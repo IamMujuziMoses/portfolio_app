@@ -410,6 +410,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       apTime: Timestamp.fromDate(startTime),
       name: widget.doctorsName,
       id: id,
+      status: "waiting",
       hospital: widget.hospital,
       type: "appointment",
       howLong: null,

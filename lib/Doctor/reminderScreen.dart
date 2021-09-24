@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/main.dart';
+import 'package:creativedata_app/AllScreens/addReminderScreen.dart';
+import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
+import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -27,12 +30,18 @@ class ReminderScreen extends StatelessWidget {
                       String type = snapshot.data.docs[index].get("type");
                       if (type == "appointment") {
                         String speciality = snapshot.data.docs[index].get("speciality");
-                        String time = snapshot.data.docs[index].get("time");
+                        Timestamp timeStr = snapshot.data.docs[index].get("time");
+                        DateTime time = timeStr.toDate();
+                        String status = snapshot.data.docs[index].get("status");
+                        int id = snapshot.data.docs[index].get("id");
                         String patientName = snapshot.data.docs[index].get("name");
                         String hospital = snapshot.data.docs[index].get("hospital");
                         return appointmentReminder(
+                          context: context,
                           speciality: speciality,
                           time: time,
+                          id: id,
+                          status: status,
                           name: patientName,
                           hospital: hospital,
                         );
@@ -74,11 +83,12 @@ class ReminderScreen extends StatelessWidget {
     );
   }
 
-  Widget appointmentReminder({String speciality, String time, String name, String hospital}) {
+  Widget appointmentReminder({String speciality, DateTime time, String name, String hospital,
+    int id, String status, BuildContext context}) {
     return Container(
       width: 95 * SizeConfig.widthMultiplier,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: status == "waiting" ? Colors.white : Colors.white38,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -101,11 +111,13 @@ class ReminderScreen extends StatelessWidget {
                   height: 8 * SizeConfig.heightMultiplier,
                   width: 16 * SizeConfig.widthMultiplier,
                   decoration: BoxDecoration(
-                    color: Colors.red[100],
+                    color: status == "waiting" ? Colors.red[100] : Colors.grey[400],
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Center(
-                    child: Icon(FontAwesomeIcons.calendarAlt, color: Colors.red[300],),
+                    child: Icon(FontAwesomeIcons.calendarAlt,
+                      color: status == "waiting" ? Colors.red[300] : Colors.black,
+                    ),
                   ),
                 ),
                 SizedBox(width: 2 * SizeConfig.widthMultiplier,),
@@ -120,7 +132,7 @@ class ReminderScreen extends StatelessWidget {
                           fontSize: 3 * SizeConfig.textMultiplier,
                         ),),
                     ),
-                    Text(time, style: TextStyle(
+                    Text("${Utils.formatDate(time)}", style: TextStyle(
                       fontFamily: "Brand-Regular",
                       fontSize: 2 * SizeConfig.textMultiplier,
                       color: Colors.black54,
@@ -132,7 +144,6 @@ class ReminderScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: <Widget>[
                           Container(
-                            width: 68 * SizeConfig.widthMultiplier,
                             child: Text("$speciality Appointment", maxLines: 1, overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: "Brand Bold",
@@ -154,9 +165,32 @@ class ReminderScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
                 RaisedButton(
-                  onPressed: () {},
-                  // onPressed: () async => await databaseMethods.deleteDoctorReminder(name, currentUser.uid),
-                  color: Colors.white,
+                  onPressed: status == "waiting" ? () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => AlertDialog(
+                        title: Text("Cancel appointment reminder?"),
+                        content: Text("$speciality with $name", style: TextStyle(
+                          fontFamily: "Brand-Regular",
+                        ),),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text("No"),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          FlatButton(
+                            child: Text("Yes"),
+                            onPressed: () {
+                              cancelDocAlarm(name: name, id: id);
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  } : () => displaySnackBar(message: "Reminder already ended and cancelled", context: context, label: ""),
+                  color: status == "waiting" ? Colors.white : Colors.grey[400],
                   splashColor: Colors.red[300],
                   highlightColor: Colors.grey.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -173,8 +207,32 @@ class ReminderScreen extends StatelessWidget {
                   ),
                 ),
                 RaisedButton(
-                  onPressed: () {},
-                  color: Colors.white,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => AlertDialog(
+                        title: Text("Delete appointment reminder?"),
+                        content: Text("$speciality with $name", style: TextStyle(
+                          fontFamily: "Brand-Regular",
+                        ),),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text("No"),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          FlatButton(
+                            child: Text("Yes"),
+                            onPressed: () {
+                              deleteDocAlarm(name);
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  color: status == "waiting" ? Colors.white : Colors.grey[400],
                   splashColor: Colors.red[300],
                   highlightColor: Colors.grey.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -182,7 +240,7 @@ class ReminderScreen extends StatelessWidget {
                     child: Row(
                       children: <Widget>[
                         Icon(CupertinoIcons.checkmark_alt),
-                        Text("Done", style: TextStyle(
+                        Text("Delete", style: TextStyle(
                           fontFamily: "Brand-Regular",
                           fontSize: 2 * SizeConfig.textMultiplier,
                         )),

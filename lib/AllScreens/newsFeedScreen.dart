@@ -208,13 +208,20 @@ class _PostBodyState extends State<PostBody> {
 
   bool allVisible = true;
   bool myVisible = false;
+  int selectedIndex = 0;
 
-  Widget button({String category, Color color, Color splashColor, Color textColor}) {
+  changeIndex(index) {
+    setState(() {
+      selectedIndex = index;
+    });
+  }
+
+  Widget button({String category, int index,}) {
     return RaisedButton(
-        splashColor: splashColor,
+        color: selectedIndex == index ? Colors.red[300] : Colors.white,
+        splashColor: selectedIndex == index ? Colors.white : Colors.red[200],
         highlightColor: Colors.grey.withOpacity(0.1),
-        color: color,
-        textColor: textColor,
+        textColor: selectedIndex == index ? Colors.white : Colors.red[300],
         child: Container(
           height: 4 * SizeConfig.heightMultiplier,
           width: 15 * SizeConfig.widthMultiplier,
@@ -229,6 +236,7 @@ class _PostBodyState extends State<PostBody> {
           borderRadius: new BorderRadius.circular(15),
         ),
         onPressed: () {
+          changeIndex(index);
           if (category == "All") {
             setState(() {
               allVisible = true;
@@ -320,17 +328,13 @@ class _PostBodyState extends State<PostBody> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
                           button(
+                            index: 0,
                             category: "All",
-                            color: Colors.red[300],
-                            splashColor: Colors.white,
-                            textColor: Colors.white,
                           ),
                           SizedBox(width: 4 * SizeConfig.widthMultiplier,),
                           button(
+                            index: 1,
                             category: "My Posts",
-                            color: Colors.white,
-                            splashColor: Colors.red[200],
-                            textColor: Colors.red[300],
                           ),
                         ],
                       ),

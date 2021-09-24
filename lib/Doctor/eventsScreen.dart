@@ -1,14 +1,54 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:creativedata_app/Utilities/utils.dart';
+import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 /*
 * Created by Mujuzi Moses
 */
 
 class EventsScreen extends StatelessWidget {
-  const EventsScreen({Key key}) : super(key: key);
+  final Stream eventsStream;
+  const EventsScreen({Key key, this.eventsStream}) : super(key: key);
+
+  Widget eventList() {
+    return StreamBuilder(
+      stream: eventsStream,
+      builder: (context, snapshot) {
+        return snapshot.hasData
+            ? ListView.separated(
+                itemCount: snapshot.data.docs.length,
+                separatorBuilder: (context, index) => SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+                itemBuilder: (context, index) {
+                  Timestamp dateStr = snapshot.data.docs[index].get("eventDate");
+                  DateTime dateTime = dateStr.toDate();
+                  String date = Utils.formatDate(dateStr.toDate());
+                  String description = snapshot.data.docs[index].get("eventDesc");
+                  String title = snapshot.data.docs[index].get("eventTitle");
+                  String imageUrl = snapshot.data.docs[index].get("url");
+                  String status = snapshot.data.docs[index].get("status");
+                  String time = Utils.formatTime(dateStr.toDate());
+                  return eventTile(
+                    context: context,
+                    dateTime: dateTime,
+                    date: date,
+                    description: description,
+                    title: title,
+                    imageUrl: imageUrl,
+                    status: status,
+                    time: time,
+                  );
+                },
+              )
+            : Container();
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     return PickUpLayout(
       scaffold: Scaffold(
         appBar: AppBar(
@@ -21,11 +61,150 @@ class EventsScreen extends StatelessWidget {
           ),),
         ),
         body: Container(
-          child: Center(
-            child: Text("Events Screen"),
+          color: Colors.grey[100],
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: eventList(),
           ),
         ),
       ),
     );
+  }
+
+  Widget eventTile({title, description, imageUrl, time, date, status, DateTime dateTime, BuildContext context}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      child: Container(
+        clipBehavior: Clip.hardEdge,
+        height: 40 * SizeConfig.heightMultiplier,
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              offset: Offset(2, 3),
+              spreadRadius: 0.5,
+              blurRadius: 2,
+              color: Colors.black.withOpacity(0.3),
+            ),
+          ],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            GestureDetector(
+              onTap: () {},
+              child: CachedImage(
+                width: double.infinity,
+                height: double.infinity,
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                radius: 10,
+              ),
+            ),
+            Positioned(
+              top: 2 * SizeConfig.heightMultiplier,
+              right: 2 * SizeConfig.widthMultiplier,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: <Widget>[
+                      Text(editDateDay(date), style: TextStyle(
+                        fontFamily: "Brand Bold",
+                        fontSize: 4 * SizeConfig.textMultiplier,
+                      ),),
+                      SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                      Text(editDateMY(date), style: TextStyle(
+                        fontFamily: "Brand Bold",
+                        color: Colors.grey,
+                        fontSize: 2 * SizeConfig.textMultiplier,
+                      ),)
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 2 * SizeConfig.heightMultiplier,
+              left: 2 * SizeConfig.widthMultiplier,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Container(
+                        width: 85 * SizeConfig.widthMultiplier,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            Text("Status: $status", maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: "Brand-Regular",
+                                color: Colors.white,
+                                fontSize: 1.8 * SizeConfig.textMultiplier,
+                            ),),
+                            Text("Time: $time", maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: "Brand-Regular",
+                                color: Colors.white,
+                                fontSize: 1.8 * SizeConfig.textMultiplier,
+                            ),),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 85 * SizeConfig.widthMultiplier,
+                        child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: "Brand Bold",
+                            color: Colors.red[300],
+                            fontSize: 4 * SizeConfig.textMultiplier,
+                        ),),
+                      ),
+                      Container(
+                        width: 85 * SizeConfig.widthMultiplier,
+                        child: Text(description, maxLines: 3, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: "Brand-Regular",
+                            color: Colors.white,
+                            fontSize: 2 * SizeConfig.textMultiplier,
+                        ),),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String editDateDay(String date) {
+    int index = date.indexOf(",");
+    String day = date.substring(index - 2, index);
+
+    return day;
+  }
+
+  String editDateMY(String date) {
+    int index = date.indexOf(",");
+    String day = date.substring(index - 2, index);
+    String monthYear = date.replaceAll(day, "").trim();
+    return monthYear;
   }
 }

@@ -33,11 +33,7 @@ class AlertsScreen extends StatelessWidget {
                   );
                 },
               )
-            : Container(
-                child: Center(
-                  child: Text("You have no Alerts"),
-                ),
-              );
+            : Container();
       },
     );
   }

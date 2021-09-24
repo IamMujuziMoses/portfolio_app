@@ -37,7 +37,7 @@ class CachedImage extends StatelessWidget {
             fit: fit,
             placeholder: (context, url) =>
                 Center(
-                  child: CircularProgressIndicator()),
+                  child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),)),
             errorWidget: (context, url, error) =>
                 isAd != null && isAd == true
                     ? Center(child: Text("AD", style: TextStyle(fontSize: 10 * SizeConfig.textMultiplier, color: Colors.black12),),)

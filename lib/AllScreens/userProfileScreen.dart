@@ -182,7 +182,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           borderRadius: BorderRadius.circular(50),
                         ),
                         child: Center(
-                          child: Text("2", style: TextStyle(
+                          child: Text("5", style: TextStyle(
                               fontFamily: "Brand-Regular",
                               color: Colors.white
                           ),),

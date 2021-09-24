@@ -31,8 +31,11 @@ class DatabaseMethods{
   final CollectionReference doctorsCollection = fireStore.collection("doctors");
   final CollectionReference driversCollection = fireStore.collection("Drivers");
   final CollectionReference hospitalsCollection = fireStore.collection("Hospitals");
+  final CollectionReference notificationsCollection = fireStore.collection("Notifications");
   final CollectionReference postsCollection = fireStore.collection("Posts");
   final CollectionReference usersCollection = fireStore.collection("users");
+  final CollectionReference eventsCollection = fireStore.collection("Events");
+  final CollectionReference drugStoreCollection = fireStore.collection("DrugStore");
   final CollectionReference alertsCollection = fireStore.collection("Alerts");
   final CollectionReference adsCollection = fireStore.collection("Ads");
 
@@ -456,10 +459,28 @@ class DatabaseMethods{
     });
   }
 
+  updateUserReminder(Map<String, dynamic> update, String uid, String remName) async {
+    String docId = await getUserDocId(uid);
+    QuerySnapshot snap = await usersCollection.doc(docId).collection("Reminders").where("name", isEqualTo: remName).get();
+    String remDocId = snap.docs[0].id.trim();
+    usersCollection.doc(docId).collection("Reminders").doc(remDocId).update(update).catchError((e) {
+      print("Update User Reminder Field Error ::: ${e.toString()}");
+    });
+  }
+
   createDoctorReminder(reminderMap, uid) async {
     String docId = await getDoctorDocId(uid);
     doctorsCollection.doc(docId).collection("Reminders").add(reminderMap).catchError((e) {
       print("Create Reminder Error ::: ${e.toString()}");
+    });
+  }
+
+  updateDoctorReminder(Map<String, dynamic> update, String uid, String remName) async {
+    String docId = await getDoctorDocId(uid);
+    QuerySnapshot snap = await doctorsCollection.doc(docId).collection("Reminders").where("name", isEqualTo: remName).get();
+    String remDocId = snap.docs[0].id.trim();
+    doctorsCollection.doc(docId).collection("Reminders").doc(remDocId).update(update).catchError((e) {
+      print("Update Doctor Reminder Field Error ::: ${e.toString()}");
     });
   }
 
@@ -612,6 +633,18 @@ class DatabaseMethods{
     return await usersCollection.snapshots();
   }
 
+  getEvents() async {
+    return await eventsCollection.orderBy("createdAt", descending: true).snapshots();
+  }
+
+  getNotifications() async {
+    return await notificationsCollection.orderBy("created_at", descending: true).snapshots();
+  }
+
+  getDrugs() async {
+    return await drugStoreCollection.doc("QUZsrrSSPfO9Si98Ob5R93nqqVC3").collection("Drugs").snapshots();
+  }
+
   getDoctors() async {
     return await doctorsCollection.snapshots();
   }
@@ -723,6 +756,14 @@ class DatabaseMethods{
     docSnap = await doctorsCollection.where("uid", isEqualTo: uid.trim()).get();
     String id = docSnap.docs[0].id.trim();
     return id;
+  }
+  
+  Future<String> getDrugStoreDocId() async {
+    Stream drugStream;
+    drugStream = drugStoreCollection.snapshots();
+    var id = await drugStream.length;
+    print("DrugDocId ::: ${id.toString()}");
+    return id.toString();
   }
 
   Future<String> getDriverDocId(String uid) async {

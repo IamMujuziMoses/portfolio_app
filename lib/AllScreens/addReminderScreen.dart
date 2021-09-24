@@ -1064,6 +1064,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           howLong: howLongSelectedValue,
           isOnce: true,
           id: id,
+          status: "waiting",
           type: "medicine",
           period: periodSelectedValue,
           onceTime: timeTEC.text.trim(),
@@ -1143,6 +1144,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           tablets: tabletsTEC.text.trim(),
           cycle: timeSelectedValue,
           idList: idList,
+          status: "waiting",
           howLong: howLongSelectedValue,
           isOnce: false,
           type: "medicine",
@@ -1271,15 +1273,23 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 cancelAlarm({String name, int id}) {
   cancel() async {
     await notificationsPlugin.cancel(id);
-    await databaseMethods.deleteUserReminder(name, currentUser.uid);
+    await databaseMethods.updateUserReminder({"status": "complete"}, currentUser.uid, name);
   }
   cancel();
+}
+
+deleteAlarm(String name) async {
+  await databaseMethods.deleteUserReminder(name, currentUser.uid);
 }
 
 cancelDocAlarm({String name, int id}) {
   cancel() async {
     await notificationsPlugin.cancel(id);
-    await databaseMethods.deleteDoctorReminder(name, currentUser.uid);
+    await databaseMethods.updateDoctorReminder({"status": "complete"}, currentUser.uid, name);
   }
   cancel();
+}
+
+deleteDocAlarm(String name) async {
+  await databaseMethods.deleteDoctorReminder(name, currentUser.uid);
 }

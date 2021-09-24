@@ -129,7 +129,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                           borderRadius: BorderRadius.circular(50),
                         ),
                         child: Center(
-                          child: Text("2", style: TextStyle(
+                          child: Text("5", style: TextStyle(
                               fontFamily: "Brand-Regular",
                               color: Colors.white
                           ),),
@@ -555,11 +555,21 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                                 icon: CupertinoIcons.calendar_badge_plus,
                                                 title: "Events",
                                                 alert: "0",
-                                                onTap: () => Navigator.push(
-                                                  context, MaterialPageRoute(
-                                                  builder: (context) => EventsScreen(),
-                                                ),
-                                                ),
+                                                onTap: () async {
+                                                  Stream eventsStream;
+                                                  await databaseMethods.getEvents().then((val) {
+                                                    setState(() {
+                                                      eventsStream = val;
+                                                    });
+                                                  });
+                                                  Navigator.push(
+                                                    context, MaterialPageRoute(
+                                                    builder: (context) => EventsScreen(
+                                                      eventsStream: eventsStream,
+                                                    ),
+                                                  ),
+                                                  );
+                                                },
                                               ),
                                             ],
                                           ),
@@ -601,11 +611,21 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                                 icon: Icons.add_shopping_cart_rounded,
                                                 title: "Medical Store",
                                                 alert: "0",
-                                                onTap: () => Navigator.push(
-                                                  context, MaterialPageRoute(
-                                                  builder: (context) => MedicalStore(),
-                                                ),
-                                                ),
+                                                onTap: () async {
+                                                  Stream drugStream;
+                                                  await databaseMethods.getDrugs().then((val) {
+                                                    setState(() {
+                                                      drugStream = val;
+                                                    });
+                                                  });
+                                                  Navigator.push(
+                                                    context, MaterialPageRoute(
+                                                    builder: (context) => MedicalStore(
+                                                      drugStream: drugStream,
+                                                    ),
+                                                  ),
+                                                  );
+                                                },
                                               ),
                                             ],
                                           ),

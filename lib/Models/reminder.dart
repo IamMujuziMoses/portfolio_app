@@ -14,6 +14,7 @@ class Reminder{
   String type;
   Timestamp date;
   String cycle;
+  String status;
   String howLong;
   String period;
   String onceTime;
@@ -24,13 +25,13 @@ class Reminder{
   FieldValue createdAt;
 
   Reminder({this.name, this.dosage, this.cycle, this.howLong, this.tablets, this.type,
-    this.time, this.isOnce, this.createdAt, this.idList, this.date,
+    this.time, this.isOnce, this.createdAt, this.idList, this.date, this.status,
   });
   Reminder.onceReminder({this.name, this.dosage, this.cycle, this.howLong, this.tablets, this.type,
-    this.period, this.onceTime, this.isOnce, this.createdAt, this.id, this.date,
+    this.period, this.onceTime, this.isOnce, this.createdAt, this.id, this.date, this.status,
   });
   Reminder.appointReminder({this.speciality, this.createdAt, this.apTime, this.name, this.hospital,
-    this.type, this.howLong, this.id,
+    this.type, this.howLong, this.id, this.status,
   });
 
   Map toAppointMap(Reminder reminder) {
@@ -39,6 +40,7 @@ class Reminder{
     reminderMap["created_at"] = reminder.createdAt;
     reminderMap["time"] = reminder.apTime;
     reminderMap["name"] = reminder.name;
+    reminderMap["status"] = reminder.status;
     reminderMap["hospital"] = reminder.hospital;
     reminderMap["id"] = reminder.id;
     reminderMap["type"] = reminder.type;
@@ -55,6 +57,7 @@ class Reminder{
     reminderMap["cycle"] = reminder.cycle;
     reminderMap["how_long"] = reminder.howLong;
     reminderMap["id_list"] = reminder.idList;
+    reminderMap["status"] = reminder.status;
     reminderMap["date"] = reminder.date;
     reminderMap["time"] = reminder.time;
     reminderMap["isOnce"] = reminder.isOnce;
@@ -74,6 +77,7 @@ class Reminder{
     reminderMap["type"] = reminder.type;
     reminderMap["period"] = reminder.period;
     reminderMap["id"] = reminder.id;
+    reminderMap["status"] = reminder.status;
     reminderMap["date"] = reminder.date;
     reminderMap["once_time"] = reminder.onceTime;
     reminderMap["isOnce"] = reminder.isOnce;

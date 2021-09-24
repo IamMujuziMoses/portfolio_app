@@ -280,6 +280,7 @@ class _AppointmentTileState extends State<AppointmentTile> {
                               apTime: Timestamp.fromDate(widget.dateTime),
                               name: widget.patientName,
                               id: id,
+                              status: "waiting",
                               hospital: widget.hospital,
                               type: "appointment",
                             );

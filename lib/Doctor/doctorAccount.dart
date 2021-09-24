@@ -74,6 +74,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
   Widget _doctorAccBody(BuildContext context) {
     return Container(
             width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height - 15 * SizeConfig.heightMultiplier,
             decoration: BoxDecoration(
               color: Colors.grey[100],
             ),
@@ -501,7 +502,6 @@ class _DoctorAccountState extends State<DoctorAccount> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 18 * SizeConfig.heightMultiplier,),
                 ],
               ),
             ),
