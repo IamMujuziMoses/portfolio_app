@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
+import 'package:creativedata_app/AllScreens/siroWeb.dart';
 import 'package:creativedata_app/Covid-19/causesAndSpread.dart';
 import 'package:creativedata_app/Covid-19/preventiveMeasures.dart';
 import 'package:creativedata_app/Covid-19/signsAndSymptoms.dart';
@@ -174,7 +175,11 @@ class Covid19Center extends StatelessWidget {
                               width: 24 * SizeConfig.widthMultiplier,
                               textWidth: 30 * SizeConfig.widthMultiplier,
                               iconSize: 8 * SizeConfig.imageSizeMultiplier,
-                              onTap: () {},
+                              onTap: () => Navigator.push(
+                                context, MaterialPageRoute(
+                                builder: (context) => SiroWeb(url: 'https://www.cdc.gov/coronavirus/2019-ncov/symptoms-testing/coronavirus-self-checker.html/',),
+                              ),
+                              ),
                             ),
                           ],
                         ),
@@ -197,7 +202,11 @@ class Covid19Center extends StatelessWidget {
                               width: 24 * SizeConfig.widthMultiplier,
                               textWidth: 30 * SizeConfig.widthMultiplier,
                               iconSize: 8 * SizeConfig.imageSizeMultiplier,
-                              onTap: () {},
+                              onTap: () => Navigator.push(
+                                context, MaterialPageRoute(
+                                builder: (context) => SiroWeb(url: 'https://www.who.int/emergencies/diseases/novel-coronavirus-2019/',),
+                              ),
+                              ),
                             ),
                             customTiles(
                               desc: "COVID-19 Updates",
@@ -206,7 +215,11 @@ class Covid19Center extends StatelessWidget {
                               width: 24 * SizeConfig.widthMultiplier,
                               textWidth: 30 * SizeConfig.widthMultiplier,
                               iconSize: 8 * SizeConfig.imageSizeMultiplier,
-                              onTap: () {},
+                              onTap: () => Navigator.push(
+                                context, MaterialPageRoute(
+                                builder: (context) => SiroWeb(url: 'https://www.worldometers.info/coronavirus/',),
+                              ),
+                              ),
                             ),
                             customTiles(
                               desc: "MoH Center",
@@ -215,7 +228,11 @@ class Covid19Center extends StatelessWidget {
                               width: 24 * SizeConfig.widthMultiplier,
                               textWidth: 30 * SizeConfig.widthMultiplier,
                               iconSize: 8 * SizeConfig.imageSizeMultiplier,
-                              onTap: () {},
+                              onTap: () => Navigator.push(
+                              context, MaterialPageRoute(
+                              builder: (context) => SiroWeb(url: 'https://www.health.go.ug/covid',),
+                            ),
+                            ),
                             ),
                           ],
                         ),

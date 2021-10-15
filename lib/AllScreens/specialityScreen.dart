@@ -1,10 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:creativedata_app/AllScreens/doctorProfileScreen.dart';
 import 'package:creativedata_app/AllScreens/userProfileScreen.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /*
 * Created by Mujuzi Moses
 */
@@ -12,7 +15,8 @@ import 'package:flutter/material.dart';
 class SpecialityScreen extends StatefulWidget {
   static const String screenId = "specialityScreen";
   final String speciality;
-  SpecialityScreen({Key key, this.speciality}) : super(key: key);
+  final List doctors;
+  SpecialityScreen({Key key, this.speciality, this.doctors}) : super(key: key);
 
   @override
   _SpecialityScreenState createState() => _SpecialityScreenState();
@@ -56,6 +60,7 @@ class _SpecialityScreenState extends State<SpecialityScreen> {
     return PickUpLayout(
         scaffold: Scaffold(
           body: SpecCustom(
+            doctors: widget.doctors,
             body: SpecBody(
               allStream: allStream,
               topStream: topStream,
@@ -163,6 +168,7 @@ class _SpecBodyState extends State<SpecBody> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
       decoration: BoxDecoration(
         color: Colors.grey[100],
       ),
@@ -260,7 +266,6 @@ class _SpecBodyState extends State<SpecBody> {
               ),
             ],
           ),
-          SizedBox(height: 1 * SizeConfig.heightMultiplier,),
         ],
       ),
     );
@@ -270,13 +275,48 @@ class _SpecBodyState extends State<SpecBody> {
 class SpecCustom extends StatefulWidget {
   final Widget body;
   final String speciality;
-  const SpecCustom({Key key, this.body, this.speciality}) : super(key: key);
+  final bool appointment;
+  final List doctors;
+  const SpecCustom({Key key, this.body, this.speciality, this.appointment, this.doctors}) : super(key: key);
 
   @override
   _SpecCustomState createState() => _SpecCustomState();
 }
 
 class _SpecCustomState extends State<SpecCustom> {
+
+  TextEditingController searchTEC = TextEditingController();
+  bool searchVisible = false;
+  bool titleVisible = true;
+  List doctorOnSearch = [];
+  List doctors = [];
+
+  @override
+  void initState() {
+    getDoctorsList();
+    super.initState();
+  }
+
+  getDoctorsList() {
+    setState(() {
+      doctors = widget.doctors;
+    });
+  }
+
+  showHideSearchBar() {
+    if (searchVisible == false && titleVisible == true) {
+      setState(() {
+        searchVisible = true;
+        titleVisible = false;
+      });
+    } else if (searchVisible == true && titleVisible == false) {
+      setState(() {
+        searchVisible = false;
+        titleVisible = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
@@ -287,25 +327,167 @@ class _SpecCustomState extends State<SpecCustom> {
           pinned: true,
           elevation: 0,
           actions: <Widget>[
-            IconButton(
-              onPressed: () {},
-              color: Colors.red[300],
-              splashColor: Colors.red[200],
-              icon: Icon(CupertinoIcons.search,
-              ),),
+            widget.appointment == true ? Container() : Stack(
+              children: <Widget>[
+                Visibility(
+                  visible: titleVisible,
+                  child: IconButton(
+                    onPressed: () => showHideSearchBar(),
+                    splashColor: Colors.red[200],
+                    icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                    ),),
+                ),
+                Visibility(
+                  visible: searchVisible,
+                  child: IconButton(
+                    onPressed: () {
+                      searchTEC.text = "";
+                      // drugOnSearch.clear();
+                      showHideSearchBar();
+                    },
+                    color: Colors.red[300],
+                    splashColor: Colors.red[200],
+                    icon: Icon(CupertinoIcons.clear,
+                    ),),
+                ),
+              ],
+            ),
           ],
           flexibleSpace: FlexibleSpaceBar(
-            title: Text(widget.speciality, textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.red[300],
-                fontFamily: "Brand Bold",
-                //fontSize: 2.7 * SizeConfig.textMultiplier,
-            ),),
+            title: Stack(
+                children: <Widget>[
+                  Visibility(
+                    visible: titleVisible,
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(15)
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(widget.speciality, style: TextStyle(
+                          fontFamily: "Brand Bold",
+                          color: Colors.red[300],
+                        ),),
+                      ),
+                    ),
+                  ),
+                  Visibility(
+                    visible: searchVisible,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: 4 * SizeConfig.heightMultiplier,
+                        left: 10 * SizeConfig.widthMultiplier,
+                        right: 10 * SizeConfig.widthMultiplier,
+                      ),
+                      child: Container(
+                        height: 5 * SizeConfig.heightMultiplier,
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              doctorOnSearch = doctors.where((element) => element.toLowerCase()
+                                  .contains(value.toLowerCase())).toList();
+                            });
+                          },
+                          controller: searchTEC,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: "Search for ${widget.speciality}...",
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                              fontFamily: "Brand-Regular",
+                              fontSize: 2 * SizeConfig.textMultiplier,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                            fontFamily: "Brand-Regular",
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ]
+            ),
             centerTitle: true,
           ),
         ),
         SliverToBoxAdapter(
-          child: widget.body,
+          child: searchTEC.text.isNotEmpty && doctorOnSearch.length > 0 ?
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
+            color: Colors.grey[100],
+            child: ListView.builder(
+              itemCount: doctorOnSearch.length,
+              itemBuilder: (context, index) => GestureDetector(
+                onTap: () async {
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                  );
+                  QuerySnapshot doctorSnap;
+                  await databaseMethods.getUserByUsername(doctorOnSearch[index]).then((val) {
+                    setState(() {
+                      doctorSnap = val;
+                    });
+                  });
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context, MaterialPageRoute(
+                    builder: (context) => DoctorProfileScreen(
+                      imageUrl: doctorSnap.docs[0].get("profile_photo"),
+                      doctorsName: doctorSnap.docs[0].get("name"),
+                      speciality: widget.speciality,
+                      hospital: doctorSnap.docs[0].get("hospital"),
+                      reviews: doctorSnap.docs[0].get("reviews"),
+                      uid: doctorSnap.docs[0].get("uid"),
+                      doctorsAge: doctorSnap.docs[0].get("age"),
+                      phone: doctorSnap.docs[0].get("phone"),
+                      hours: doctorSnap.docs[0].get("hours"),
+                      patients: doctorSnap.docs[0].get("patients"),
+                      experience: doctorSnap.docs[0].get("years"),
+                      doctorsEmail: doctorSnap.docs[0].get("email"),
+                      about: doctorSnap.docs[0].get("about"),
+                      days: doctorSnap.docs[0].get("days"),
+                      fee: doctorSnap.docs[0].get("fee"),
+                    ),
+                  ),);
+                  Future.delayed(Duration(seconds: 1), () {
+                    setState(() {
+                      searchTEC.text = "";
+                      doctorOnSearch.clear();
+                      searchVisible = false;
+                      titleVisible = true;
+                    });
+                  });
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 5,
+                    horizontal: 4,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      CircleAvatar(
+                        backgroundColor: Colors.red[100],
+                        foregroundColor: Colors.red[300],
+                        child: Icon(FontAwesomeIcons.userMd),
+                      ),
+                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                      Text("Dr. ${doctorOnSearch[index]}", style: TextStyle(
+                        fontFamily: "Brand Bold",
+                      ),),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ) : widget.body,
         ),
       ],
     );

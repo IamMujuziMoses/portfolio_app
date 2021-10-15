@@ -6,6 +6,7 @@ import 'package:creativedata_app/AllScreens/userProfileScreen.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Widgets/onlineIndicator.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
 import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -170,6 +171,8 @@ class CallRecordsTile extends StatelessWidget {
             children: <Widget>[
               GestureDetector(
                 onTap: () => profilePicView(
+                  isDoctor: isDoctor,
+                  isUser: false,
                   imageUrl: profilePhoto,
                   context: context,
                   isSender: false,
@@ -235,9 +238,14 @@ class CallRecordsTile extends StatelessWidget {
               Spacer(),
               isVoiceCall == true ?
               GestureDetector(
-                onTap: () async =>
-                await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                goToVoiceCall(databaseMethods, userName, context, isDoctor) : {},
+                onTap: () async {
+                  showDialog(
+                    context: context,
+                    builder: (context) => ProgressDialog(message: "Please wait...",),
+                  );
+                  await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                  goToVoiceCall(databaseMethods, userName, context, isDoctor) : {};
+                },
                 child: Container(
                   height: 4 * SizeConfig.heightMultiplier,
                   width: 8 * SizeConfig.widthMultiplier,
@@ -253,9 +261,14 @@ class CallRecordsTile extends StatelessWidget {
                 ),
               )
               : GestureDetector(
-                onTap: () async => await Permissions.cameraAndMicrophonePermissionsGranted()
-                    ? goToVideoChat(databaseMethods, userName, context, isDoctor)
-                    : {},
+                onTap: () async {
+                  showDialog(
+                    context: context,
+                    builder: (context) => ProgressDialog(message: "Please wait...",),
+                  );
+                  await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                  goToVideoChat(databaseMethods, userName, context, isDoctor) : {};
+                },
                 child: Container(
                   height: 4 * SizeConfig.heightMultiplier,
                   width: 8 * SizeConfig.widthMultiplier,

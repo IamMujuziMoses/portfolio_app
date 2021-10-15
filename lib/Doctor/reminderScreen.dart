@@ -22,9 +22,8 @@ class ReminderScreen extends StatelessWidget {
         return snapshot.hasData
             ? Container(
                 height: double.infinity,
-                child: ListView.separated(
+                child: ListView.builder(
                     padding: EdgeInsets.symmetric(vertical: 8),
-                    separatorBuilder: (context, index) => SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                     itemCount: snapshot.data.docs.length,
                     itemBuilder: (context, index) {
                       String type = snapshot.data.docs[index].get("type");
@@ -36,18 +35,37 @@ class ReminderScreen extends StatelessWidget {
                         int id = snapshot.data.docs[index].get("id");
                         String patientName = snapshot.data.docs[index].get("name");
                         String hospital = snapshot.data.docs[index].get("hospital");
-                        return appointmentReminder(
-                          context: context,
-                          speciality: speciality,
-                          time: time,
-                          id: id,
-                          status: status,
-                          name: patientName,
-                          hospital: hospital,
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          child: appointmentReminder(
+                            context: context,
+                            speciality: speciality,
+                            time: time,
+                            id: id,
+                            status: status,
+                            name: patientName,
+                            hospital: hospital,
+                          ),
                         );
-                      } else {
-                        return Container();
-                      }
+                      } else if (type == "event") {
+                        Timestamp timeStr = snapshot.data.docs[index].get("date");
+                        DateTime date = timeStr.toDate();
+                        String status = snapshot.data.docs[index].get("status");
+                        int id = snapshot.data.docs[index].get("id");
+                        String description = snapshot.data.docs[index].get("description");
+                        String eventName = snapshot.data.docs[index].get("name");
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 4),
+                          child: eventReminder(
+                            context: context,
+                            description: description,
+                            status: status,
+                            id: id,
+                            date: date,
+                            eventName: eventName,
+                          ),
+                        );
+                      } else return Container();
                     }),
               )
             : Container(
@@ -82,6 +100,179 @@ class ReminderScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget eventReminder({BuildContext context, DateTime date, description, eventName, status, int id}) {
+    return Container(
+      width: 95 * SizeConfig.widthMultiplier,
+      decoration: BoxDecoration(
+        color: status == "waiting" ? Colors.white : Colors.white38,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(2, 3),
+            spreadRadius: 0.5,
+            blurRadius: 2,
+            color: Colors.black.withOpacity(0.3),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Container(
+                  height: 8 * SizeConfig.heightMultiplier,
+                  width: 16 * SizeConfig.widthMultiplier,
+                  decoration: BoxDecoration(
+                    color: status == "waiting" ? Colors.red[100] : Colors.grey[400],
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Center(
+                    child: Icon(CupertinoIcons.calendar_badge_plus,
+                      color: status == "waiting" ? Colors.red[300] : Colors.black,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 2 * SizeConfig.widthMultiplier,),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      width: 70 * SizeConfig.widthMultiplier,
+                      child: Text(eventName, maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: "Brand Bold",
+                          fontSize: 3 * SizeConfig.textMultiplier,
+                        ),),
+                    ),
+                    Text("${Utils.formatDate(date)}", style: TextStyle(
+                      fontFamily: "Brand-Regular",
+                      fontSize: 2 * SizeConfig.textMultiplier,
+                      color: Colors.black54,
+                    ),),
+                    SizedBox(height: 0.5 * SizeConfig.heightMultiplier,),
+                    Container(
+                      width: 70 * SizeConfig.widthMultiplier,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: <Widget>[
+                          Container(
+                            width: 68 * SizeConfig.widthMultiplier,
+                            child: Text("$description", maxLines: 2, overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: "Brand Bold",
+                                fontSize: 2 * SizeConfig.textMultiplier,
+                                color: Colors.grey,
+                              ),),
+                          ),
+                          SizedBox(width: 0.8 * SizeConfig.widthMultiplier,),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Divider(color: Colors.grey, thickness: 2,),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                RaisedButton(
+                  onPressed: status == "waiting" ? () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => AlertDialog(
+                        title: Text("Cancel event reminder?"),
+                        content: Text("$eventName on ${Utils.formatDate(date)}", style: TextStyle(
+                          fontFamily: "Brand-Regular",
+                        ),),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text("No"),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          FlatButton(
+                            child: Text("Yes"),
+                            onPressed: () {
+                              cancelDocAlarm(name: eventName, id: id);
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  } : () => displaySnackBar(message: "Reminder already ended and cancelled", context: context, label: ""),
+                  color: status == "waiting" ? Colors.white : Colors.grey[400],
+                  splashColor: Colors.red[300],
+                  highlightColor: Colors.grey.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  child: Center(
+                    child: Row(
+                      children: <Widget>[
+                        Icon(CupertinoIcons.clear),
+                        Text("Cancel", style: TextStyle(
+                          fontFamily: "Brand-Regular",
+                          fontSize: 2 * SizeConfig.textMultiplier,
+                        ),),
+                      ],
+                    ),
+                  ),
+                ),
+                RaisedButton(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => AlertDialog(
+                        title: Text("Delete event reminder?"),
+                        content: Text("$eventName on ${Utils.formatDate(date)}", style: TextStyle(
+                          fontFamily: "Brand-Regular",
+                        ),),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text("No"),
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          FlatButton(
+                            child: Text("Yes"),
+                            onPressed: () {
+                              deleteDocAlarm(eventName);
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  color: status == "waiting" ? Colors.white : Colors.grey[400],
+                  splashColor: Colors.red[300],
+                  highlightColor: Colors.grey.withOpacity(0.1),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  child: Center(
+                    child: Row(
+                      children: <Widget>[
+                        Icon(CupertinoIcons.checkmark_alt),
+                        Text("Delete", style: TextStyle(
+                          fontFamily: "Brand-Regular",
+                          fontSize: 2 * SizeConfig.textMultiplier,
+                        )),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+}
 
   Widget appointmentReminder({String speciality, DateTime time, String name, String hospital,
     int id, String status, BuildContext context}) {

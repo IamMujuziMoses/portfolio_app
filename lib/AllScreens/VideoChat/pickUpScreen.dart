@@ -1,3 +1,4 @@
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatSearch.dart';
@@ -7,6 +8,7 @@ import 'package:creativedata_app/Models/call.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 /*
@@ -69,7 +71,7 @@ class PickUpScreen extends StatelessWidget {
                     icon: Icon(Icons.call_end_rounded),
                     color: Colors.redAccent,
                     onPressed: () async {
-                      String chatRoomId = getChatRoomId(call.receiverName, call.callerName);
+                      String chatRoomId = getChatRoomId(username: call.receiverName, myName: call.callerName, isVoiceCall: true);
                       Records records = Records(
                         callerId: call.callerId,
                         callerPic: call.callerPic,
@@ -95,16 +97,19 @@ class PickUpScreen extends StatelessWidget {
                   child: IconButton(
                     icon: Icon(Icons.call_rounded),
                     color: Colors.green,
-                    onPressed: () async =>
-                    await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => isVoiceCall == true
-                            ? VoiceCallScreen(call: call, isDoctor: isDoctor,)
-                            : CallScreen(call: call, isDoctor: isDoctor,),
-                      ),
-                    ) : {},
+                    onPressed: () async {
+                      assetsAudioPlayer.stop();
+                      assetsAudioPlayer = new AssetsAudioPlayer();
+                      await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => isVoiceCall == true
+                              ? VoiceCallScreen(call: call, isDoctor: isDoctor,)
+                              : CallScreen(call: call, isDoctor: isDoctor,),
+                        ),
+                      ) : {};
+                    },
                   ),
                 ),
               ],

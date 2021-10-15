@@ -31,10 +31,17 @@ dependencies:
   animated_text_kit: ^2.5.4
   cached_network_image: ^2.5.0
   chewie: ^1.0.0
+  flutter_sound_lite: ^7.8.4
   cloud_firestore: ^0.14.0
   cupertino_icons: ^1.0.2
   emoji_picker: ^0.1.0
   firebase_auth: ^0.18.1+2
+  webview_flutter: ^2.0.12
+  open_file: ^3.2.1
+  flutter_inappwebview: ^4.0.0
+  flutter_downloader: ^1.7.0
+  flutter_pdfview: ^1.0.4
+  file_picker: ^2.1.7
   firebase_core: ^0.5.0+1
   firebase_storage: ^5.2.0
   firebase_messaging: ^7.0.3
@@ -53,6 +60,7 @@ dependencies:
   image_picker: ^0.6.7
   intl: ^0.16.1
   path_provider: ^1.6.8
+  path: ^1.8.0
   permission_handler: ^3.0.0
   photo_view: ^0.11.1
   provider: ^4.3.2+2
@@ -116,6 +124,9 @@ flutter:
      - images/stethoscope.png
      - images/heart.png
      - sounds/alert.mp3
+     - sounds/dail_tone.mp3
+     - sounds/user_unavailable.mp3
+     - sounds/doc_unavailable.mp3
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

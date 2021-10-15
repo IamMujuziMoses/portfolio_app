@@ -1,13 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/videoView.dart';
+import 'package:creativedata_app/AllScreens/doctorProfileScreen.dart';
 import 'package:creativedata_app/AllScreens/specialityScreen.dart';
 import 'package:creativedata_app/AllScreens/Specialities/specialitiesScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/Hospitals/hospitalProfileScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Hospitals/hospitalsScreen.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -18,21 +20,50 @@ import 'package:video_player/video_player.dart';
 */
 
 class FindADoctorScreen extends StatefulWidget {
-  final QuerySnapshot ihkSnap;
-  final QuerySnapshot mulagoSnap;
-  final QuerySnapshot caseSnap;
-  final QuerySnapshot kibuliSnap;
   final QuerySnapshot adSnap;
+  final List<QuerySnapshot> hospSnap;
+  final List doctors;
   static const String screenId = "findADoctorScreen";
 
-  const FindADoctorScreen({Key key, this.ihkSnap, this.mulagoSnap, this.caseSnap, this.kibuliSnap, this.adSnap}) : super(key: key);
+  FindADoctorScreen({Key key, this.adSnap, this.doctors, this.hospSnap}) : super(key: key);
 
   @override
   _FindADoctorScreenState createState() => _FindADoctorScreenState();
 }
 
 class _FindADoctorScreenState extends State<FindADoctorScreen> {
-  DatabaseMethods databaseMethods = DatabaseMethods();
+
+  TextEditingController searchTEC = TextEditingController();
+  bool searchVisible = false;
+  bool titleVisible = true;
+  List doctorOnSearch = [];
+  List doctors = [];
+
+  @override
+  void initState() {
+    getDoctorsList();
+    super.initState();
+  }
+
+  getDoctorsList() {
+    setState(() {
+      doctors = widget.doctors;
+    });
+  }
+
+  showHideSearchBar() {
+    if (searchVisible == false && titleVisible == true) {
+      setState(() {
+        searchVisible = true;
+        titleVisible = false;
+      });
+    } else if (searchVisible == true && titleVisible == false) {
+      setState(() {
+        searchVisible = false;
+        titleVisible = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,124 +74,243 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
             backgroundColor: Colors.grey[100],
             titleSpacing: 0,
             elevation: 0,
-            title: Text("Find A Doctor", style: TextStyle(
-              fontFamily: "Brand Bold",
-              color: Colors.red[300],
-            ),),
+            title: Stack(
+                children: <Widget>[
+                  Visibility(
+                    visible: titleVisible,
+                    child: Text("Find A Doctor", style: TextStyle(
+                      fontFamily: "Brand Bold",
+                      color: Colors.red[300],
+                    ),),
+                  ),
+                  Visibility(
+                    visible: searchVisible,
+                    child: Container(
+                      height: 5 * SizeConfig.heightMultiplier,
+                      child: TextField(
+                        onChanged: (value) {
+                          setState(() {
+                            doctorOnSearch = doctors.where((element) => element.toLowerCase()
+                                .contains(value.toLowerCase())).toList();
+                          });
+                        },
+                        controller: searchTEC,
+                        maxLines: 1,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: "Search for doctor...",
+                          hintStyle: TextStyle(
+                            color: Colors.grey,
+                            fontFamily: "Brand-Regular",
+                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        style: TextStyle(
+                          fontSize: 2.5 * SizeConfig.textMultiplier,
+                          fontFamily: "Brand-Regular",
+                        ),
+                      ),
+                    ),
+                  ),
+                ]
+            ),
             actions: <Widget>[
-              IconButton(
-                  onPressed: () {},
-                  color: Colors.red[300],
-                  splashColor: Colors.red[200],
-                  icon: Icon(CupertinoIcons.search,
-                  ),),
+              Stack(
+                children: <Widget>[
+                  Visibility(
+                    visible: titleVisible,
+                    child: IconButton(
+                      onPressed: () => showHideSearchBar(),
+                      splashColor: Colors.red[200],
+                      icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                      ),),
+                  ),
+                  Visibility(
+                    visible: searchVisible,
+                    child: IconButton(
+                      onPressed: () {
+                        searchTEC.text = "";
+                        doctorOnSearch.clear();
+                        showHideSearchBar();
+                      },
+                      color: Colors.red[300],
+                      splashColor: Colors.red[200],
+                      icon: Icon(CupertinoIcons.clear,
+                      ),),
+                  ),
+                ],
+              ),
             ],
           ),
-          body: Stack(
-            fit: StackFit.loose,
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              Container(
+          body: Container(
                   width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
                   ),
-                  child: SingleChildScrollView(
+                  child: searchTEC.text.isNotEmpty && doctorOnSearch.length > 0 ? ListView.builder(
+                    itemCount: doctorOnSearch.length,
+                    itemBuilder: (context, index) => GestureDetector(
+                      onTap: () async {
+                        showDialog(
+                            context: context,
+                            builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                        );
+                        QuerySnapshot doctorSnap;
+                        await databaseMethods.getUserByUsername(doctorOnSearch[index]).then((val) {
+                          setState(() {
+                            doctorSnap = val;
+                          });
+                        });
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context, MaterialPageRoute(
+                          builder: (context) => DoctorProfileScreen(
+                            imageUrl: doctorSnap.docs[0].get("profile_photo"),
+                            doctorsName: doctorSnap.docs[0].get("name"),
+                            speciality: doctorSnap.docs[0].get("speciality"),
+                            hospital: doctorSnap.docs[0].get("hospital"),
+                            reviews: doctorSnap.docs[0].get("reviews"),
+                            uid: doctorSnap.docs[0].get("uid"),
+                            doctorsAge: doctorSnap.docs[0].get("age"),
+                            phone: doctorSnap.docs[0].get("phone"),
+                            hours: doctorSnap.docs[0].get("hours"),
+                            patients: doctorSnap.docs[0].get("patients"),
+                            experience: doctorSnap.docs[0].get("years"),
+                            doctorsEmail: doctorSnap.docs[0].get("email"),
+                            about: doctorSnap.docs[0].get("about"),
+                            days: doctorSnap.docs[0].get("days"),
+                            fee: doctorSnap.docs[0].get("fee"),
+                          ),
+                        ),);
+                        Future.delayed(Duration(seconds: 1), () {
+                          setState(() {
+                            searchTEC.text = "";
+                            doctorOnSearch.clear();
+                            searchVisible = false;
+                            titleVisible = true;
+                          });
+                        });
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 5,
+                          horizontal: 4,
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            CircleAvatar(
+                              backgroundColor: Colors.red[100],
+                              foregroundColor: Colors.red[300],
+                              child: Icon(FontAwesomeIcons.userMd),
+                            ),
+                            SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                            Text("Dr. ${doctorOnSearch[index]}", style: TextStyle(
+                              fontFamily: "Brand Bold",
+                            ),),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ) : SingleChildScrollView(
                     child: Column(
                       children: <Widget>[
                         SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                         Container(
-                            height: 4 * SizeConfig.heightMultiplier,
-                            width: 94 * SizeConfig.widthMultiplier,
-                            child: Padding(
-                              padding: EdgeInsets.all(4),
-                              child: Row(
-                                children: <Widget>[
-                                  Text("Specialities", style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: "Brand Bold",
-                                      fontSize: 3.3 * SizeConfig.textMultiplier,
-                                    ),),
-                                  Spacer(),
-                                  GestureDetector(
-                                    onTap: () => Navigator.push(
-                                      context, MaterialPageRoute(
-                                      builder: (context) => SpecialitiesScreen(),
-                                    ),),
-                                    child: Text("View All", style: TextStyle(
-                                      color: Colors.red[300],
-                                      fontFamily: "Brand Bold",
-                                      fontSize: 2 * SizeConfig.textMultiplier,
-                                    ),),
-                                  ),
-                                ],
-                              ),
+                          height: 4 * SizeConfig.heightMultiplier,
+                          width: 94 * SizeConfig.widthMultiplier,
+                          child: Padding(
+                            padding: EdgeInsets.all(4),
+                            child: Row(
+                              children: <Widget>[
+                                Text("Specialities", style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: "Brand Bold",
+                                  fontSize: 3.3 * SizeConfig.textMultiplier,
+                                ),),
+                                Spacer(),
+                                GestureDetector(
+                                  onTap: () => Navigator.push(
+                                    context, MaterialPageRoute(
+                                    builder: (context) => SpecialitiesScreen(),
+                                  ),),
+                                  child: Text("View All", style: TextStyle(
+                                    color: Colors.red[300],
+                                    fontFamily: "Brand Bold",
+                                    fontSize: 2 * SizeConfig.textMultiplier,
+                                  ),),
+                                ),
+                              ],
                             ),
                           ),
+                        ),
                         SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                         Container(
                           width: 94 * SizeConfig.widthMultiplier,
-                            child: Padding(
-                              padding: EdgeInsets.only(
-                                top: 8,
-                                bottom: 8,
-                                left: 5,
-                                right: 1,
-                              ),
-                              child: Column(
-                                children: <Widget>[
-                                  Row(
-                                    children: <Widget>[
-                                      _getSpec(logo:"images/stethoscope.png", speciality: "General Doctor"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(logo: "images/heart.png", speciality: "Cardiology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(logo: "images/tooth.png",speciality: "Dentist"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: FontAwesomeIcons.baby, speciality: "Pediatrics"),
-                                    ],
-                                  ),
-                                  SizedBox(height: 1 * SizeConfig.heightMultiplier,),
-                                  Row(
-                                    children: <Widget>[
-                                      _getSpec(logo: "images/eye.png",speciality: "Ophthalmology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(logo: "images/lungs.png",speciality: "Pneumology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(logo: "images/brain.png", speciality: "Neurology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Obstetrics"),
-                                    ],
-                                  ),
-                                  SizedBox(height: 1 * SizeConfig.heightMultiplier,),
-                                  Row(
-                                    children: <Widget>[
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Gynecology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Rheumatology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Nephrology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Gastroenterology"),
-                                    ],
-                                  ),
-                                  SizedBox(height: 1 * SizeConfig.heightMultiplier,),
-                                  Row(
-                                    children: <Widget>[
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Dermatology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Psychiatry"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Oncology"),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      _getSpec(icon: Icons.do_not_disturb, speciality: "Plastic Surgery"),
-                                    ],
-                                  ),
-                                ],
-                              ),
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              top: 8,
+                              bottom: 8,
+                              left: 5,
+                              right: 1,
+                            ),
+                            child: Column(
+                              children: <Widget>[
+                                Row(
+                                  children: <Widget>[
+                                    _getSpec(logo:"images/stethoscope.png", speciality: "General Doctor"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(logo: "images/heart.png", speciality: "Cardiology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(logo: "images/tooth.png",speciality: "Dentist"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: FontAwesomeIcons.baby, speciality: "Pediatrics"),
+                                  ],
+                                ),
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                Row(
+                                  children: <Widget>[
+                                    _getSpec(logo: "images/eye.png",speciality: "Ophthalmology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(logo: "images/lungs.png",speciality: "Pneumology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(logo: "images/brain.png", speciality: "Neurology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Obstetrics"),
+                                  ],
+                                ),
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                Row(
+                                  children: <Widget>[
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Gynecology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Rheumatology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Nephrology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Gastroenterology"),
+                                  ],
+                                ),
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                Row(
+                                  children: <Widget>[
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Dermatology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Psychiatry"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Oncology"),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    _getSpec(icon: Icons.do_not_disturb, speciality: "Plastic Surgery"),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
+                        ),
                         SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                         Container(
                           height: 4 * SizeConfig.heightMultiplier,
@@ -177,10 +327,28 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                                 ),),
                                 Spacer(),
                                 GestureDetector(
-                                  onTap: () => Navigator.push(
+                                  onTap: () async {
+                                    Stream allStream;
+                                    List hospitals = [];
+                                    QuerySnapshot hospitalSnap;
+                                    await databaseMethods.getHospitals().then((val) {
+                                      setState(() {
+                                        allStream = val;
+                                      });
+                                    });
+                                    hospitalSnap = await allStream.first;
+                                    for (int i = 0; i <= hospitalSnap.size - 1; i++) {
+                                      setState(() {
+                                        hospitals.add(hospitalSnap.docs[i].get("name"));
+                                      });
+                                    }
+                                    Navigator.push(
                                       context, MaterialPageRoute(
-                                    builder: (context) => HospitalsScreen(),
-                                  ),),
+                                      builder: (context) => HospitalsScreen(
+                                        hospitals: hospitals,
+                                      ),
+                                    ),);
+                                  },
                                   child: Text("View All", style: TextStyle(
                                     color: Colors.red[300],
                                     fontFamily: "Brand Bold",
@@ -208,27 +376,22 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                                 top: 8,
                                 bottom: 8,
                               ),
-                              child: ListView(
+                              child: widget.hospSnap.length <= 0 ? Center(
+                                  child: Text("No Health Centers Currently", style: TextStyle(
+                                    fontSize: 3 * SizeConfig.textMultiplier,
+                                    color: Colors.black12,
+                                  ),),
+                                ) : ListView.builder(
+                                itemCount: widget.hospSnap.length <= 5 ? widget.hospSnap.length : 5,
                                 scrollDirection: Axis.horizontal,
-                                children: <Widget>[
-                                  SizedBox(width: 2 * SizeConfig.widthMultiplier,),
-                                  _topRatedHC(
-                                    hospitalSnap: widget.mulagoSnap,
-                                  ),
-                                  SizedBox(width: 2 * SizeConfig.widthMultiplier,),
-                                  _topRatedHC(
-                                    hospitalSnap: widget.caseSnap,
-                                  ),
-                                  SizedBox(width: 2 * SizeConfig.widthMultiplier,),
-                                  _topRatedHC(
-                                    hospitalSnap: widget.kibuliSnap,
-                                  ),
-                                  SizedBox(width: 2 * SizeConfig.widthMultiplier,),
-                                  _topRatedHC(
-                                    hospitalSnap: widget.ihkSnap,
-                                  ),
-                                  SizedBox(width: 2 * SizeConfig.widthMultiplier,),
-                                ],
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 4),
+                                    child: _topRatedHC(
+                                      hospitalSnap: widget.hospSnap[index],
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           ),
@@ -262,9 +425,9 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                             child: widget.adSnap.docs.isEmpty ? Center(
                               child: Text("AD", style: TextStyle(fontSize: 10 * SizeConfig.textMultiplier, color: Colors.black12),),
                             ) : VideoView(
-                              showControls: false,
+                              isAd: true,
                               videoPlayerController: VideoPlayerController.network(widget.adSnap.docs[0].get("url"),
-                            ),
+                              ),
                             ),
                           ),
                         ),
@@ -273,8 +436,6 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                     ),
                   ),
                 ),
-            ],
-          ),
         ),
       );
   }
@@ -290,10 +451,25 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
       shape: new RoundedRectangleBorder(
         borderRadius: new BorderRadius.circular(10),
       ),
-      onPressed: () => Navigator.push(
-      context, MaterialPageRoute(
-      builder: (context) => SpecialityScreen(speciality: speciality,),
-    ),),
+      onPressed: () async {
+        QuerySnapshot doctorSnap;
+        await databaseMethods.getAllDoctorsBySpecialitySnap(speciality).then((val) {
+          setState(() {
+            doctorSnap= val;
+          });
+        });
+        List doctorsList = [];
+        for (int i = 0; i <= doctorSnap.size - 1; i++) {
+          doctorsList.add(doctorSnap.docs[i].get("name"));
+        }
+        Navigator.push(
+          context, MaterialPageRoute(
+          builder: (context) => SpecialityScreen(
+            doctors: doctorsList,
+            speciality: speciality,
+          ),
+        ),);
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
@@ -302,15 +478,13 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
             height: 8 * SizeConfig.heightMultiplier,
             width:  16 * SizeConfig.widthMultiplier,
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 4),
+              padding: EdgeInsets.all(10),
               child: logo != null ? Image.asset(logo,
                     color: Colors.black54,
-                    height: 5 * SizeConfig.imageSizeMultiplier,
-                    width: 10 * SizeConfig.imageSizeMultiplier,
                     fit: BoxFit.contain,
                   ) : Icon(icon,
                 color: Colors.black54,
-                size: 14 * SizeConfig.imageSizeMultiplier,
+                size: 10 * SizeConfig.imageSizeMultiplier,
               ),
             ),
           ),

@@ -8,6 +8,7 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/videoView.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
+import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Models/post.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
@@ -624,9 +625,22 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
           barrierDismissible: false,
           builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
       );
+
+      CustomNotification notification = CustomNotification.newPost(
+        createdAt: FieldValue.serverTimestamp(),
+        type: "post",
+        postText: messageTEC.text.trim(),
+        from: widget.userName,
+        postHeading: headingTEC.text.trim(),
+        heading: null,
+        eventTitle: null,
+        drugName: null,
+        appType: null,
+      );
+      var notificationMap = notification.toPostNotification(notification);
       Post post;
       if (imageVisible == true && photoFile != null) {
-        String postImageUrl = await databaseMethods.uploadImageToStorage(photoFile);
+        String postImageUrl = await databaseMethods.uploadFileToStorage(photoFile);
         post = new Post.imagePost(
           heading: headingTEC.text.trim(),
           postImageUrl: postImageUrl,
@@ -640,11 +654,12 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
         );
         var imagePostMap = post.toImageMap(post);
         await databaseMethods.createPost(imagePostMap);
+        await databaseMethods.createNotification(notificationMap);
         Navigator.pop(context);
 
       } else if (videoVisible == true && videoFile != null) {
         Uint8List thumbnail = await Utils.generateThumbnail(videoFile);
-        String postVideoUrl = await databaseMethods.uploadVideoToStorage(videoFile);
+        String postVideoUrl = await databaseMethods.uploadFileToStorage(videoFile);
         post = new Post.videoPost(
           heading: headingTEC.text.trim(),
           postVideoUrl: postVideoUrl,
@@ -659,6 +674,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
         );
         var videoPostMap = post.toVideoMap(post);
         await databaseMethods.createPost(videoPostMap);
+        await databaseMethods.createNotification(notificationMap);
         Navigator.pop(context);
 
       } else if (postTEC.text.isNotEmpty) {
@@ -674,6 +690,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
         );
         var textPostMap = post.toTextMap(post);
         await databaseMethods.createPost(textPostMap);
+        await databaseMethods.createNotification(notificationMap);
         Navigator.pop(context);
 
       } else {

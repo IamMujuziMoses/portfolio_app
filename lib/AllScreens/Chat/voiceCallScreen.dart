@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatSearch.dart';
@@ -10,6 +11,7 @@ import 'package:creativedata_app/Provider/userProvider.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/agoraConfigs.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +42,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   Records records;
 
   void getInfo() {
-    chatRoomId = getChatRoomId(widget.call.receiverName, widget.call.callerName);
+    chatRoomId = getChatRoomId(username: widget.call.receiverName, myName: widget.call.callerName, isVoiceCall: true);
     records = Records(
       callerId: widget.call.callerId,
       callerPic: widget.call.callerPic,
@@ -65,6 +67,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     }
 
     await _initAgoraRtcEngine();
+    assetsAudioPlayer.open(Audio("sounds/dail_tone.mp3"));
+    assetsAudioPlayer.play();
     _addAgoraEventHandlers();
     await AgoraRtcEngine.enableWebSdkInteroperability(true);
     // await AgoraRtcEngine.setParameters(
@@ -73,12 +77,12 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   }
 
   void _addAgoraEventHandlers() {
-    AgoraRtcEngine.onError = (dynamic code) {
-      setState(() {
-        final info = 'onError: $code';
-        _infoStrings.add(info);
-      });
-    };
+    // AgoraRtcEngine.onError = (dynamic code) {
+    //   setState(() {
+    //     final info = 'onError: $code';
+    //     _infoStrings.add(info);
+    //   });
+    // };
 
     AgoraRtcEngine.onJoinChannelSuccess = (
         String channel,
@@ -92,6 +96,8 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     };
 
     AgoraRtcEngine.onUserJoined = (int uid, int elapsed) {
+      assetsAudioPlayer.stop();
+      assetsAudioPlayer = new AssetsAudioPlayer();
       setState(() {
         final info = 'userJoined: $uid';
         _infoStrings.add(info);
@@ -148,27 +154,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     await AgoraRtcEngine.create(APP_ID);
   }
 
-  Future<bool> _onBackPressed() async {
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Hang Up Phone Call?"),
-        actions: <Widget>[
-          FlatButton(
-            child: Text("No"),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          FlatButton(
-            child: Text("Yes"),
-            onPressed: () async {
-              await databaseMethods.endCall(call: widget.call, records: records, chatRoomId: chatRoomId);
-              Navigator.pop(context);
-            }
-          ),
-        ],
-      ),
-    );
-  }
+  Future<bool> _onBackPressed() async {}
 
   addPostFrameCallback() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -266,7 +252,14 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             padding: const EdgeInsets.all(12.0),
           ),
           RawMaterialButton(
-            onPressed: () async => await databaseMethods.endCall(call: widget.call, records: records, chatRoomId: chatRoomId),
+            onPressed: () async {
+              assetsAudioPlayer.stop();
+              assetsAudioPlayer = new AssetsAudioPlayer();
+              await databaseMethods.endCall(
+                call: widget.call,
+                records: records,
+                chatRoomId: chatRoomId,);
+            },
             child: Icon(
               Icons.call_end,
               color: Colors.white,
@@ -304,20 +297,39 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
   @override
   void initState() {
     super.initState();
+    userAvailableTone();
     getInfo();
     addPostFrameCallback();
     initializeAgora();
   }
 
+  userAvailableTone() async {
+    Future.delayed(Duration(seconds: 40), () {
+      assetsAudioPlayer.stop();
+      assetsAudioPlayer = new AssetsAudioPlayer();
+      if (mounted == true) {
+        _users.length == 0 ? widget.isDoctor == true
+            ? assetsAudioPlayer.open(Audio("sounds/user_unavailable.mp3"))
+            : assetsAudioPlayer.open(Audio("sounds/doc_unavailable.mp3")) : {};
+        Future.delayed(Duration(seconds: 7), () async {
+          assetsAudioPlayer.stop();
+          assetsAudioPlayer = new AssetsAudioPlayer();
+          _users.length == 0 ? await databaseMethods
+              .endCall(call: widget.call, records: records, chatRoomId: chatRoomId,) : {};
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
     _users.clear();
-    // destroy sdk
     AgoraRtcEngine.leaveChannel();
     AgoraRtcEngine.destroy();
     callStreamSubscription.cancel();
+    assetsAudioPlayer.stop();
+    assetsAudioPlayer = new AssetsAudioPlayer();
     super.dispose();
-
   }
 
   @override

@@ -13,6 +13,7 @@ import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/onlineIndicator.dart';
 import 'package:creativedata_app/Widgets/photoViewPage.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -92,7 +93,7 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
   }
 }
 
-Widget postsList({@required Stream postStream, String userName, String userPic, bool isDoctor}) {
+Widget postsList({@required Stream postStream, String userName, String mainUserPic, bool isDoctor}) {
   ScrollController _listScrollController = new ScrollController();
 
   return StreamBuilder(
@@ -121,7 +122,7 @@ Widget postsList({@required Stream postStream, String userName, String userPic, 
                 if (type == "IMAGE") {
                   return ImagePostCard(
                     mainUserName: userName,
-                    mainUserPic: userPic,
+                    mainUserPic: mainUserPic,
                     type: type,
                     time: time,
                     name: name,
@@ -138,7 +139,7 @@ Widget postsList({@required Stream postStream, String userName, String userPic, 
                 } else if (type == "TEXT") {
                   return TextPostCard(
                     mainUserName: userName,
-                    mainUserPic: userPic,
+                    mainUserPic: mainUserPic,
                     type: type,
                     time: time,
                     name: name,
@@ -155,7 +156,7 @@ Widget postsList({@required Stream postStream, String userName, String userPic, 
                   List<int> intList = List<int>.from(snapshot.data.docs[index].get("thumbnail"));
                   return VideoPostCard(
                     mainUserName: userName,
-                    mainUserPic: userPic,
+                    mainUserPic: mainUserPic,
                     type: type,
                     time: time,
                     name: name,
@@ -172,6 +173,8 @@ Widget postsList({@required Stream postStream, String userName, String userPic, 
                   );
                 } else if (type == "SHARED") {
                   return SharePostCard(
+                    mainUserName: userName,
+                    mainUserPic: mainUserPic,
                     type: type,
                     time: time,
                     name: name,
@@ -181,6 +184,7 @@ Widget postsList({@required Stream postStream, String userName, String userPic, 
                     userPic: userPic,
                     likes: likes,
                     docId: docId,
+                    isDoctor: isDoctor,
                   );
                 } else {
                   return Container();
@@ -282,7 +286,7 @@ class _PostBodyState extends State<PostBody> {
                       child: postsList(
                         postStream: widget.allPostsStream,
                         userName: widget.userName,
-                        userPic: widget.userPic,
+                        mainUserPic: widget.userPic,
                         isDoctor: widget.isDoctor,
                       ),
                     ),
@@ -306,7 +310,7 @@ class _PostBodyState extends State<PostBody> {
                       color: Colors.grey[100],
                       child: postsList(
                         postStream: widget.myPostsStream,
-                        userPic: widget.userPic,
+                        mainUserPic: widget.userPic,
                         userName: widget.userName,
                         isDoctor: widget.isDoctor,
                       ),
@@ -362,9 +366,9 @@ class SharePostCard extends StatefulWidget {
   final String uid;
   final String userPic;
   final int likes;
-  final int comments;
+  final bool isDoctor;
   SharePostCard({Key key, this.type, this.heading,this.name, this.userPic, this.likes,
-    this.comments, this.time, this.docId, this.message, this.mainUserName, this.mainUserPic, this.uid,
+    this.time, this.docId, this.message, this.mainUserName, this.mainUserPic, this.uid, this.isDoctor,
   }) : super(key: key);
 
   @override
@@ -372,11 +376,11 @@ class SharePostCard extends StatefulWidget {
 }
 
 class _SharePostCardState extends State<SharePostCard> {
-  DatabaseMethods databaseMethods = DatabaseMethods();
+
   int _likes = 0;
-  int _comments = 0;
   IconData _icon = CupertinoIcons.suit_heart;
   QuerySnapshot likesSnap;
+
   String sharedType = "";
   String sharedUserName = "";
   String sharedUserPic = "";
@@ -393,7 +397,7 @@ class _SharePostCardState extends State<SharePostCard> {
     super.initState();
   }
 
-  getInfo() async{
+  getInfo() async {
     QuerySnapshot sharedPost;
     await databaseMethods.getSharedPosts(widget.docId).then((val) {
       sharedPost = val;
@@ -404,26 +408,21 @@ class _SharePostCardState extends State<SharePostCard> {
     sharedUserName = sharedPost.docs[0].get("shared_user_name");
     sharedUserPic = sharedPost.docs[0].get("shared_user_pic");
     sharedText = sharedPost.docs[0].get("shared_text");
-    sharedTime = Utils.formatTime(timestamp.toDate());
+    sharedTime = "${Utils.formatDate(timestamp.toDate())}, ${Utils.formatTime(timestamp.toDate())}";
     setState(() {
       _likes = widget.likes;
-      _comments = widget.comments;
       if (sharedType == "TEXT") {
         sharedText = sharedText;
         sharedHeading = sharedHeading;
-        sharedImageUrl = "";
-        sharedVideoUrl = "";
         sharedThumbnail = null;
       } else if (sharedType == "IMAGE") {
         sharedText = sharedText;
         sharedHeading = sharedHeading;
         sharedImageUrl = sharedPost.docs[0].get("shared_image_url");
-        sharedVideoUrl = "";
         sharedThumbnail = null;
       } else if (sharedType == "VIDEO") {
         sharedText = sharedText;
         sharedHeading = sharedHeading;
-        sharedImageUrl = "";
         sharedVideoUrl = sharedPost.docs[0].get("shared_video_url");
         List<int> intList = List<int>.from(sharedPost.docs[0].get("shared_thumbnail"));
         sharedThumbnail = Uint8List.fromList(intList);
@@ -529,19 +528,17 @@ class _SharePostCardState extends State<SharePostCard> {
                   ),
                 ),
                 Spacer(),
-                Visibility(
-                  visible: widget.type == "SHARED" ? true : false,
-                  child: Container(
+                Container(
                     height: 4 * SizeConfig.heightMultiplier,
                     width: 10 * SizeConfig.widthMultiplier,
                     child: Center(
-                      child: Icon(CupertinoIcons.arrowshape_turn_up_right_fill,
-                        color: Colors.grey[400],
-                        size: 6 * SizeConfig.imageSizeMultiplier,
-                      ),
+                      child: Text("Shared", style: TextStyle(
+                        fontFamily: "Brand Bold",
+                        color: Colors.grey
+                      ),),
                     ),
                   ),
-                ),
+                SizedBox(width: 1 * SizeConfig.widthMultiplier,),
               ],
             ),
           ),
@@ -550,12 +547,12 @@ class _SharePostCardState extends State<SharePostCard> {
               child: Padding(
                 padding: EdgeInsets.all(8.0),
                 child: Text(widget.heading != null ? widget.heading : "",
-                  maxLines: 4,
+                  maxLines: 2,
                   textAlign: TextAlign.justify,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 2.5 * SizeConfig.textMultiplier,
-                    fontFamily: "Brand-Regular",
+                    fontFamily: "Brand Bold",
                   ),
                 ),
               ),
@@ -622,111 +619,176 @@ class _SharePostCardState extends State<SharePostCard> {
                         ],
                       ),
                     ),
-                    Container(
-                        width: double.infinity,
-                        child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Text(sharedType == "TEXT" ? "" : sharedHeading,
-                            maxLines: 4,
-                            textAlign: TextAlign.justify,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.black,
-                              decoration: TextDecoration.none,
-                              fontSize: 2 * SizeConfig.textMultiplier,
-                              fontFamily: "Brand-Regular",
-                            ),
-                          ),
-                        ),
-                      ),
                     Visibility(
                       visible: sharedType == "IMAGE" ? true : false,
-                      child: Container(
-                        clipBehavior: Clip.hardEdge,
-                        height: 40 * SizeConfig.heightMultiplier,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          color: Colors.grey[400],
-                        ),
-                        child: GestureDetector(
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PhotoViewPage(
-                                  message: sharedImageUrl,
-                                  isSender: true,
-                                ),
-                              )),
-                          child: CachedImage(
-                            imageUrl: sharedImageUrl,
-                            radius: 0,
-                            isRound: false,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                     Visibility(
-                      visible: sharedType == "VIDEO" ? true : false,
-                      child: Container(
-                        clipBehavior: Clip.hardEdge,
-                        height: 40 * SizeConfig.heightMultiplier,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          color: Colors.grey[400],
-                        ),
-                        child: Stack(
-                          children: <Widget>[
-                            sharedType == "VIDEO" ? Image.memory(
-                              sharedThumbnail,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              height: double.infinity,
-                            ) : Container(),
-                            Positioned(
-                              top: 17 * SizeConfig.heightMultiplier,
-                              left: 32 * SizeConfig.widthMultiplier,
-                              child: GestureDetector(
-                                onTap: () => Navigator.push(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Container(
+                            clipBehavior: Clip.hardEdge,
+                            height: 14 * SizeConfig.heightMultiplier,
+                            width: 28 * SizeConfig.widthMultiplier,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.grey[400],
+                            ),
+                            child: GestureDetector(
+                              onTap: () => Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => VideoViewPage(
-                                    message: sharedVideoUrl,
-                                    isSender: true,
+                                  MaterialPageRoute(
+                                    builder: (context) => PhotoViewPage(
+                                      message: sharedImageUrl,
+                                      isSender: true,
+                                    ),
+                                  )),
+                              child: CachedImage(
+                                imageUrl: sharedImageUrl,
+                                radius: 0,
+                                isRound: false,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: <Widget>[
+                              Container(
+                                width: 60 * SizeConfig.widthMultiplier,
+                                child: Text(sharedHeading, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: "Brand Bold",
+                                    fontSize: 2 * SizeConfig.textMultiplier,
                                   ),),
-                                ),
-                                child: Container(
-                                  height: 7 * SizeConfig.heightMultiplier,
-                                  width: 14 * SizeConfig.widthMultiplier,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.play_arrow_rounded,
-                                      color: Colors.red[300],
-                                      size: 14 * SizeConfig.imageSizeMultiplier,),
+                              ),
+                              SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                              Container(
+                                width: 60 * SizeConfig.widthMultiplier,
+                                child: Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: DescriptionText(
+                                    description: sharedText,
+                                    maxChar: 160,
                                   ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Visibility(
+                      visible: sharedType == "VIDEO" ? true : false,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Container(
+                            clipBehavior: Clip.hardEdge,
+                            height: 14 * SizeConfig.heightMultiplier,
+                            width: 28 * SizeConfig.widthMultiplier,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.grey.withOpacity(0.5),
                             ),
-                          ],
-                        ),
+                            child: Stack(
+                              children: <Widget>[
+                                sharedType == "VIDEO" ? Image.memory(
+                                  sharedThumbnail,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ) : Container(),
+                                Positioned(
+                                  top: 5 * SizeConfig.heightMultiplier,
+                                  left: 9 * SizeConfig.widthMultiplier,
+                                  child: GestureDetector(
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => VideoViewPage(
+                                        message: sharedVideoUrl,
+                                        isSender: true,
+                                      ),),
+                                    ),
+                                    child: Container(
+                                      height: 5 * SizeConfig.heightMultiplier,
+                                      width: 10 * SizeConfig.widthMultiplier,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withOpacity(0.5),
+                                        borderRadius: BorderRadius.circular(30),
+                                        border: Border.all(color: Colors.red[300]),
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.play_arrow_rounded,
+                                          color: Colors.red[300],
+                                          size: 8 * SizeConfig.imageSizeMultiplier,),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: <Widget>[
+                              Container(
+                                width: 60 * SizeConfig.widthMultiplier,
+                                child: Text(sharedHeading, maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 2 * SizeConfig.textMultiplier,
+                                    fontFamily: "Brand Bold",
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                              Container(
+                                width: 60 * SizeConfig.widthMultiplier,
+                                child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: DescriptionText(
+                                      description: sharedText,
+                                      maxChar: 160,
+                                    )
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                     Visibility(
                       visible: sharedType == "TEXT" ? true : false,
-                      child: Container(
-                        width: double.infinity,
-                        child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: sharedType == "IMAGE" ? Container() : DescriptionText(
-                            description: sharedText,
-                            maxChar: 550,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          Container(
+                            width: 93 * SizeConfig.widthMultiplier,
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: sharedType == "IMAGE"
+                                  ? Container()
+                                  : Text(sharedHeading, maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: "Brand Bold",
+                                  fontSize: 2 * SizeConfig.textMultiplier,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          Container(
+                            width: 93 * SizeConfig.widthMultiplier,
+                            child: Padding(
+                              padding: EdgeInsets.all(8),
+                              child: sharedType == "IMAGE"
+                                  ? Container()
+                                  : DescriptionText(
+                                description: sharedText,
+                                maxChar: 160,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -734,14 +796,17 @@ class _SharePostCardState extends State<SharePostCard> {
               ),
             ),
           ),
-          SizedBox(height: _likes == 0 && _comments == 0 ? 0 : 1 * SizeConfig.heightMultiplier,),
+          SizedBox(height: _likes == 0 ? 0 : 1 * SizeConfig.heightMultiplier,),
           Visibility(
-            visible: _likes == 0 && _comments == 0 ? false : true,
+            visible: _likes == 0 ? false : true,
             child: Container(
               height: 3 * SizeConfig.heightMultiplier,
               width: double.infinity,
               child: Padding(
-                padding: EdgeInsets.only(left: 4 * SizeConfig.widthMultiplier,),
+                padding: EdgeInsets.only(
+                  left: 4 * SizeConfig.widthMultiplier,
+                  right: 4 * SizeConfig.widthMultiplier,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -750,10 +815,6 @@ class _SharePostCardState extends State<SharePostCard> {
                       fontFamily: "Brand Bold",
                       fontSize: 2 * SizeConfig.textMultiplier,
                     ),),
-                    Text(_comments == 0 ? "" : "$_comments comment(s)", style: TextStyle(
-                      fontFamily: "Brand Bold",
-                      fontSize: 1.5 * SizeConfig.textMultiplier,
-                    ),),
                   ],
                 ),
               ),
@@ -761,42 +822,31 @@ class _SharePostCardState extends State<SharePostCard> {
           ),
           Divider(thickness: 2,),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 10 * SizeConfig.widthMultiplier),
+            padding: EdgeInsets.symmetric(
+              horizontal: 10 * SizeConfig.widthMultiplier,
+            ),
             child: Row(
-              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 GestureDetector(
                   onTap: _incrementLikes,
                   child: Container(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      children: <Widget>[
-                        Icon(
+                    child: Icon(
                           _icon,
                           color: Colors.red[300],
                         ),
-                        SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                        Text("Like", style: TextStyle(fontFamily: "Brand-Regular", color: Colors.red[300]),),
-                      ],
-                    ),
                   ),
                 ),
-                GestureDetector(
+                widget.isDoctor == true ? GestureDetector(
                   onTap: () {},
                   child: Container(
-                    child: Row(
-                      children: <Widget>[
-                        Icon(
-                          CupertinoIcons.bubble_middle_bottom,
-                          color: Colors.red[300],
+                    child: Icon(
+                          CupertinoIcons.arrowshape_turn_up_right,
+                          color: Colors.grey,
                         ),
-                        SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                        Text("Comment", style: TextStyle(fontFamily: "Brand-Regular", color: Colors.red[300]),),
-                      ],
-                    ),
                   ),
-                ),
+                ) : Spacer(),
               ],
             ),
           ),
@@ -830,8 +880,6 @@ class ShareScreen extends StatefulWidget {
 }
 
 class _ShareScreenState extends State<ShareScreen> {
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  DatabaseMethods databaseMethods = DatabaseMethods();
   TextEditingController headingTEC = TextEditingController();
 
   Future<bool> _onBackPressed() async {
@@ -997,7 +1045,6 @@ class _ShareScreenState extends State<ShareScreen> {
                                 ),),
                               ),
                             ),
-
                           ],
                         )
                             : Row(
@@ -1082,7 +1129,7 @@ class _ShareScreenState extends State<ShareScreen> {
                   bottom: 2 * SizeConfig.heightMultiplier,
                   right: 25 * SizeConfig.widthMultiplier,
                   child: RaisedButton(
-                    onPressed: () => sharePost(context, firebaseAuth.currentUser.uid),
+                    onPressed: () => sharePost(context, currentUser.uid),
                     color: Colors.red[300],
                     splashColor: Colors.white,
                     highlightColor: Colors.red.withOpacity(0.1),
@@ -1107,6 +1154,7 @@ class _ShareScreenState extends State<ShareScreen> {
       ),
     );
   }
+
   sharePost(BuildContext context, String uid) {
     if (headingTEC.text.isEmpty) {
       displaySnackBar(message: "Please provide heading for this post", context: context, label: "OK");
@@ -1173,10 +1221,6 @@ class _ShareScreenState extends State<ShareScreen> {
         Navigator.pop(context);
         Navigator.pop(context);
 
-      } else {
-        displayToastMessage("Nothing to post", context);
-        Navigator.pop(context);
-        Navigator.pop(context);
       }
 
       showDialog(
@@ -1191,7 +1235,6 @@ class _ShareScreenState extends State<ShareScreen> {
             FlatButton(
               child: Text("OK", style: TextStyle(fontFamily: "Brand-Regular"),),
               onPressed: () {
-                Navigator.of(context).pop();
                 Navigator.of(context).pop();
               },
             ),
@@ -1529,7 +1572,6 @@ class TextPostCard extends StatefulWidget {
 }
 
 class _TextPostCardState extends State<TextPostCard> {
-  DatabaseMethods databaseMethods = DatabaseMethods();
 
   int _likes = 0;
   IconData _icon = CupertinoIcons.suit_heart;
@@ -1672,7 +1714,6 @@ class _TextPostCardState extends State<TextPostCard> {
                   ),
                 ),
               ),
-
             ],
           ),
           SizedBox(height: _likes == 0 ? 0 : 1 * SizeConfig.heightMultiplier,),

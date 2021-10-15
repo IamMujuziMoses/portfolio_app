@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/Enum/userState.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +17,7 @@ import 'package:video_compress/video_compress.dart';
 class Utils{
 
   static String getUsername(String email) {
-    return "live:${email.split('@')[0]}";
+    return "siro:${email.split('@')[0]}";
   }
 
   static Future<File> pickImage({@required ImageSource source}) async {
@@ -86,12 +88,35 @@ class Utils{
     }
   }
 
+  static Future<File> pickDoc() async {
+    File selectedDocument;
+    FilePickerResult pickedFile = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+    if (pickedFile != null) {
+      selectedDocument = File(pickedFile.files.first.path);
+      return selectedDocument;
+    } else return null;
+  }
+
+  static Future<File> pickAudio() async {
+    File selectedAudio;
+    FilePickerResult pickedFile = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['mp3'],
+    );
+    if (pickedFile != null) {
+      selectedAudio = File(pickedFile.files.first.path);
+      return selectedAudio;
+    } else return null;
+  }
+
+
   static Future<File> pickVideo({@required ImageSource source}) async {
 
     File selectedVideo;
-    PickedFile pickedFile = await ImagePicker().getVideo(
-        source: source
-    );
+    PickedFile pickedFile = await ImagePicker().getVideo(source: source);
     if (pickedFile != null) {
       selectedVideo = File(pickedFile.path);
       return compressVideo(selectedVideo);
@@ -104,8 +129,8 @@ class Utils{
     return await VideoCompress.getByteThumbnail(video.path);
   }
 
-  static Future getVideoSize(File video) async {
-    return await video.length();
+  static Future getFileSize(File file) async {
+    return await file.length();
   }
 
   static String toDate(DateTime startTime) {

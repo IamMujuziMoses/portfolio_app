@@ -222,7 +222,10 @@ class _UserAccountState extends State<UserAccount> {
                         color: Colors.red[300],
                         onTap: () => Navigator.push(
                           context, MaterialPageRoute(
-                          builder: (context) => AboutScreen(),
+                          builder: (context) => AboutScreen(
+                            title: "About",
+                            heading: "Know more about us",
+                          ),
                         ),),
                       ),
                       SizedBox(height: 1 * SizeConfig.heightMultiplier,),

@@ -4,8 +4,10 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
+import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Models/reminder.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
@@ -21,17 +23,17 @@ class AddReminderScreen extends StatefulWidget {
   _AddReminderScreenState createState() => _AddReminderScreenState();
 }
 
+List<String> timeList = ["6:00am", "6:30am", "7:00am", "7:30am", "8:00am", "8:30am", "9:00am", "9:30am",
+  "10:00am", "10:30am", "11:00am", "11:30am", "12:00pm", "12:30pm", "1:00pm", "1:30pm", "2:00pm",
+  "2:30pm", "3:00pm", "3:30pm", "4:00pm", "4:30pm", "5:00pm", "5:30pm", "6:00pm", "6:30pm",
+  "7:00pm", "7:30pm", "8:00pm", "8:30pm", "9:00pm", "9:30pm", "10:00pm", "10:30pm", "11:00pm"];
+
 class _AddReminderScreenState extends State<AddReminderScreen> {
   TextEditingController titleTEC = TextEditingController();
   TextEditingController dosageTEC = TextEditingController();
   TextEditingController tabletsTEC = TextEditingController();
   TextEditingController timeTEC = TextEditingController();
   TextEditingController alarmTimeTEC = TextEditingController();
-
-  List<String> time = ["6:00am", "6:30am", "7:00am", "7:30am", "8:00am", "8:30am", "9:00am", "9:30am",
-    "10:00am", "10:30am", "11:00am", "11:30am", "12:00pm", "12:30pm", "1:00pm", "1:30pm", "2:00pm",
-    "2:30pm", "3:00pm", "3:30pm", "4:00pm", "4:30pm", "5:00pm", "5:30pm", "6:00pm", "6:30pm",
-    "7:00pm", "7:30pm", "8:00pm", "8:30pm", "9:00pm", "9:30pm", "10:00pm", "10:30pm", "11:00pm"];
 
   List<String> timesToTake = [];
   List<String> alarmTimesToTake = [];
@@ -540,12 +542,12 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                             padding: EdgeInsets.symmetric(
                               horizontal: 10, vertical: 5
                             ),
-                            itemCount: time.length,
+                            itemCount: timeList.length,
                             scrollDirection: Axis.horizontal,
                             shrinkWrap: true,
                             physics: ClampingScrollPhysics(),
                             itemBuilder: (context, index) {
-                              String timeStr = time[index];
+                              String timeStr = timeList[index];
                               int idx = timeStr.indexOf(":");
                               int idx2 = timeStr.indexOf(":") + 3;
                               String hour = timeStr.substring(0, idx2);
@@ -794,14 +796,11 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           child: DropdownButtonHideUnderline(
             child: DropdownButtonFormField(
               decoration: InputDecoration.collapsed(hintText: ""),
-              hint: Text(
-                placeholder,
-                style: TextStyle(
+              hint: Text(placeholder, style: TextStyle(
                   fontFamily: "brand-Regular",
                   fontSize: 2.5 * SizeConfig.textMultiplier,
                   color: Colors.grey,
-                ),
-              ),
+                ),),
               dropdownColor: Colors.white,
               icon: Icon(
                 Icons.keyboard_arrow_down_rounded,
@@ -1056,6 +1055,21 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         int min = int.parse(minStr.trim());
         DateTime alarmDateTime = DateTime.parse("${Utils.formatForAlarm("${Utils.formatDate(DateTime.now())}, $hour, $min")}");
 
+        CustomNotification notification = CustomNotification.newMedReminder(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "medicine reminder",
+          cycle: timeSelectedValue,
+          dosage: dosageTEC.text.trim(),
+          drugName: titleTEC.text.trim(),
+          howLong: howLongSelectedValue,
+          name: Constants.myName,
+          postHeading: null,
+          heading: null,
+          eventTitle: null,
+          appType: null,
+        );
+        var notificationMap = notification.toMedReminderNotification(notification);
+
         Reminder reminder = Reminder.onceReminder(
           name: titleTEC.text.trim(),
           dosage: dosageTEC.text.trim(),
@@ -1116,6 +1130,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
         Map<String, dynamic> reminderMap = reminder.toOnceMap(reminder);
         await databaseMethods.createUserReminder(reminderMap, firebaseAuth.currentUser.uid);
+        await databaseMethods.createNotification(notificationMap);
 
         Navigator.pop(context);
         displaySnackBar(message: "Created Reminder", context: context, label: "OK");
@@ -1138,6 +1153,21 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
             idList = [randomInt, randomInt2, randomInt3, randomInt4];
           });
         }
+        CustomNotification notification = CustomNotification.newMedReminder(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "medicine reminder",
+          cycle: timeSelectedValue,
+          dosage: dosageTEC.text.trim(),
+          drugName: titleTEC.text.trim(),
+          howLong: howLongSelectedValue,
+          name: Constants.myName,
+          postHeading: null,
+          heading: null,
+          eventTitle: null,
+          appType: null,
+        );
+        var notificationMap = notification.toMedReminderNotification(notification);
+
         Reminder reminder = Reminder(
           name: titleTEC.text.trim(),
           dosage: dosageTEC.text.trim(),
@@ -1263,6 +1293,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
 
         Map<String, dynamic> reminderMap = reminder.toMap(reminder);
         await databaseMethods.createUserReminder(reminderMap, firebaseAuth.currentUser.uid);
+        await databaseMethods.createNotification(notificationMap);
 
         Navigator.pop(context);
         displaySnackBar(message: "Created Reminder", context: context, label: "OK");

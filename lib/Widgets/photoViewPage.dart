@@ -45,6 +45,7 @@ class PhotoViewPage extends StatelessWidget {
                value: event == null
                    ? 0
                    : event.cumulativeBytesLoaded / event.expectedTotalBytes,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),
             ),
           ),
         ) : Container(

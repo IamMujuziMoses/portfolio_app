@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:creativedata_app/AllScreens/siroWeb.dart';
 import 'package:creativedata_app/AllScreens/findADoctorScreen.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/AllScreens/newsFeedScreen.dart';
@@ -18,6 +19,8 @@ import 'package:creativedata_app/Doctor/postArticleScreen.dart';
 import 'package:creativedata_app/Doctor/eventsScreen.dart';
 import 'package:creativedata_app/Doctor/reminderScreen.dart';
 import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/User/aboutScreen.dart';
+import 'package:creativedata_app/User/helpScreen.dart';
 import 'package:creativedata_app/Widgets/divider.dart';
 import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
@@ -109,12 +112,25 @@ class _DoctorProfileState extends State<DoctorProfile> {
                       size: 8 * SizeConfig.imageSizeMultiplier,
                       color: Colors.red[300],
                     ),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NotificationsScreen(),
-                      ),
-                    ),
+                    onPressed: () async {
+                      Stream notificationStream;
+                      await databaseMethods.getNotifications().then((val) {
+                        setState(() {
+                          notificationStream = val;
+                        });
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationsScreen(
+                            notificationsStream: notificationStream,
+                            name: widget.name,
+                            userPic: widget.userPic,
+                            isDoctor: true,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   Positioned(
                     top: 4,
@@ -211,9 +227,23 @@ class _DoctorProfileState extends State<DoctorProfile> {
                   SizedBox(height: 12.0,),
                   //Drawer body controller
                   GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => ChatScreen(isDoctor: true,),
-                    ),),
+                    onTap: () async {
+                      Stream patientsStream;
+                      await databaseMethods
+                          .getDoctorsSavedPatients(firebaseAuth.currentUser.uid)
+                          .then((val) {
+                        setState(() {
+                          patientsStream = val;
+                        });
+                      });
+                      Navigator.push(
+                        context, MaterialPageRoute(
+                        builder: (context) => PatientsScreen(
+                          patientsStream: patientsStream,
+                        ),
+                      ),
+                      );
+                    },
                     child: ListTile(
                       hoverColor: Colors.red[300],
                       leading: Container(
@@ -224,38 +254,74 @@ class _DoctorProfileState extends State<DoctorProfile> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
-                          child: Icon(Icons.message_outlined,
+                          child: Icon(FontAwesomeIcons.users,
                           ),
                         ),),
-                      title: Text("Chats", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                      title: Text("My Patients", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => DoctorAccount(
-                        name: widget.name, speciality: widget.speciality, userPic: widget.userPic, email: widget.email,
-                        about: widget.about, age: widget.age, hospital: widget.hospital, hours: widget.hours,
-                        patients: widget.patients, experience: widget.experience, reviews: widget.reviews,
+                    onTap: () async {
+                      Stream appointmentStream;
+                      await databaseMethods.getAppointments(Constants.myName).then((val) {
+                        setState(() {
+                          appointmentStream = val;
+                        });
+                      });
+                      Navigator.push(
+                        context, MaterialPageRoute(
+                        builder: (context) => AppointmentsScreen(
+                          appointmentStream: appointmentStream,
+                        ),
+                      ),
+                      );
+                    },
+                    child: ListTile(
+                      hoverColor: Colors.red[300],
+                      leading: Container(
+                        height: 5 * SizeConfig.heightMultiplier,
+                        width: 10 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: Icon(CupertinoIcons.calendar_today,
+                          ),
+                        ),),
+                      title: Text("My Appointments", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context, MaterialPageRoute(
+                      builder: (context) => HelpScreen(),
+                    ),
+                    ),
+                    child: ListTile(
+                      hoverColor: Colors.red[300],
+                      leading: Container(
+                        height: 5 * SizeConfig.heightMultiplier,
+                        width: 10 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: Icon(CupertinoIcons.question_circle_fill,
+                          ),
+                        ),),
+                      title: Text("Help", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context, MaterialPageRoute(
+                      builder: (context) => AboutScreen(
+                          title: "About",
+                          heading: "Know more about us",
                       ),
                     ),),
-                    child: ListTile(
-                      hoverColor: Colors.red[300],
-                      leading: Container(
-                        height: 5 * SizeConfig.heightMultiplier,
-                        width: 10 * SizeConfig.widthMultiplier,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.account_box_rounded,
-                          ),
-                        ),),
-                      title: Text("Visit Profile", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
                     child: ListTile(
                       hoverColor: Colors.red[300],
                       leading: Container(
@@ -333,6 +399,8 @@ class _DoctorProfileState extends State<DoctorProfile> {
                             children: <Widget>[
                               GestureDetector(
                                 onTap: () => profilePicView(
+                                  isDoctor: true,
+                                  isUser: true,
                                   imageUrl: widget.userPic,
                                   context: context,
                                   isSender: true,
@@ -565,6 +633,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                                   Navigator.push(
                                                     context, MaterialPageRoute(
                                                     builder: (context) => EventsScreen(
+                                                      isDoctor: true,
                                                       eventsStream: eventsStream,
                                                     ),
                                                   ),
@@ -637,7 +706,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                                 icon: FontAwesomeIcons.ban,
                                                 title: "MoH",
                                                 alert: "0",
-                                                onTap: () {},
+                                                onTap: () => Navigator.push(
+                                                  context, MaterialPageRoute(
+                                                  builder: (context) => SiroWeb(url: 'https://www.health.go.ug/',),
+                                                ),
+                                                ),
                                               ),
                                               accessTile(
                                                 icon: FontAwesomeIcons.virus,
@@ -658,9 +731,14 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                                 icon: Icons.support_agent_rounded,
                                                 title: "Help Centers",
                                                 alert: "0",
-                                                onTap: () {},
+                                                onTap: () => Navigator.push(
+                                                  context, MaterialPageRoute(
+                                                  builder: (context) => AboutScreen(
+                                                    title: "Help Centers",
+                                                    heading: "Contact us through these channels"
+                                                  ),
+                                                ),),
                                               ),
-
                                             ],
                                           ),
                                         ],

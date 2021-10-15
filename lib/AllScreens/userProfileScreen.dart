@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
+import 'package:creativedata_app/AllScreens/Chat/conversationScreen.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/AllScreens/reminderScreen.dart';
 import 'package:creativedata_app/AllScreens/specialityScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/AllScreens/topRatedDoctors.dart';
 import 'package:creativedata_app/Covid-19/covid19Center.dart';
 import 'package:creativedata_app/AllScreens/doctorProfileScreen.dart';
 import 'package:creativedata_app/AllScreens/findADoctorScreen.dart';
@@ -18,6 +18,9 @@ import 'package:creativedata_app/AllScreens/newsFeedScreen.dart';
 import 'package:creativedata_app/Covid-19/preventiveMeasures.dart';
 import 'package:creativedata_app/Doctor/alertsScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
+import 'package:creativedata_app/Doctor/doctorRegistration.dart';
+import 'package:creativedata_app/Doctor/eventsScreen.dart';
+import 'package:creativedata_app/Doctor/medicalStore.dart';
 import 'package:creativedata_app/Models/venue.dart';
 import 'package:creativedata_app/Provider/placesProvider.dart';
 import 'package:creativedata_app/Services/database.dart';
@@ -29,13 +32,18 @@ import 'package:creativedata_app/Widgets/divider.dart';
 import 'package:creativedata_app/Widgets/onlineIndicator.dart';
 import 'package:creativedata_app/Widgets/photoViewPage.dart';
 import 'package:creativedata_app/AllScreens/notificationsScreen.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:focused_menu/focused_menu.dart';
+import 'package:focused_menu/modals.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../sizeConfig.dart';
@@ -62,27 +70,41 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
 
-  String ihk = "IHK";
-  String mulagoH = "Mulago Hospital";
-  String caseH = "Case Hospital";
-  String kibuliH = "Kibuli Hospital";
-  QuerySnapshot ihkSnap;
   QuerySnapshot adSnap;
-  QuerySnapshot mulagoSnap;
-  QuerySnapshot caseSnap;
-  QuerySnapshot kibuliSnap;
+  QuerySnapshot hospitalSnap;
   Venue venue;
   Position position;
   Stream topDocStream;
-
+  Stream hospitalStream;
+  List<QuerySnapshot> hospQueryList = [];
+  List hospitalList = [];
   @override
   void initState() {
-    getHospitalInfo();
     getInfo();
     super.initState();
   }
 
   getInfo() async {
+    adSnap = await databaseMethods.getVideoAd();
+    await databaseMethods.getHospitals().then((val) {
+      setState(() {
+        hospitalStream = val;
+      });
+    });
+    hospitalSnap = await hospitalStream.first;
+    for (int i = 0; i <= hospitalSnap.size - 1; i++) {
+      hospitalList.add(hospitalSnap.docs[i].get("name"));
+    }
+    for (int i = 0; i <= hospitalList.length - 1; i++) {
+      QuerySnapshot hospSnap;
+      await databaseMethods.getHospitalByName(hospitalList[i]).then((val) {
+        setState(() {
+          hospSnap = val;
+        });
+      });
+      hospQueryList.add(hospSnap);
+    }
+
     position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
 
     print("positionLat ::: ${position.latitude}");
@@ -100,24 +122,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       });
     }
   }
-
-  void getHospitalInfo() async {
-    adSnap = await databaseMethods.getVideoAd();
-
-    await databaseMethods.getHospitalByName(ihk).then((val) {
-      ihkSnap = val;
-    });
-    await databaseMethods.getHospitalByName(mulagoH).then((val) {
-      mulagoSnap = val;
-    });
-    await databaseMethods.getHospitalByName(caseH).then((val) {
-      caseSnap = val;
-    });
-    await databaseMethods.getHospitalByName(kibuliH).then((val) {
-      kibuliSnap = val;
-    });
-  }
-
 
   Future<bool> _onBackPressed() async {
     return showDialog(
@@ -162,12 +166,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       size: 8 * SizeConfig.imageSizeMultiplier,
                       color: Colors.red[300],
                     ),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => NotificationsScreen(),
-                      ),
-                    ),
+                    onPressed: () async {
+                      Stream notificationStream;
+                      await databaseMethods.getNotifications().then((val) {
+                        setState(() {
+                          notificationStream = val;
+                        });
+                      });
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationsScreen(
+                            notificationsStream: notificationStream,
+                            name: widget.name,
+                            userPic: widget.userPic,
+                            isDoctor: false,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   Positioned(
                     top: 4,
@@ -341,7 +358,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   GestureDetector(
                     onTap: () => Navigator.push(
                       context, MaterialPageRoute(
-                      builder: (context) => AboutScreen(),
+                      builder: (context) => AboutScreen(
+                        title: "About",
+                        heading: "Know more about us",
+                      ),
                     ),),
                     child: ListTile(
                       hoverColor: Colors.red[300],
@@ -420,6 +440,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               children: <Widget>[
                                 GestureDetector(
                                   onTap: () => profilePicView(
+                                    isDoctor: false,
+                                    isUser: true,
                                     imageUrl: widget.userPic,
                                     context: context,
                                     isSender: true,
@@ -593,10 +615,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       doctors: widget.dentistSnap != null
                                           ? widget.dentistSnap.size.toString()
                                           : "0",
-                                      onTap: () => Navigator.push(
-                                        context, MaterialPageRoute(
-                                        builder: (context) => SpecialityScreen(speciality: "Dentist",),
-                                      ),),
+                                      onTap: () async {
+                                        QuerySnapshot doctorSnap;
+                                        await databaseMethods.getAllDoctorsBySpecialitySnap("Dentist").then((val) {
+                                          setState(() {
+                                            doctorSnap= val;
+                                          });
+                                        });
+                                        List doctorsList = [];
+                                        for (int i = 0; i <= doctorSnap.size - 1; i++) {
+                                          doctorsList.add(doctorSnap.docs[i].get("name"));
+                                        }
+                                        Navigator.push(
+                                          context, MaterialPageRoute(
+                                          builder: (context) => SpecialityScreen(
+                                            doctors: doctorsList,
+                                            speciality: "Dentist",
+                                          ),
+                                        ),);
+                                      },
                                     ),
                                     SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     custTile(
@@ -605,10 +642,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       doctors: widget.generalSnap != null
                                           ? widget.generalSnap.size.toString()
                                           : "0",
-                                      onTap: () => Navigator.push(
-                                        context, MaterialPageRoute(
-                                        builder: (context) => SpecialityScreen(speciality: "General Doctor",),
-                                      ),),
+                                      onTap: () async {
+                                        QuerySnapshot doctorSnap;
+                                        await databaseMethods.getAllDoctorsBySpecialitySnap("General Doctor").then((val) {
+                                          setState(() {
+                                            doctorSnap= val;
+                                          });
+                                        });
+                                        List doctorsList = [];
+                                        for (int i = 0; i <= doctorSnap.size - 1; i++) {
+                                          doctorsList.add(doctorSnap.docs[i].get("name"));
+                                        }
+                                        Navigator.push(
+                                          context, MaterialPageRoute(
+                                          builder: (context) => SpecialityScreen(
+                                            doctors: doctorsList,
+                                            speciality: "General Doctor",
+                                          ),
+                                        ),);
+                                      },
                                     ),
                                     SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     custTile(
@@ -617,23 +669,48 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       doctors: widget.cardiologySnap != null
                                           ? widget.cardiologySnap.size.toString()
                                           : "0",
-                                      onTap: () => Navigator.push(
-                                        context, MaterialPageRoute(
-                                        builder: (context) => SpecialityScreen(speciality: "Cardiology",),
-                                      ),),
+                                      onTap: () async {
+                                        QuerySnapshot doctorSnap;
+                                        await databaseMethods.getAllDoctorsBySpecialitySnap("Cardiology").then((val) {
+                                          setState(() {
+                                            doctorSnap= val;
+                                          });
+                                        });
+                                        List doctorsList = [];
+                                        for (int i = 0; i <= doctorSnap.size - 1; i++) {
+                                          doctorsList.add(doctorSnap.docs[i].get("name"));
+                                        }
+                                        Navigator.push(
+                                          context, MaterialPageRoute(
+                                          builder: (context) => SpecialityScreen(
+                                            doctors: doctorsList,
+                                            speciality: "Cardiology",
+                                          ),
+                                        ),);
+                                      },
                                     ),
                                     SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     GestureDetector(
-                                      onTap: () => Navigator.push(
-                                        context, MaterialPageRoute(
+                                      onTap: () async {
+                                        QuerySnapshot doctorSnap;
+                                        await databaseMethods.getDoctorsSnap().then((val) {
+                                          setState(() {
+                                            doctorSnap= val;
+                                          });
+                                        });
+                                        List doctorsList = [];
+                                        for (int i = 0; i <= doctorSnap.size - 1; i++) {
+                                          doctorsList.add(doctorSnap.docs[i].get("name"));
+                                        }
+                                        Navigator.push(
+                                          context, MaterialPageRoute(
                                           builder: (context) => FindADoctorScreen(
+                                            hospSnap: hospQueryList,
+                                            doctors: doctorsList,
                                             adSnap: adSnap,
-                                            ihkSnap: ihkSnap,
-                                            caseSnap: caseSnap,
-                                            kibuliSnap: kibuliSnap,
-                                            mulagoSnap: mulagoSnap,
                                           ),
-                                        ),),
+                                        ),);
+                                      },
                                       child: Container(
                                         height: 8 * SizeConfig.heightMultiplier,
                                         width: 6 * SizeConfig.widthMultiplier,
@@ -683,7 +760,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   clipBehavior: Clip.none,
                                   children: <Widget>[
                                     Positioned(
-                                      left: 10 * SizeConfig.widthMultiplier,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: FontAwesomeIcons.solidHospital,
@@ -699,6 +775,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                             )
                                           ),
                                           ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      left: 35 * SizeConfig.widthMultiplier,
+                                      child: customAccessB(
+                                        color: Colors.white,
+                                        icon: Icons.add_shopping_cart_rounded,
+                                        title1: "Medical Store",
+                                        onTap: () async {
+                                          Stream drugStream;
+                                          await databaseMethods.getDrugs().then((val) {
+                                            setState(() {
+                                              drugStream = val;
+                                            });
+                                          });
+                                          Navigator.push(
+                                            context, MaterialPageRoute(
+                                            builder: (context) => MedicalStore(
+                                              drugStream: drugStream,
+                                            ),
+                                          ),
+                                          );
+                                        },
                                       ),
                                     ),
                                     Positioned(
@@ -725,8 +824,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      top: 35 * SizeConfig.heightMultiplier,
-                                      left: 10 * SizeConfig.widthMultiplier,
+                                      top: 40 * SizeConfig.heightMultiplier,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: CupertinoIcons.alarm_fill,
@@ -739,7 +837,32 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      left: 64 * SizeConfig.widthMultiplier,
+                                      left: 35 * SizeConfig.widthMultiplier,
+                                      top: 40 * SizeConfig.heightMultiplier,
+                                      child: customAccessB(
+                                        color: Colors.white,
+                                        icon: CupertinoIcons.calendar_badge_plus,
+                                        title1: "Events",
+                                        onTap: () async {
+                                          Stream eventsStream;
+                                          await databaseMethods.getEvents().then((val) {
+                                            setState(() {
+                                              eventsStream = val;
+                                            });
+                                          });
+                                          Navigator.push(
+                                            context, MaterialPageRoute(
+                                            builder: (context) => EventsScreen(
+                                              isDoctor: false,
+                                              eventsStream: eventsStream,
+                                            ),
+                                          ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    Positioned(
+                                      right: 0,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: CupertinoIcons.news_solid,
@@ -763,22 +886,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                         icon: FontAwesomeIcons.userMd,
                                         title1: "Find A",
                                         title2: "Doctor",
-                                        onTap: () => Navigator.push(context,
-                                          MaterialPageRoute(
+                                        onTap: () async {
+                                          QuerySnapshot doctorSnap;
+                                          await databaseMethods.getDoctorsSnap().then((val) {
+                                            setState(() {
+                                              doctorSnap= val;
+                                            });
+                                          });
+                                          List doctorsList = [];
+                                          for (int i = 0; i <= doctorSnap.size - 1; i++) {
+                                            doctorsList.add(doctorSnap.docs[i].get("name"));
+                                          }
+                                          Navigator.push(context,
+                                            MaterialPageRoute(
                                               builder: (context) => FindADoctorScreen(
+                                                hospSnap: hospQueryList,
+                                                doctors: doctorsList,
                                                 adSnap: adSnap,
-                                                ihkSnap: ihkSnap,
-                                                caseSnap: caseSnap,
-                                                kibuliSnap: kibuliSnap,
-                                                mulagoSnap: mulagoSnap,
                                               ),
-                                          ),
-                                        ),
+                                            ),);
+                                        },
                                       ),
                                     ),
                                     Positioned(
-                                      top: 35 * SizeConfig.heightMultiplier,
-                                      left: 64 * SizeConfig.widthMultiplier,
+                                      right: 0,
+                                      top: 40 * SizeConfig.heightMultiplier,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: FontAwesomeIcons.virus,
@@ -796,7 +928,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                         },
                                       ),
                                     ),
-
                                     Positioned(
                                       top: 16 * SizeConfig.heightMultiplier,
                                       left: 31 * SizeConfig.widthMultiplier,
@@ -819,7 +950,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                            SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                           ],
                         ),
                       ),
@@ -1105,9 +1236,14 @@ class _InfoViewState extends State<InfoView> {
                                           ),
                                         ),
                                         GestureDetector(
-                                          onTap: () async => await Permissions.cameraAndMicrophonePermissionsGranted()
-                                              ? goToVideoChat(databaseMethods, widget.doctorsName, context, false)
-                                              : {},
+                                          onTap: () async {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => ProgressDialog(message: "Please wait...",),
+                                            );
+                                            await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                                            goToVideoChat(databaseMethods, widget.doctorsName, context, false) : {};
+                                          },
                                           child: Container(
                                             height: 5 * SizeConfig.heightMultiplier,
                                             width: 10 * SizeConfig.widthMultiplier,
@@ -1181,7 +1317,7 @@ Widget iconLabel({String hospital, IconData icon}) {
   );
 }
 
-Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSender, String chatRoomId}) {
+Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSender, String chatRoomId, bool isUser, bool isDoctor}) {
   return showDialog(
     context: context,
     builder: (context) => Padding(
@@ -1217,19 +1353,148 @@ Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSe
                 ),
               ),
               Spacer(),
-              Row(
+              isUser == true
+                  ? Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4 * SizeConfig.widthMultiplier),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  Spacer(),
-                  Icon(Icons.message_rounded, color: Colors.red[300],),
-                  SizedBox(width: 13 * SizeConfig.widthMultiplier,),
-                  Icon(Icons.call_rounded, color: Colors.red[300],),
-                  SizedBox(width: 13 * SizeConfig.widthMultiplier,),
-                  Icon(Icons.videocam_rounded, color: Colors.red[300],),
-                  SizedBox(width: 13 * SizeConfig.widthMultiplier,),
-                  Icon(Icons.edit_rounded, color: Colors.red[300],),
-                  Spacer(),
+                  Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red[100],
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child:FocusedMenuHolder(
+                          blurSize: 0,
+                          duration: Duration(milliseconds: 500),
+                          menuWidth: MediaQuery.of(context).size.width * 0.3,
+                          menuItemExtent: 40,
+                          onPressed: () {
+                            displayToastMessage("Tap & Hold to make selection", context);
+                          },
+                          menuItems: <FocusedMenuItem>[
+                            FocusedMenuItem(title: Text("Gallery", style: TextStyle(
+                                color: Colors.red[300], fontWeight: FontWeight.w500),),
+                              onPressed: () async =>
+                              await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                              pickImage(
+                                  source: ImageSource.gallery,
+                                  context: context,
+                                  databaseMethods: databaseMethods).then((val) async{
+                                String profilePic = val;
+                                  if (isDoctor == true) {
+                                    if (profilePic == null || profilePic == "") {} else {
+                                      await databaseMethods.updateDoctorDocField({"profile_photo": profilePic}, currentUser.uid);
+                                      Navigator.pop(context);
+                                      displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                    }
+                                  } else {
+                                    if (profilePic == null || profilePic == "") {} else {
+                                      await databaseMethods.updateUserDocField({"profile_photo": profilePic}, currentUser.uid);
+                                      Navigator.pop(context);
+                                      displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                    }
+                                  }
+                              }) : {},
+                              trailingIcon: Icon(Icons.photo_library_outlined, color: Colors.red[300],),
+                            ),
+                            FocusedMenuItem(title: Text("Capture", style: TextStyle(
+                                color: Colors.red[300], fontWeight: FontWeight.w500),),
+                              onPressed: () async =>
+                              await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                              pickImage(
+                                  source: ImageSource.camera,
+                                  context: context,
+                                  databaseMethods: databaseMethods).then((val) async {
+                                    String profilePic = val;
+                                      if (isDoctor == true) {
+                                        if (profilePic == null || profilePic == "") {} else {
+                                          await databaseMethods.updateDoctorDocField({"profile_photo": profilePic}, currentUser.uid);
+                                          Navigator.pop(context);
+                                          displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                        }
+                                      } else {
+                                        if (profilePic == null || profilePic == "") {} else {
+                                          await databaseMethods.updateUserDocField({"profile_photo": profilePic}, currentUser.uid);
+                                          Navigator.pop(context);
+                                          displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                        }
+                                      }
+                              }) : {},
+                              trailingIcon: Icon(Icons.camera, color: Colors.red[300],),
+                            ),
+                          ],
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            child: Row(
+                              children: <Widget>[
+                                Icon(CupertinoIcons.pencil, color: Colors.red[300],),
+                                Text("Edit Profile Picture", style: TextStyle(
+                                  fontFamily: "Brand Bold",
+                                  color: Colors.red[300],
+                                ),),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                  Image(
+                    image: AssetImage("images/logo.png"),
+                    width: 12 * SizeConfig.widthMultiplier,
+                    height: 5 * SizeConfig.heightMultiplier,
+                  ),
                 ],
               ),
+                  ) :
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4 * SizeConfig.widthMultiplier),
+                child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  GestureDetector(
+                    child: Icon(Icons.message_rounded, color: Colors.red[300],),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(
+                          builder: (context) => ConversationScreen(
+                            isDoctor: isDoctor,
+                            chatRoomId: chatRoomId,
+                            userName: chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""),
+                            profilePhoto: imageUrl,
+                          )),
+                      );
+                    },
+                  ),
+                  GestureDetector(
+                    child: Icon(Icons.call_rounded, color: Colors.red[300],),
+                    onTap: () async {
+                      showDialog(
+                        context: context,
+                        builder: (context) => ProgressDialog(message: "Please wait...",),
+                      );
+                      await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                      goToVoiceCall(databaseMethods, chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""), context, isDoctor) : {};
+                    },
+                  ),
+                  GestureDetector(
+                    child: Icon(Icons.videocam_rounded, color: Colors.red[300],),
+                    onTap: () async {
+                      showDialog(
+                        context: context,
+                        builder: (context) => ProgressDialog(message: "Please wait...",),
+                      );
+                      await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                      goToVideoChat(databaseMethods, chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""), context, isDoctor) : {};
+                    },
+                  ),
+                  Image(
+                    image: AssetImage("images/logo.png"),
+                    width: 12 * SizeConfig.widthMultiplier,
+                    height: 5 * SizeConfig.heightMultiplier,
+                  ),
+                ],
+              ),
+                  ),
               Spacer(),
             ],
           ),

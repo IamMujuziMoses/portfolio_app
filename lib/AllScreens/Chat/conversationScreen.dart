@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -5,18 +6,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/messageCachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
+import 'package:creativedata_app/AllScreens/Chat/soundPlayer.dart';
+import 'package:creativedata_app/AllScreens/Chat/soundRecorder.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/videoViewPage.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
+import 'package:creativedata_app/AllScreens/pdfViewerPage.dart';
+import 'package:creativedata_app/AllScreens/pdfApi.dart';
 import 'package:creativedata_app/Enum/viewState.dart';
 import 'package:creativedata_app/Models/message.dart';
+import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Provider/imageUploadProvider.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/customTile.dart';
 import 'package:creativedata_app/Widgets/photoViewPage.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/Widgets/timerWidget.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:emoji_picker/emoji_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -24,6 +32,7 @@ import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 /*
 * Created by Mujuzi Moses
@@ -43,18 +52,56 @@ class ConversationScreen extends StatefulWidget {
 
 class _ConversationScreenState extends State<ConversationScreen> {
 
+  TimerController timerController = TimerController();
+  SoundRecorder recorder = SoundRecorder();
   TextEditingController sendMessageTEC = new TextEditingController();
   ScrollController _listScrollController = new ScrollController();
-  DatabaseMethods databaseMethods = new DatabaseMethods();
   FocusNode textFieldFocus = new FocusNode();
   Stream chatMessageStream;
   ImageUploadProvider _imageUploadProvider;
   bool isWriting = false;
+  bool isRecording = false;
   bool showEmojiPicker = false;
+  String userUid = "";
+  String myProfilePhoto = "";
 
   setWritingTo(bool val) {
     setState(() {
       isWriting = val;
+    });
+  }
+
+  @override
+  void initState() {
+    getInfo();
+    recorder.init();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    recorder.dispose();
+    super.dispose();
+  }
+
+  getInfo() async {
+    await databaseMethods.getConversationMessages(widget.chatRoomId).then((val) {
+      setState(() {
+        chatMessageStream = val;
+      });
+    });
+    QuerySnapshot snap;
+    await databaseMethods.getUserByUsername(widget.userName).then((val) {
+      setState(() {
+        snap = val;
+        userUid = snap.docs[0].get("uid");
+      });
+    });
+    await databaseMethods.getUserByUsername(Constants.myName).then((val) {
+      setState(() {
+        snap = val;
+        myProfilePhoto = snap.docs[0].get("profile_photo");
+      });
     });
   }
 
@@ -86,6 +133,21 @@ class _ConversationScreenState extends State<ConversationScreen> {
                   isSender: snapshot.data.docs[index].get("sendBy") == Constants.myName,
                   message: snapshot.data.docs[index].get("photoUrl"),
                   chatRoomId: widget.chatRoomId,
+                  size: snapshot.data.docs[index].get("size"),
+                );
+              } else if (type == "audio") {
+                return AudioMessageTile(
+                  isSender: snapshot.data.docs[index].get("sendBy") == Constants.myName,
+                  message: snapshot.data.docs[index].get("audioUrl"),
+                  chatRoomId: widget.chatRoomId,
+                  size: snapshot.data.docs[index].get("size"),
+                );
+              } else if (type == "document") {
+                return DocumentMessageTile(
+                  isSender: snapshot.data.docs[index].get("sendBy") == Constants.myName,
+                  message: snapshot.data.docs[index].get("docUrl"),
+                  chatRoomId: widget.chatRoomId,
+                  size: snapshot.data.docs[index].get("size"),
                 );
               } else if (type == "text") {
                 return MessageTile(
@@ -111,12 +173,48 @@ class _ConversationScreenState extends State<ConversationScreen> {
     ) : Container();
   }
 
-  sendMessage() {
+  sendAudioMessage() {
+    File selectedAudio = new File("/data/user/0/com.mujuzimoses.emalert/cache/$pathToSaveAudio");
+    CustomNotification notification = CustomNotification.newMessage(
+      createdAt: FieldValue.serverTimestamp(),
+      type: "message",
+      messageType: "audio",
+      senderName: Constants.myName,
+      senderPhoto: myProfilePhoto,
+      senderUid: currentUser.uid,
+      receiverUid: userUid,
+      receiverPhoto: widget.profilePhoto,
+      receiverName: widget.userName,
+    );
 
+    if (selectedAudio != null) {
+      databaseMethods.uploadAudio(
+        widget.chatRoomId,
+        selectedAudio,
+        Constants.myName,
+        _imageUploadProvider,
+        notification,
+      );
+    } else {}
+  }
+
+  sendMessage() {
     if (sendMessageTEC.text.isNotEmpty) {
       setState(() {
         isWriting = false;
       });
+      CustomNotification notification = CustomNotification.newMessage(
+        createdAt: FieldValue.serverTimestamp(),
+        type: "message",
+        messageType: "text",
+        senderName: Constants.myName,
+        senderPhoto: myProfilePhoto,
+        senderUid: currentUser.uid,
+        receiverUid: userUid,
+        receiverPhoto: widget.profilePhoto,
+        receiverName: widget.userName,
+      );
+
       Message message = new Message(
         message: sendMessageTEC.text,
         sendBy: Constants.myName,
@@ -125,20 +223,11 @@ class _ConversationScreenState extends State<ConversationScreen> {
       );
 
       var messageMap = message.toMap();
-      databaseMethods.addConversationMessages(widget.chatRoomId, messageMap);
+      databaseMethods.addConversationMessages(widget.chatRoomId, messageMap, notification);
       sendMessageTEC.text = "";
     }
   }
 
-  @override
-  void initState() {
-    databaseMethods.getConversationMessages(widget.chatRoomId).then((val) {
-      setState(() {
-        chatMessageStream = val;
-      });
-    });
-    super.initState();
-  }
   showKeyboard() => textFieldFocus.requestFocus();
   hideKeyboard() => textFieldFocus.unfocus();
 
@@ -147,20 +236,97 @@ class _ConversationScreenState extends State<ConversationScreen> {
       showEmojiPicker = false;
     });
   }
+
   pickImage({@required ImageSource source}) async {
     File selectedImage = await Utils.pickImage(source: source);
+    CustomNotification notification = CustomNotification.newMessage(
+      createdAt: FieldValue.serverTimestamp(),
+      type: "message",
+      messageType: "image",
+      senderName: Constants.myName,
+      senderPhoto: myProfilePhoto,
+      senderUid: currentUser.uid,
+      receiverUid: userUid,
+      receiverPhoto: widget.profilePhoto,
+      receiverName: widget.userName,
+    );
+
     if (selectedImage != null) {
       databaseMethods.uploadImage(
         widget.chatRoomId,
         selectedImage,
         Constants.myName,
         _imageUploadProvider,
+        notification
+
       );
+    } else {}
+  }
+
+  pickAudio() async {
+    File selectedAudio = await Utils.pickAudio();
+    CustomNotification notification = CustomNotification.newMessage(
+      createdAt: FieldValue.serverTimestamp(),
+      type: "message",
+      messageType: "audio",
+      senderName: Constants.myName,
+      senderPhoto: myProfilePhoto,
+      senderUid: currentUser.uid,
+      receiverUid: userUid,
+      receiverPhoto: widget.profilePhoto,
+      receiverName: widget.userName,
+    );
+
+    if (selectedAudio != null) {
+      databaseMethods.uploadAudio(
+        widget.chatRoomId,
+        selectedAudio,
+        Constants.myName,
+        _imageUploadProvider,
+        notification
+
+      );
+    } else {}
+  }
+
+  pickDocument() async {
+    File selectedDoc = await Utils.pickDoc();
+    CustomNotification notification = CustomNotification.newMessage(
+      createdAt: FieldValue.serverTimestamp(),
+      type: "message",
+      messageType: "document",
+      senderName: Constants.myName,
+      senderPhoto: myProfilePhoto,
+      senderUid: currentUser.uid,
+      receiverUid: userUid,
+      receiverPhoto: widget.profilePhoto,
+      receiverName: widget.userName,
+    );
+
+    if (selectedDoc != null) {
+     databaseMethods.uploadDocument(
+       widget.chatRoomId,
+       selectedDoc,
+       Constants.myName,
+       _imageUploadProvider,
+       notification,
+     );
     } else {}
   }
 
   pickVideo({@required ImageSource source}) async {
     File selectedVideo = await Utils.pickVideo(source: source);
+    CustomNotification notification = CustomNotification.newMessage(
+      createdAt: FieldValue.serverTimestamp(),
+      type: "message",
+      messageType: "video",
+      senderName: Constants.myName,
+      senderPhoto: myProfilePhoto,
+      senderUid: currentUser.uid,
+      receiverUid: userUid,
+      receiverPhoto: widget.profilePhoto,
+      receiverName: widget.userName,
+    );
 
     if (selectedVideo != null) {
       databaseMethods.uploadVideo(
@@ -168,7 +334,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
         selectedVideo,
         Constants.myName,
         _imageUploadProvider,
+        notification,
       );
+
     } else {}
   }
 
@@ -217,9 +385,14 @@ class _ConversationScreenState extends State<ConversationScreen> {
                     width: 8 * SizeConfig.widthMultiplier,
                     child: IconButton(
                       icon: Icon(CupertinoIcons.video_camera_solid, color: Colors.red[300],),
-                      onPressed: () async =>
-                      await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                      goToVideoChat(databaseMethods, widget.userName, context, widget.isDoctor,) : {},
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          builder: (context) => ProgressDialog(message: "Please wait...",),
+                        );
+                        await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                        goToVideoChat(databaseMethods, widget.userName, context, widget.isDoctor,) : {};
+                      },
                     ),
                   ),
                 Padding(
@@ -230,9 +403,14 @@ class _ConversationScreenState extends State<ConversationScreen> {
                     width: 8 * SizeConfig.widthMultiplier,
                     child: IconButton(
                       icon: Icon(Icons.phone_rounded, color: Colors.red[300],),
-                      onPressed: () async =>
-                      await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                      goToVoiceCall(databaseMethods, widget.userName, context, widget.isDoctor,) : {},
+                      onPressed: () async {
+                        showDialog(
+                          context: context,
+                          builder: (context) => ProgressDialog(message: "Please wait...",),
+                        );
+                        await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                        goToVoiceCall(databaseMethods, widget.userName, context, widget.isDoctor,) : {};
+                      },
                     ),
                   ),
                 ),
@@ -285,9 +463,10 @@ class _ConversationScreenState extends State<ConversationScreen> {
                                     controller: sendMessageTEC,
                                     style: TextStyle(fontSize: 2.5 * SizeConfig.textMultiplier),
                                     focusNode: textFieldFocus,
+                                    enabled: isRecording == true ? false : true,
                                     onTap: () => hideEmojiContainer(),
                                     decoration: InputDecoration(
-                                      hintText: "Type Message...",
+                                      hintText: isRecording == true ? "" : "Type Message...",
                                       fillColor: Colors.grey[300],
                                       filled: true,
                                       border: OutlineInputBorder(
@@ -307,7 +486,39 @@ class _ConversationScreenState extends State<ConversationScreen> {
                                           : setWritingTo(false);
                                     },
                                   ),
-                                    IconButton(
+                                    isRecording == true
+                                        ? Padding(
+                                          padding: EdgeInsets.only(top: 1 * SizeConfig.heightMultiplier),
+                                          child: Container(
+                                            height: 4 * SizeConfig.heightMultiplier,
+                                            width: 75 * SizeConfig.widthMultiplier,
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: <Widget>[
+                                                TimerWidget(controller: timerController,),
+                                                TextButton(
+                                                  onPressed: () async {
+                                                    await recorder.toggleRecording();
+                                                    setState(() {
+                                                      isRecording = recorder.isRecording;
+                                                    });
+
+                                                    if (isRecording == true) {
+                                                      timerController.startTimer();
+                                                    } else {
+                                                      timerController.stopTimer();
+                                                    }
+                                                    displayToastMessage("Audio recording cancelled", context);
+                                                  },
+                                                  child: Text("Cancel".toUpperCase(), style: TextStyle(
+                                                    color: Colors.red[300]
+                                                  ),),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                        : IconButton(
                                       splashColor: Colors.transparent,
                                       highlightColor: Colors.transparent,
                                       onPressed: () {
@@ -327,15 +538,26 @@ class _ConversationScreenState extends State<ConversationScreen> {
                                 ),
                           ),
                           SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                          isWriting ? Container()
+                          isWriting == true || isRecording == true ? Container()
                               : GestureDetector(
-                            onTap: () {},
+                            onTap: () async {
+                              await recorder.toggleRecording();
+                              setState(() {
+                                isRecording = recorder.isRecording;
+                              });
+
+                              if (isRecording == true) {
+                                timerController.startTimer();
+                              } else {
+                                timerController.stopTimer();
+                              }
+                            },
                                 child: Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             child: Icon(Icons.mic_rounded, color: Colors.red[300],),
                           ),
                               ),
-                          isWriting ? Container()
+                          isWriting || isRecording ? Container()
                               : FocusedMenuHolder(
                             blurSize: 0,
                             //blurBackgroundColor: Colors.transparent,
@@ -363,9 +585,16 @@ class _ConversationScreenState extends State<ConversationScreen> {
                             ],
                             child: Icon(Icons.camera_alt_outlined, color: Colors.red[300],),
                           ),
-                          isWriting ? GestureDetector(
-                            onTap: () {
-                              sendMessage();
+                          isWriting || isRecording ? GestureDetector(
+                            onTap: () async {
+                              if (isWriting) {
+                                sendMessage();
+                              }
+                              if (isRecording) {
+                                sendAudioMessage();
+                                await recorder.toggleRecording();
+                                timerController.stopTimer();
+                              }
                             },
                             child: Container(
                               height: 4 * SizeConfig.heightMultiplier,
@@ -472,6 +701,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           title: "Audio",
                           subTitle: "Share Audio and Voice notes",
                           icon: Icons.headset_outlined,
+                           onTap: () async =>
+                           await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                           pickAudio() : {},
                         ),
                          ModalTile(
                           title: "Video Gallery",
@@ -485,13 +717,10 @@ class _ConversationScreenState extends State<ConversationScreen> {
                           title: "Document",
                           subTitle: "Share Documents",
                           icon: Icons.description_outlined,
+                           onTap: () async =>
+                           await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                           pickDocument() : {},
                         ),
-                         ModalTile(
-                          title: "Location",
-                          subTitle: "Share your Location",
-                          icon: Icons.add_location_outlined,
-                        ),
-
                       ],
                     ),
                 ),
@@ -500,9 +729,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
           );
         }
     );
-
   }
 }
+
 class VideoMessageTile extends StatelessWidget {
   final dynamic message;
   final bool isSender;
@@ -580,8 +809,8 @@ class VideoMessageTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: isSender
-                        ? Center(child: Text("$size MBs", style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),))
-                        : Center(child: Text("$size MBs", style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.w500),)),
+                        ? Center(child: Text(size, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),))
+                        : Center(child: Text(size, style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.w500),)),
                     ),
                   ),
                   Positioned(
@@ -620,12 +849,297 @@ class VideoMessageTile extends StatelessWidget {
   }
 }
 
+class DocumentMessageTile extends StatelessWidget {
+  final dynamic message;
+  final bool isSender;
+  final String chatRoomId;
+  final String size;
+  final bool isDoctor;
+  const DocumentMessageTile({Key key, this.message, this.isSender, this.chatRoomId, this.size, this.isDoctor}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        showDialog(
+          context: context,
+          builder: (context) => ProgressDialog(message: "Please wait...",),
+        );
+        int index = basename(message).indexOf("?");
+        String msg = basename(message).substring(0, index);
+        File file = await PDFApi.loadFirebase(msg);
+        if (file == null) return;
+        openPDF(context, file);
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 0.5 * SizeConfig.heightMultiplier),
+        alignment: isSender ? Alignment.centerRight : Alignment.centerLeft,
+        child: Container(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.60,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: 1 * SizeConfig.widthMultiplier,
+            vertical: 1 * SizeConfig.heightMultiplier,
+          ),
+          decoration: BoxDecoration(
+            color: isSender ? Colors.red[300] : Colors.black87,
+            borderRadius: isSender ? BorderRadius.only(
+              topLeft: Radius.circular(15),
+              topRight: Radius.circular(15),
+              bottomLeft: Radius.circular(15),
+            ) :
+            BorderRadius.only(
+              topLeft: Radius.circular(15),
+              topRight: Radius.circular(15),
+              bottomRight: Radius.circular(15),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Container(
+                height: 6 * SizeConfig.heightMultiplier,
+                width: 14 * SizeConfig.widthMultiplier,
+                decoration: BoxDecoration(
+                  color: isSender ? Colors.red[100] : Colors.grey[800],
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Center(
+                  child: Icon(CupertinoIcons.doc_fill,
+                    color: Colors.red[300],
+                  ),
+                ),
+              ),
+              SizedBox(width: 2 * SizeConfig.widthMultiplier,),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    width: 40 * SizeConfig.widthMultiplier,
+                    child: Text("siroDoc_${basename(message)}", maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: "Brand Bold",
+                        fontSize: 2 * SizeConfig.textMultiplier,
+                      ),),
+                  ),
+                  SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+                  Container(
+                    width: 40 * SizeConfig.widthMultiplier,
+                    child: Row(
+                      children: <Widget>[
+                        Spacer(),
+                        Container(
+                          height: 1.5 * SizeConfig.heightMultiplier,
+                          width: 20 * SizeConfig.widthMultiplier,
+                          child: isSender
+                              ? Center(child: Text("$size", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),))
+                              : Center(child: Text("$size", style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.w500),)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void openPDF(BuildContext context, File file) {
+    Navigator.pop(context);
+    Navigator.push(
+      context, MaterialPageRoute(
+        builder: (context) => PDFViewerPage(file: file)
+    ),
+    );
+  }
+}
+
+
+class AudioMessageTile extends StatefulWidget {
+  final dynamic message;
+  final bool isSender;
+  final String chatRoomId;
+  final String size;
+  final bool isDoctor;
+  const AudioMessageTile({Key key, this.message, this.isSender, this.chatRoomId, this.size, this.isDoctor,}) : super(key: key);
+
+  @override
+  _AudioMessageTileState createState() => _AudioMessageTileState();
+}
+
+class _AudioMessageTileState extends State<AudioMessageTile> {
+  SoundPlayer player = SoundPlayer();
+  bool isPlaying = false;
+  int finalProgress = 0;
+  IconData icon = CupertinoIcons.play_fill;
+  TimerController timerController = TimerController();
+
+  Duration duration;
+  Timer timer;
+
+  void startTimer() {
+    reset();
+    setState(() {
+      timer = Timer.periodic(Duration(seconds: 1), (_) => addTime());
+    });
+  }
+
+  void addTime() {
+    final addSeconds = 1;
+
+    setState(() {
+      int seconds = duration.inSeconds + addSeconds;
+
+      if (seconds < 0) {
+        timer.cancel();
+      } else {
+        duration = Duration(seconds: seconds);
+      }
+    });
+  }
+
+  void reset() => setState(() => duration = Duration());
+
+  void stopTimer() {
+    reset();
+    setState(() => timer.cancel());
+  }
+
+  @override
+  void initState() {
+    setState(() {
+      player = new SoundPlayer(audioUrl: widget.message);
+    });
+    player.init();
+    duration = Duration();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    player.dispose();
+    duration = Duration();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 0.5 * SizeConfig.heightMultiplier),
+      alignment: widget.isSender ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.60,
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: 1 * SizeConfig.widthMultiplier,
+          vertical: 1 * SizeConfig.heightMultiplier,
+        ),
+        decoration: BoxDecoration(
+          color: widget.isSender ? Colors.red[300] : Colors.black87,
+          borderRadius: widget.isSender ? BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(15),
+          ) :
+          BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+            bottomRight: Radius.circular(15),
+          ),
+        ),
+        child: Column(
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                GestureDetector(
+                  onTap: () async {
+                    Duration d;
+                    await player.togglePlaying(whenFinished: () {
+                      setState(() {
+                        icon = CupertinoIcons.play_fill;
+                      });
+                      timerController.stopTimer();
+                      stopTimer();
+                      player.refresh();
+                    });
+                    setState(() {
+                      isPlaying = player.isPlaying;
+                      d = player.d;
+                      finalProgress = d.inSeconds;
+                    });
+                    if (isPlaying == true) {
+                      setState(() {
+                        icon = CupertinoIcons.stop_fill;
+                      });
+                      timerController.startTimer();
+                      startTimer();
+                    } else {
+                      setState(() {
+                        icon = CupertinoIcons.play_fill;
+                      });
+                      timerController.stopTimer();
+                      stopTimer();
+                    }
+                  },
+                  child: widget.isSender
+                      ? Icon(icon, color: Colors.black87, size: 6 * SizeConfig.imageSizeMultiplier,)
+                      : Icon(icon, color: Colors.red[300], size: 6 * SizeConfig.imageSizeMultiplier,),
+                ),
+                SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                Container(
+                  clipBehavior: Clip.hardEdge,
+                  height: 3,
+                  width: 50 * SizeConfig.widthMultiplier,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  child: LinearProgressIndicator(
+                    value: isPlaying == true ? duration.inSeconds / finalProgress : 0,
+                    backgroundColor: Colors.white,
+                    valueColor: widget.isSender
+                        ? AlwaysStoppedAnimation<Color>(Colors.red[100])
+                        : AlwaysStoppedAnimation<Color>(Colors.grey[600]),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: <Widget>[
+                widget.isSender
+                    ? TimerWidget(controller: timerController, height: 2 * SizeConfig.heightMultiplier,)
+                    : TimerWidget(controller: timerController, height: 2 * SizeConfig.heightMultiplier, color: Colors.grey[800],),
+                Spacer(),
+                Container(
+                  height: 1.5 * SizeConfig.heightMultiplier,
+                  width: 20 * SizeConfig.widthMultiplier,
+                  child: widget.isSender
+                      ? Center(child: Text("${widget.size}", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),))
+                      : Center(child: Text("${widget.size}", style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.w500),)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
 class ImageMessageTile extends StatelessWidget {
   final dynamic message;
   final bool isSender;
   final String chatRoomId;
+  final String size;
   final bool isDoctor;
-  const ImageMessageTile({Key key, this.message, this.isSender, this.chatRoomId, this.isDoctor}) : super(key: key);
+  const ImageMessageTile({Key key, this.message, this.isSender, this.chatRoomId, this.isDoctor, this.size}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -666,7 +1180,7 @@ class ImageMessageTile extends StatelessWidget {
                 bottomLeft: Radius.circular(50),
               ) ,
             ),
-            child: Column(
+            child: Stack(
               children: <Widget>[
                 message != null
                     ? MessageCachedImage(
@@ -677,6 +1191,21 @@ class ImageMessageTile extends StatelessWidget {
                   radius: 10,
                 )
                     : Text("PhotoUrl is null"),
+                Positioned(
+                  top: 27 * SizeConfig.heightMultiplier,
+                  left: isSender ? 2 * SizeConfig.widthMultiplier : 27 * SizeConfig.widthMultiplier,
+                  child: Container(
+                    height: 2 * SizeConfig.heightMultiplier,
+                    width: 20 * SizeConfig.widthMultiplier,
+                    decoration: BoxDecoration(
+                      color: isSender ? Colors.red[300] : Colors.black87,
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: isSender
+                        ? Center(child: Text(size, style: TextStyle(color: Colors.black, fontWeight: FontWeight.w500),))
+                        : Center(child: Text(size, style: TextStyle(color: Colors.red[300], fontWeight: FontWeight.w500),)),
+                  ),
+                ),
               ],
             ),
           ),
@@ -684,7 +1213,6 @@ class ImageMessageTile extends StatelessWidget {
       );
   }
 }
-
 
 class MessageTile extends StatelessWidget {
   final dynamic message;

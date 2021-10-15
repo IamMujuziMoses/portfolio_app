@@ -1,4 +1,5 @@
 import 'package:creativedata_app/sizeConfig.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:chewie/chewie.dart';
 import 'package:video_player/video_player.dart';
@@ -10,7 +11,8 @@ class VideoView extends StatefulWidget {
   final VideoPlayerController videoPlayerController;
   final bool looping;
   final bool showControls;
-  const VideoView({Key key, @required this.videoPlayerController, this.looping, this.showControls}) : super(key: key);
+  final bool isAd;
+  VideoView({Key key, @required this.videoPlayerController, this.looping, this.showControls, this.isAd}) : super(key: key);
 
   @override
   _VideoViewState createState() => _VideoViewState();
@@ -36,6 +38,7 @@ class _VideoViewState extends State<VideoView> {
   }
 
   Future<void> initVideoPlayer() async {
+    IconData icon = CupertinoIcons.volume_off;
     await _controller.initialize();
     setState(() {
       _chewieController = ChewieController(
@@ -44,6 +47,36 @@ class _VideoViewState extends State<VideoView> {
         autoPlay: true,
         looping: widget.looping != null ? widget.looping : false,
         placeholder: buildPlaceholderImage(),
+        customControls: widget.isAd != null && widget.isAd == true ? StatefulBuilder(
+          builder: (context, setState) {
+            return GestureDetector(
+              onTap: () {
+                if (icon == CupertinoIcons.volume_off) {
+                  setState(() {
+                    icon = CupertinoIcons.volume_up;
+                  });
+                  _controller.setVolume(0.0);
+                } else if (icon == CupertinoIcons.volume_up) {
+                  setState(() {
+                    icon = CupertinoIcons.volume_off;
+                  });
+                  _controller.setVolume(10.0);
+                }
+              },
+              child: Container(
+                height: 5 * SizeConfig.heightMultiplier,
+                width: 10 * SizeConfig.widthMultiplier,
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Center(
+                  child: Icon(icon, color: Colors.red[300],),
+                ),
+              ),
+            );
+          },
+        ) : null,
         showControls: widget.showControls != null ? widget.showControls : true,
       );
     });
@@ -53,7 +86,7 @@ class _VideoViewState extends State<VideoView> {
     return Container(
       color: Colors.black,
       child: Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),),
       ),
     );
   }

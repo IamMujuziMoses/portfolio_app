@@ -4,16 +4,21 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/Hospitals/hospitalProfileScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /*
 * Created by Mujuzi Moses
 */
 
 class HospitalsScreen extends StatefulWidget {
   static const String screenId = "hospitalsScreen";
-  HospitalsScreen({Key key}) : super(key: key);
+
+  final List hospitals;
+  HospitalsScreen({Key key, this.hospitals}) : super(key: key);
 
   @override
   _HospitalsScreenState createState() => _HospitalsScreenState();
@@ -39,7 +44,9 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
       });
     });
     await databaseMethods.getTopHospitals(topReviews).then((val) {
-      topStream = val;
+      setState(() {
+        topStream = val;
+      });
     });
   }
 
@@ -49,6 +56,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
     return PickUpLayout(
       scaffold: Scaffold(
         body: HospCustom(
+          hospitals: widget.hospitals,
           body: HospBody(
             allStream: allStream,
             topStream: topStream,
@@ -279,9 +287,8 @@ class _HospBodyState extends State<HospBody> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-      ),
+      height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
+      color: Colors.grey[100],
       child: Column(
         children: <Widget>[
           Stack(
@@ -356,7 +363,6 @@ class _HospBodyState extends State<HospBody> {
               ),
             ],
           ),
-          SizedBox(height: 4 * SizeConfig.heightMultiplier,),
         ],
       ),
     );
@@ -367,13 +373,47 @@ class _HospBodyState extends State<HospBody> {
 class HospCustom extends StatefulWidget {
   final Widget body;
   final String title;
-  const HospCustom({Key key, this.body, this.title}) : super(key: key);
+  final List hospitals;
+  const HospCustom({Key key, this.body, this.title, this.hospitals}) : super(key: key);
 
   @override
   _HospCustomState createState() => _HospCustomState();
 }
 
 class _HospCustomState extends State<HospCustom> {
+
+  TextEditingController searchTEC = TextEditingController();
+  bool searchVisible = false;
+  bool titleVisible = true;
+  List hospitalOnSearch = [];
+  List hospitals = [];
+
+  @override
+  void initState() {
+    getHospitalList();
+    super.initState();
+  }
+
+  getHospitalList() {
+    setState(() {
+      hospitals = widget.hospitals;
+    });
+  }
+
+  showHideSearchBar() {
+    if (searchVisible == false && titleVisible == true) {
+      setState(() {
+        searchVisible = true;
+        titleVisible = false;
+      });
+    } else if (searchVisible == true && titleVisible == false) {
+      setState(() {
+        searchVisible = false;
+        titleVisible = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
@@ -384,24 +424,167 @@ class _HospCustomState extends State<HospCustom> {
           pinned: true,
           elevation: 0,
           actions: <Widget>[
-            IconButton(
-              onPressed: () {},
-              color: Colors.red[300],
-              splashColor: Colors.red[200],
-              icon: Icon(CupertinoIcons.search,
-              ),),
+            Stack(
+              children: <Widget>[
+                Visibility(
+                  visible: titleVisible,
+                  child: IconButton(
+                    onPressed: () => showHideSearchBar(),
+                    splashColor: Colors.red[200],
+                    icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                    ),),
+                ),
+                Visibility(
+                  visible: searchVisible,
+                  child: IconButton(
+                    onPressed: () {
+                      searchTEC.text = "";
+                      // drugOnSearch.clear();
+                      showHideSearchBar();
+                    },
+                    color: Colors.red[300],
+                    splashColor: Colors.red[200],
+                    icon: Icon(CupertinoIcons.clear,
+                    ),),
+                ),
+              ],
+            ),
           ],
           flexibleSpace: FlexibleSpaceBar(
-            title: Text(widget.title, style: TextStyle(
-              color: Colors.red[300],
-              fontFamily: "Brand Bold",
-              fontSize: 3 * SizeConfig.textMultiplier,
-            ),),
+            title: Stack(
+                children: <Widget>[
+                  Visibility(
+                    visible: titleVisible,
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(15)
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(widget.title, style: TextStyle(
+                          fontFamily: "Brand Bold",
+                          color: Colors.red[300],
+                        ),),
+                      ),
+                    ),
+                  ),
+                  Visibility(
+                    visible: searchVisible,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        top: 4 * SizeConfig.heightMultiplier,
+                        left: 10 * SizeConfig.widthMultiplier,
+                        right: 10 * SizeConfig.widthMultiplier,
+                      ),
+                      child: Container(
+                        height: 5 * SizeConfig.heightMultiplier,
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() {
+                              hospitalOnSearch = hospitals.where((element) => element.toLowerCase()
+                                  .contains(value.toLowerCase())).toList();
+                            });
+                          },
+                          controller: searchTEC,
+                          maxLines: 1,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            hintText: "Search for hospital...",
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                              fontFamily: "Brand-Regular",
+                              fontSize: 2 * SizeConfig.textMultiplier,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                            fontFamily: "Brand-Regular",
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ]
+            ),
             centerTitle: true,
           ),
         ),
         SliverToBoxAdapter(
-          child: widget.body,
+          child: searchTEC.text.isNotEmpty && hospitalOnSearch.length > 0 ?
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
+            color: Colors.grey[100],
+            child: ListView.builder(
+              itemCount: hospitalOnSearch.length,
+              itemBuilder: (context, index) => GestureDetector(
+                  onTap: () async {
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                    );
+                    QuerySnapshot hospitalSnap;
+                    String name =  hospitalOnSearch[index];
+                    await databaseMethods.getHospitalByName(name).then((val) {
+                      setState(() {
+                        hospitalSnap = val;
+                      });
+                    });
+                    Map ratingsMap = hospitalSnap.docs[0].get("ratings");
+                    String ratings = ratingsMap["percentage"];
+                    String people = ratingsMap["people"];
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context, MaterialPageRoute(
+                      builder: (context) => HospitalProfileScreen(
+                        uid: hospitalSnap.docs[0].get("uid"),
+                        imageUrl: hospitalSnap.docs[0].get("hospital_photo"),
+                        ratings: ratings,
+                        people: people,
+                        phone: hospitalSnap.docs[0].get("phone"),
+                        name: hospitalSnap.docs[0].get("name"),
+                        email: hospitalSnap.docs[0].get("email"),
+                        about: hospitalSnap.docs[0].get("about"),
+                        address: hospitalSnap.docs[0].get("address"),
+                        services: hospitalSnap.docs[0].get("services"),
+                      ),
+                    ),
+                    );
+                    Future.delayed(Duration(seconds: 1), () {
+                      setState(() {
+                        searchTEC.text = "";
+                        hospitalOnSearch.clear();
+                        searchVisible = false;
+                        titleVisible = true;
+                      });
+                    });
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 5,
+                      horizontal: 4,
+                    ),
+                    child: Row(
+                      children: <Widget>[
+                        CircleAvatar(
+                          backgroundColor: Colors.red[100],
+                          foregroundColor: Colors.red[300],
+                          child: Icon(FontAwesomeIcons.hospital),
+                        ),
+                        SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                        Text(hospitalOnSearch[index], style: TextStyle(
+                          fontFamily: "Brand Bold",
+                        ),),
+                      ],
+                    ),
+                  ),
+                ),
+            ),
+          ) : widget.body,
         ),
       ],
     );

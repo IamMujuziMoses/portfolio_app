@@ -32,6 +32,7 @@ class CallUtils{
    bool callMade = await databaseMethods.makeCall(call: call);
     call.hasDialled = true;
 
+    Navigator.pop(context);
     if (callMade) {
       Navigator.push(
         context,
@@ -58,6 +59,7 @@ class CallUtils{
    bool callMade = await databaseMethods.makeCall(call: call);
     call.hasDialled = true;
 
+    Navigator.pop(context);
     if (callMade) {
       Navigator.push(
         context,
@@ -84,6 +86,7 @@ class CallUtils{
    bool callMade = await databaseMethods.makeCall(call: call);
     call.hasDialled = true;
 
+    Navigator.pop(context);
     if (callMade) {
       Navigator.push(
         context,
@@ -110,6 +113,7 @@ class CallUtils{
    bool callMade = await databaseMethods.makeCall(call: call);
     call.hasDialled = true;
 
+    Navigator.pop(context);
     if (callMade) {
       Navigator.push(
         context,

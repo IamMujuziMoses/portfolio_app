@@ -338,7 +338,13 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
 pickImage({ImageSource source, BuildContext context, DatabaseMethods databaseMethods}) async {
   File selectedImage = await Utils.pickImage(source: source);
   if (selectedImage != null) {
-    String url = await databaseMethods.uploadImageToStorage(selectedImage);
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+    );
+    String url = await databaseMethods.uploadFileToStorage(selectedImage);
+    Navigator.pop(context);
     return url;
   } else {
     displayToastMessage("No Image Selected!", context);
@@ -348,7 +354,13 @@ pickImage({ImageSource source, BuildContext context, DatabaseMethods databaseMet
 pickVideo({ImageSource source, BuildContext context, DatabaseMethods databaseMethods}) async {
   File selectedVideo = await Utils.pickVideo(source: source);
   if (selectedVideo != null) {
-    String url = await databaseMethods.uploadVideoToStorage(selectedVideo);
+    showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+    );
+    String url = await databaseMethods.uploadFileToStorage(selectedVideo);
+    Navigator.pop(context);
     return url;
   } else {
     displayToastMessage("No Video Selected!", context);

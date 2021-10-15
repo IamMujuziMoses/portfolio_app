@@ -10,7 +10,9 @@ import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Widgets/photoViewPage.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -87,6 +89,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
     String time = widget.hours.substring(0, idx+1).trim();
     return Container(
       width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
       decoration: BoxDecoration(
         color: Colors.grey[100],
       ),
@@ -140,45 +143,35 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                             color: Colors.red[300],
                             iconColor: Colors.white,
                             icon: CupertinoIcons.video_camera,
-                            onTap: () async => await Permissions.cameraAndMicrophonePermissionsGranted()
-                                ? goToVideoChat(databaseMethods, widget.doctorsName, context, false)
-                                : {},
+                            onTap: () async {
+                              showDialog(
+                                context: context,
+                                builder: (context) => ProgressDialog(message: "Please wait...",),
+                              );
+                              await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                              goToVideoChat(databaseMethods, widget.doctorsName, context, false) : {};
+                            },
                           ),
                           circleIconButton(
                             color: Colors.white,
                             iconColor: Colors.red[300],
                             icon: Icons.phone_outlined,
-                            onTap: () => launch(('tel:${widget.phone}')),
+                            onTap: () async {
+                              showDialog(
+                                context: context,
+                                builder: (context) => ProgressDialog(message: "Please wait...",),
+                              );
+                              await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                              goToVoiceCall(databaseMethods, widget.doctorsName, context, false) : {};
+                            },
                           ),
                           circleIconButton(
                             color: Colors.white,
                             iconColor: Colors.red[300],
                             icon: CupertinoIcons.ellipses_bubble,
-                            onTap: () {
-                              if (widget.doctorsName != myName) {
-                                String chatRoomId = getChatRoomId(widget.doctorsName, myName);
-                                List<String> users = [widget.doctorsName, Constants.myName];
-
-                                Map<String, dynamic> chartRoomMap = {
-                                  "users" : users,
-                                  "chatroomId" : chatRoomId,
-                                  "createdBy" : myName,
-                                  "receiver_profile_photo" : widget.imageUrl,
-                                  "sender_profile_photo" : myProfilePic,
-                                };
-                                databaseMethods.createChatRoom(chatRoomId, chartRoomMap);
-                                Navigator.pushReplacement(context, MaterialPageRoute(
-                                  builder: (context) => ConversationScreen(
-                                    isDoctor: false,
-                                    chatRoomId: chatRoomId,
-                                    userName: widget.doctorsName,
-                                    profilePhoto: widget.imageUrl,
-                                  ),
-                                ));
-                              } else {
-                                displayToastMessage("Cannot perform Operation", context);
-                              }
-                            },
+                            onTap: () => goToChat(widget.doctorsName, widget.imageUrl, false, widget.uid,
+                                myProfilePic, context,
+                            ),
                           ),
 
                         ],
@@ -340,7 +333,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                     ))),
               ),
             ),
-            SizedBox(height: 11 * SizeConfig.heightMultiplier,),
           ],
         ),
       ),
@@ -468,11 +460,20 @@ Widget custom({@required Widget body, String doctorsName, imageUrl, BuildContext
         elevation: 0,
         flexibleSpace: FlexibleSpaceBar(
           centerTitle: true,
-          title: Text(isDoctor == true ? "Dr. " + doctorsName : doctorsName, style: TextStyle(
-            color: Colors.red[300],
-            fontFamily: "Brand Bold",
-            fontSize: 2.5 * SizeConfig.textMultiplier,
-          ),),
+          title: Container(
+            decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(15)
+            ),
+            child: Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Text(isDoctor == true ? "Dr. " + doctorsName : doctorsName, style: TextStyle(
+                color: Colors.red[300],
+                fontFamily: "Brand Bold",
+                fontSize: 2.5 * SizeConfig.textMultiplier,
+              ),),
+            ),
+          ),
           background: GestureDetector(
             onTap: () => Navigator.push(
                 context,

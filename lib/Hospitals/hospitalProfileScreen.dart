@@ -55,6 +55,7 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
   Widget _hospBody(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
       decoration: BoxDecoration(
         color: Colors.grey[100],
       ),
@@ -234,7 +235,6 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 40 * SizeConfig.heightMultiplier),
           ],
         ),
       ),
@@ -377,11 +377,20 @@ Widget hospCustom({Widget body, String hospName, imageUrl, BuildContext context}
        elevation: 0,
        flexibleSpace: FlexibleSpaceBar(
          centerTitle: true,
-         title: Text(hospName, style: TextStyle(
-           color: Colors.red[300],
-           fontFamily: "Brand Bold",
-           fontSize: 2.5 * SizeConfig.textMultiplier,
-         ),),
+         title: Container(
+           decoration: BoxDecoration(
+               color: Colors.grey[100],
+               borderRadius: BorderRadius.circular(15)
+           ),
+           child: Padding(
+             padding: EdgeInsets.all(8.0),
+             child: Text(hospName, style: TextStyle(
+               color: Colors.red[300],
+               fontFamily: "Brand Bold",
+               fontSize: 2.5 * SizeConfig.textMultiplier,
+             ),),
+           ),
+         ),
          background: CachedImage(
            imageUrl: imageUrl,
            fit: BoxFit.cover,

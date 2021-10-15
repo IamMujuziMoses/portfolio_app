@@ -1,20 +1,73 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:creativedata_app/AllScreens/cartScreen.dart';
 import 'package:creativedata_app/AllScreens/drugDetails.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /*
 * Created by Mujuzi Moses
 */
 
-class MedicalStore extends StatelessWidget {
+class MedicalStore extends StatefulWidget {
   final Stream drugStream;
-  const MedicalStore({Key key, this.drugStream}) : super(key: key);
+  final int items;
+  MedicalStore({Key key, this.drugStream, this.items}) : super(key: key);
+
+  @override
+  _MedicalStoreState createState() => _MedicalStoreState();
+}
+
+class _MedicalStoreState extends State<MedicalStore> {
+
+  TextEditingController searchTEC = TextEditingController();
+  bool searchVisible = false;
+  bool titleVisible = true;
+
+  int _cartItems = 0;
+  List drugOnSearch = [];
+  List drugs = [];
+  QuerySnapshot drugSnap;
+
+  @override
+  void initState() {
+    if (widget.items == null) {
+      _cartItems = 0;
+    } else {
+      _cartItems = widget.items;
+    }
+    getDrugList();
+    super.initState();
+  }
+
+  getDrugList() async {
+    drugSnap = await widget.drugStream.first;
+     for (int i = 0; i <= drugSnap.size - 1; i++) {
+       drugs.add(drugSnap.docs[i].get("name"));
+     }
+  }
+
+  showHideSearchBar() {
+    if (searchVisible == false && titleVisible == true) {
+     setState(() {
+       searchVisible = true;
+       titleVisible = false;
+     });
+    } else if (searchVisible == true && titleVisible == false) {
+      setState(() {
+        searchVisible = false;
+        titleVisible = true;
+      });
+    }
+  }
 
   Widget drugList() {
     return StreamBuilder(
-      stream: drugStream,
+      stream: widget.drugStream,
       builder: (context, snapshot) {
         return snapshot.hasData
             ? GridView.builder(
@@ -25,7 +78,6 @@ class MedicalStore extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   String description = snapshot.data.docs[index].get("description");
-                  String boxCapacity = snapshot.data.docs[index].get("dosage");
                   String imageUrl = snapshot.data.docs[index].get("drug_img");
                   String drugName = snapshot.data.docs[index].get("name");
                   String price = snapshot.data.docs[index].get("price");
@@ -33,7 +85,7 @@ class MedicalStore extends StatelessWidget {
                   return drugTile(
                     context: context,
                     description: description,
-                    boxCapacity: boxCapacity,
+                    boxCapacity: dosage,
                     imageUrl: imageUrl,
                     dosage: dosage,
                     drugName: drugName,
@@ -56,29 +108,118 @@ class MedicalStore extends StatelessWidget {
           title: Stack(
             children: <Widget>[
               Visibility(
-                visible: true,
+                visible: titleVisible,
                 child: Text("Medical Store", style: TextStyle(
                   fontFamily: "Brand Bold",
                   color: Colors.red[300],
             ),),
               ),
               Visibility(
-                visible: true,
-                child: Text("Medical Store", style: TextStyle(
-                  fontFamily: "Brand Bold",
-                  color: Colors.red[300],
-            ),),
+                visible: searchVisible,
+                child: Container(
+                  height: 5 * SizeConfig.heightMultiplier,
+                  child: TextField(
+                    onChanged: (value) {
+                      setState(() {
+                        drugOnSearch = drugs.where((element) => element.toLowerCase()
+                            .contains(value.toLowerCase())).toList();
+                      });
+                    },
+                    controller: searchTEC,
+                    maxLines: 1,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      hintText: "Search for drug...",
+                      hintStyle: TextStyle(
+                        color: Colors.grey,
+                        fontFamily: "Brand-Regular",
+                        fontSize: 2.5 * SizeConfig.textMultiplier,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    style: TextStyle(
+                      fontSize: 2.5 * SizeConfig.textMultiplier,
+                      fontFamily: "Brand-Regular",
+                    ),
+                  ),
+                ),
               ),
-
             ]
           ),
           actions: <Widget>[
-            IconButton(
-              onPressed: () {},
-              color: Colors.red[300],
-              splashColor: Colors.red[200],
-              icon: Icon(CupertinoIcons.search,
-              ),),
+            Stack(
+              children: <Widget>[
+                Padding(
+                  padding: EdgeInsets.all(4),
+                  child: GestureDetector(
+                    onTap: () => Navigator.push(
+                      context, MaterialPageRoute(
+                      builder: (context) => CartScreen(),
+                    ),
+                    ),
+                    child: Container(
+                      child: Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Center(
+                          child: Icon(Icons.shopping_cart_outlined,
+                            color: Colors.red[300],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  right: 0, top: 5,
+                  child: Visibility(
+                    visible: _cartItems == 0 ? false : true,
+                    child: Container(
+                      height: 2.5 * SizeConfig.heightMultiplier,
+                      width: 5 * SizeConfig.widthMultiplier,
+                      decoration: BoxDecoration(
+                        color: Colors.red[300],
+                        border: Border.all(color: Colors.grey[100], width: 2),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: Center(
+                        child: Text(_cartItems.toString(), style: TextStyle(
+                          fontFamily: "Brand Bold",
+                          color: Colors.white,
+                          fontSize: 1.5 * SizeConfig.textMultiplier,
+                        ),),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Stack(
+              children: <Widget>[
+                Visibility(
+                  visible: titleVisible,
+                  child: IconButton(
+                    onPressed: () => showHideSearchBar(),
+                    splashColor: Colors.red[200],
+                    icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                  ),),
+                ),
+                Visibility(
+                  visible: searchVisible,
+                  child: IconButton(
+                    onPressed: () {
+                      searchTEC.text = "";
+                      drugOnSearch.clear();
+                      showHideSearchBar();
+                    },
+                    color: Colors.red[300],
+                    splashColor: Colors.red[200],
+                    icon: Icon(CupertinoIcons.clear,
+                  ),),
+                ),
+              ],
+            ),
           ],
         ),
         body: Container(
@@ -87,7 +228,63 @@ class MedicalStore extends StatelessWidget {
           width:  MediaQuery.of(context).size.width,
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
-            child: drugList(),
+            child: searchTEC.text.isNotEmpty && drugOnSearch.length > 0
+                ? ListView.builder(
+              itemCount: drugOnSearch.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: EdgeInsets.all(4),
+                  child: GestureDetector(
+                    onTap: () async {
+                      // showDialog(
+                      //     context: context,
+                      //     builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                      // );
+                      QuerySnapshot drugSnap2;
+                      await databaseMethods.getDrugByName(drugOnSearch[index]).then((val) {
+                        setState(() {
+                          drugSnap2 = val;
+                        });
+                      });
+                      // Navigator.pop(context);
+                      Navigator.push(
+                        context, MaterialPageRoute(
+                        builder: (context) => DrugDetails(
+                          items: _cartItems,
+                          imageUrl: drugSnap2.docs[0].get("drug_img"),
+                          description: drugSnap2.docs[0].get("description"),
+                          drugName: drugOnSearch[index],
+                          price: drugSnap2.docs[0].get("price"),
+                          dosage: drugSnap2.docs[0].get("dosage"),
+                        ),
+                      ),
+                      );
+                      Future.delayed(Duration(seconds: 1), () {
+                        setState(() {
+                          searchTEC.text = "";
+                          drugOnSearch.clear();
+                          searchVisible = false;
+                          titleVisible = true;
+                        });
+                      });
+                    },
+                    child: Row(
+                      children: <Widget>[
+                        CircleAvatar(
+                          backgroundColor: Colors.red[100],
+                          foregroundColor: Colors.red[300],
+                          child: Icon(FontAwesomeIcons.pills),
+                        ),
+                        SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                        Text(drugOnSearch[index], style: TextStyle(
+                          fontFamily: "Brand Bold",
+                        ),),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ) : drugList(),
           ),
         ),
       ),
@@ -101,6 +298,7 @@ class MedicalStore extends StatelessWidget {
         onTap: () => Navigator.push(
           context, MaterialPageRoute(
           builder: (context) => DrugDetails(
+            items: _cartItems,
             imageUrl: imageUrl,
             description: description,
             drugName: drugName,

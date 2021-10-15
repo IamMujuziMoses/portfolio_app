@@ -7,7 +7,9 @@ import 'package:flutter/material.dart';
 */
 
 class AboutScreen extends StatelessWidget {
-  const AboutScreen({Key key}) : super(key: key);
+  final String title;
+  final String heading;
+  AboutScreen({Key key,@required this.title, this.heading}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +19,7 @@ class AboutScreen extends StatelessWidget {
         appBar: AppBar(
           titleSpacing: 0,
           elevation: 0,
-          title: Text("About", style: TextStyle(
+          title: Text(title, style: TextStyle(
             fontFamily: "Brand Bold",
             color: Colors.red[300],
           ),),
@@ -33,7 +35,7 @@ class AboutScreen extends StatelessWidget {
                 SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                 Row(
                   children: <Widget>[
-                    Text("KNOW MORE ABOUT US", style: TextStyle(
+                    Text(heading.toUpperCase(), style: TextStyle(
                       fontSize: 2 * SizeConfig.textMultiplier,
                       fontFamily: "Brand Bold",
                       fontWeight: FontWeight.w900,
@@ -114,7 +116,7 @@ class AboutScreen extends StatelessWidget {
                 height: 13 * SizeConfig.heightMultiplier,
                 width: 50 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[300],
+                  color: Colors.red[100],
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(10),
                   ),
@@ -123,7 +125,7 @@ class AboutScreen extends StatelessWidget {
                   child: Image.asset(image,
                     height: 12 * SizeConfig.heightMultiplier,
                     width: 16 * SizeConfig.widthMultiplier,
-                    color: Colors.white,
+                    color: Colors.red[300],
                   ),
                 ),
               ),

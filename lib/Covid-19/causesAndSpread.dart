@@ -1,7 +1,7 @@
+import 'package:creativedata_app/AllScreens/siroWeb.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 /*
 * Created by Mujuzi Moses
 */
@@ -150,10 +150,11 @@ class CausesAndSpread extends StatelessWidget {
                 ),
                 Spacer(),
                 GestureDetector(
-                  onTap: () {
-                    const url = 'https://www.who.int';
-                    launch(url);
-                  },
+                  onTap: () => Navigator.push(
+                    context, MaterialPageRoute(
+                    builder: (context) => SiroWeb(url: 'https://www.who.int',),
+                  ),
+                  ),
                   child: Center(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,

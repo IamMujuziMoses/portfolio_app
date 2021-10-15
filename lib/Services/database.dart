@@ -2,10 +2,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:creativedata_app/AllScreens/Chat/chatSearch.dart';
 import 'package:creativedata_app/Enum/userState.dart';
 import 'package:creativedata_app/Models/call.dart';
 import 'package:creativedata_app/Models/message.dart';
+import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Models/rideRequest.dart';
 import 'package:creativedata_app/Models/user.dart' as myUser;
 import 'package:creativedata_app/Models/doctor.dart';
@@ -35,7 +35,7 @@ class DatabaseMethods{
   final CollectionReference postsCollection = fireStore.collection("Posts");
   final CollectionReference usersCollection = fireStore.collection("users");
   final CollectionReference eventsCollection = fireStore.collection("Events");
-  final CollectionReference drugStoreCollection = fireStore.collection("DrugStore");
+  final CollectionReference drugsCollection = fireStore.collection("Drugs");
   final CollectionReference alertsCollection = fireStore.collection("Alerts");
   final CollectionReference adsCollection = fireStore.collection("Ads");
 
@@ -393,17 +393,18 @@ class DatabaseMethods{
     });
   }
 
-  addConversationMessages(String chatRoomId, messageMap) {
-    chatRoomCollection
-        .doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
+  addConversationMessages(String chatRoomId, messageMap, CustomNotification notification) {
+    chatRoomCollection.doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
           print(e.toString());
     });
+    chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
+    var notificationMap =  notification.toMessageNotification(notification);
+    createNotification(notificationMap);
   }
 
   getConversationMessages(String chatRoomId) async{
-    return await chatRoomCollection
-        .doc(chatRoomId).collection("chats").orderBy("time", descending: true)
-        .snapshots();
+    return await chatRoomCollection.doc(chatRoomId).collection("chats")
+        .orderBy("time", descending: true).snapshots();
   }
 
   Future<String> createPost(postMap) async {
@@ -418,6 +419,8 @@ class DatabaseMethods{
       return null;
     }
   }
+
+
 
   getPosts() async {
     return await postsCollection.orderBy("time", descending: true).snapshots();
@@ -438,7 +441,7 @@ class DatabaseMethods{
       print(e.toString());
     });
   }
-  
+
   createLike(likeMap, docId) async {
     postsCollection.doc(docId).collection("likes").add(likeMap).catchError((e) {
       print(e.toString());
@@ -516,6 +519,38 @@ class DatabaseMethods{
     await postsCollection.doc(docId).delete();
   }
 
+  deleteNotification(type, heading) async {
+    if (type == "event") {
+      QuerySnapshot snap = await notificationsCollection.where("event_title", isEqualTo: heading).get();
+      String docId = snap.docs[0].id.trim();
+      await notificationsCollection.doc(docId).delete();
+    } else if (type == "alert") {
+      QuerySnapshot snap = await notificationsCollection.where("heading", isEqualTo: heading).get();
+      String docId = snap.docs[0].id.trim();
+      await notificationsCollection.doc(docId).delete();
+    } else if (type == "medicine reminder") {
+      QuerySnapshot snap = await notificationsCollection.where("drug_name", isEqualTo: heading).get();
+      String docId = snap.docs[0].id.trim();
+      await notificationsCollection.doc(docId).delete();
+    } else if (type == "appointment reminder") {
+      QuerySnapshot snap = await notificationsCollection.where("app_type", isEqualTo: heading).get();
+      String docId = snap.docs[0].id.trim();
+      await notificationsCollection.doc(docId).delete();
+    } else if (type == "post") {
+      QuerySnapshot snap = await notificationsCollection.where("post_heading", isEqualTo: heading).get();
+      String docId = snap.docs[0].id.trim();
+      await notificationsCollection.doc(docId).delete();
+    }
+  }
+
+  deleteMessageNotification(senderName, receiverName) async {
+    QuerySnapshot snap = await notificationsCollection
+        .where("sender_name", isEqualTo: senderName)
+        .where("receiver_name", isEqualTo: receiverName).get();
+    String docId = snap.docs[0].id.trim();
+    await notificationsCollection.doc(docId).delete();
+  }
+
   getSharedPosts(String docId) async {
     CollectionReference sharedPostCollection = postsCollection.doc(docId).collection("sharedPost");
     QuerySnapshot snap = await sharedPostCollection.get();
@@ -584,11 +619,8 @@ class DatabaseMethods{
   
   getChatRooms(String userName) async{
     return await chatRoomCollection
-        .where("users", arrayContains: userName).snapshots();
-  }
-
-  getChatRoomSnap(String username) async {
-    return await chatRoomCollection.where("users", arrayContains: username).get();
+        .where("users", arrayContains: userName)
+        .orderBy("last_time", descending: true).snapshots();
   }
 
   getAppointments(String username) async {
@@ -634,7 +666,13 @@ class DatabaseMethods{
   }
 
   getEvents() async {
-    return await eventsCollection.orderBy("createdAt", descending: true).snapshots();
+    return await eventsCollection.orderBy("created_at", descending: true).snapshots();
+  }
+
+  createNotification(notificationMap) async {
+    await notificationsCollection.add(notificationMap).catchError((e) {
+      print("Create Notification Error ::: ${e.toString()}");
+    });
   }
 
   getNotifications() async {
@@ -642,11 +680,19 @@ class DatabaseMethods{
   }
 
   getDrugs() async {
-    return await drugStoreCollection.doc("QUZsrrSSPfO9Si98Ob5R93nqqVC3").collection("Drugs").snapshots();
+    return await drugsCollection.snapshots();
+  }
+
+  getDrugByName(name) async {
+    return await drugsCollection.where("name", isEqualTo: name).get();
   }
 
   getDoctors() async {
     return await doctorsCollection.snapshots();
+  }
+
+  getDoctorsSnap() async {
+    return await doctorsCollection.get();
   }
 
   getDrivers() async {
@@ -758,12 +804,11 @@ class DatabaseMethods{
     return id;
   }
   
-  Future<String> getDrugStoreDocId() async {
-    Stream drugStream;
-    drugStream = drugStoreCollection.snapshots();
-    var id = await drugStream.length;
-    print("DrugDocId ::: ${id.toString()}");
-    return id.toString();
+  Future<String> getDrugsDocId(drugName) async {
+    QuerySnapshot drugSnap;
+    drugSnap = await drugsCollection.where("name", isEqualTo: drugName).get();
+    String id = drugSnap.docs[0].id.trim();
+    return id;
   }
 
   Future<String> getDriverDocId(String uid) async {
@@ -773,34 +818,68 @@ class DatabaseMethods{
     return id;
   }
 
-  void uploadImage(String chatRoomId, File image, String senderId, ImageUploadProvider imageUploadProvider)
-  async {
+  void uploadImage(String chatRoomId, File image, String senderId, ImageUploadProvider imageUploadProvider,
+      CustomNotification notification) async {
     imageUploadProvider.setToLoading();
-    String url = await uploadImageToStorage(image);
+    int size = await Utils.getFileSize(image);
+    final kb = size / 1024;
+    final mb = kb / 1024;
+    final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
+    // double size2 = size / 1000000;
+    // String sizeStr = size2.toStringAsFixed(2);
+    String url = await uploadFileToStorage(image);
     imageUploadProvider.setToIdle();
-    setImageMsg(chatRoomId, url, senderId);
+    setImageMsg(chatRoomId, url, senderId, sizeStr, notification);
   }
 
-  void uploadVideo(String chatRoomId, File video, String senderId, ImageUploadProvider imageUploadProvider)
-  async {
+  void uploadAudio(chatRoomId, File audio, senderId, ImageUploadProvider provider,
+      CustomNotification notification) async {
+    provider.setToLoading();
+    int size = await Utils.getFileSize(audio);
+    final kb = size / 1024;
+    final mb = kb / 1024;
+    final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
+    // double size2 = size / 1000000;
+    // String sizeStr = size2.toStringAsFixed(2);
+    String url = await uploadFileToStorage(audio);
+    provider.setToIdle();
+    setAudioMsg(chatRoomId, url, senderId, sizeStr, notification);
+  }
+
+  void uploadDocument(chatRoomId, File document,senderId, ImageUploadProvider provider,
+      CustomNotification notification) async {
+    provider.setToLoading();
+    int size = await Utils.getFileSize(document);
+    final kb = size / 1024;
+    final mb = kb / 1024;
+    final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
+    String url = await uploadFileToStorage(document);
+    provider.setToIdle();
+    setDocumentMsg(chatRoomId, url, senderId, sizeStr, notification);
+  }
+
+  void uploadVideo(String chatRoomId, File video, String senderId, ImageUploadProvider imageUploadProvider,
+      CustomNotification notification) async {
     imageUploadProvider.setToLoading();
-    int size = await Utils.getVideoSize(video);
-    double size2 = size / 1000000;
-    String sizeStr = size2.toStringAsFixed(2);
+    int size = await Utils.getFileSize(video);
+    final kb = size / 1024;
+    final mb = kb / 1024;
+    final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
+    // double size2 = size / 1000000;
+    // String sizeStr = size2.toStringAsFixed(2);
     Uint8List thumbnail = await Utils.generateThumbnail(video);
-    String url = await uploadVideoToStorage(video);
+    String url = await uploadFileToStorage(video);
     imageUploadProvider.setToIdle();
-
-    setVideoMsg(chatRoomId, url, senderId, sizeStr, thumbnail);
+    setVideoMsg(chatRoomId, url, senderId, sizeStr, thumbnail, notification);
   }
 
-  Future<String> uploadVideoToStorage(File video) async {
+  Future<String> uploadFileToStorage(File file) async {
 
     try {
       _storageReference = FirebaseStorage.instance.ref()
-          .child('${DateTime.now().millisecondsSinceEpoch}');
+          .child('${DateTime.now().microsecondsSinceEpoch}');
 
-      UploadTask _storageUploadTask = _storageReference.putFile(video);
+      UploadTask _storageUploadTask = _storageReference.putFile(file);
 
       var url;
       await _storageUploadTask.then((val) async {
@@ -808,25 +887,7 @@ class DatabaseMethods{
       });
       return await url;
     } catch (e) {
-      print("upload Video Error :: " + e.toString());
-      return null;
-    }
-  }
-  Future<String> uploadImageToStorage(File image) async {
-
-    try {
-      _storageReference = FirebaseStorage.instance.ref()
-          .child('${DateTime.now().millisecondsSinceEpoch}');
-
-      UploadTask _storageUploadTask = _storageReference.putFile(image);
-
-      var url;
-      await _storageUploadTask.then((val) async {
-        url = await val.ref.getDownloadURL();
-      });
-      return await url;
-    } catch (e) {
-      print("upload Image Error :: " + e.toString());
+      print("upload File Error :: " + e.toString());
       return null;
     }
   }
@@ -890,9 +951,49 @@ class DatabaseMethods{
     }
   }
 
-  void setVideoMsg(String chatRoomId, String url, String senderId, String size, Uint8List thumbnail) async {
+  void setDocumentMsg(chatRoomId, url, senderId, sizeStr, notification) async {
     Message _message;
+    _message = Message.documentMessage(
+      message: "DOCUMENT",
+      sendBy: senderId,
+      size: sizeStr,
+      docUrl: url,
+      time: FieldValue.serverTimestamp(),
+      type: "document",
+    );
 
+    var messageMap = _message.toDocumentMap();
+    chatRoomCollection.doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
+      print( e.toString());
+    });
+    chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
+    var notificationMap =  notification.toMessageNotification(notification);
+    createNotification(notificationMap);
+  }
+
+  void setAudioMsg(chatRoomId, url, senderId, sizeStr, notification) async {
+    Message _message;
+    _message = Message.audioMessage(
+      message: "AUDIO",
+      sendBy: senderId,
+      size: sizeStr,
+      audioUrl: url,
+      time: FieldValue.serverTimestamp(),
+      type: "audio",
+    );
+
+    var messageMap = _message.toAudioMap();
+    chatRoomCollection.doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
+      print( e.toString());
+    });
+    chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
+    var notificationMap =  notification.toMessageNotification(notification);
+    createNotification(notificationMap);
+  }
+
+  void setVideoMsg(String chatRoomId, String url, String senderId, String size, Uint8List thumbnail,
+      CustomNotification notification) async {
+    Message _message;
     _message = Message.videoMessage(
       message: "VIDEO",
       sendBy: senderId,
@@ -904,29 +1005,34 @@ class DatabaseMethods{
     );
 
     var messageMap = _message.toVideoMap();
-
-    fireStore.collection("ChatRoom")
-        .doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
+    chatRoomCollection.doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
       print( e.toString());
     });
+    chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
+    var notificationMap =  notification.toMessageNotification(notification);
+    createNotification(notificationMap);
   }
-  void setImageMsg(String chatRoomId, String url, String senderId) async {
+
+  void setImageMsg(String chatRoomId, String url, String senderId, String size, CustomNotification notification) async {
     Message _message;
 
     _message = Message.imageMessage(
       message: "IMAGE",
       sendBy: senderId,
       photoUrl: url,
+      size: size,
       time: FieldValue.serverTimestamp(),
       type: "image",
     );
 
     var messageMap = _message.toImageMap();
 
-    fireStore.collection("ChatRoom")
-        .doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
+    chatRoomCollection.doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
       print( e.toString());
     });
+    chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
+    var notificationMap =  notification.toMessageNotification(notification);
+    createNotification(notificationMap);
   }
 
   Future<Map<String, dynamic>> userSnapToMap(String name, QuerySnapshot snap) async {

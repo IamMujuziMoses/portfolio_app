@@ -8,6 +8,7 @@ import 'package:creativedata_app/AllScreens/specialityScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/Models/event.dart';
+import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Models/reminder.dart';
 import 'package:creativedata_app/Provider/eventProvider.dart';
 import 'package:creativedata_app/Services/database.dart';
@@ -70,6 +71,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           body: SpecCustom(
             body: bookAppointmentBody(context, events),
             speciality: "Book an Appointment",
+            appointment: true,
           ),
         ),
       );
@@ -78,6 +80,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   Widget bookAppointmentBody(BuildContext context, List<Event> events) {
     return Container(
       width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
       color: Colors.grey[200],
       child: SingleChildScrollView(
         child: Column(
@@ -352,13 +355,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       width: 80 * SizeConfig.widthMultiplier,
                       height: 5 * SizeConfig.heightMultiplier,
                       child: Center(
-                        child: Text(
-                          "Book Appointment",
-                          style: TextStyle(
+                        child: Text("Book Appointment", style: TextStyle(
                             fontSize: 20.0,
                             fontFamily: "Brand Bold",
-                          ),
-                        ),
+                          ),),
                       ),
                     ),
                     shape: new RoundedRectangleBorder(
@@ -373,7 +373,6 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 17 * SizeConfig.heightMultiplier,),
           ],
         ),
       ),
@@ -381,7 +380,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   }
 
   createEvent(BuildContext context, String time1, String time2) async {
-    String chatRoomId = getChatRoomId(Constants.myName, widget.doctorsName);
+    String chatRoomId = getChatRoomId(myName: Constants.myName, username: widget.doctorsName);
     int t = startTime.day;
     int m = startTime.month;
     int h = startTime.hour;
@@ -400,6 +399,21 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       users: [Constants.myName, widget.doctorsName],
       chatRoomId: chatRoomId,
     );
+
+    CustomNotification notification = CustomNotification.newAppointment(
+      createdAt: FieldValue.serverTimestamp(),
+      type: "appointment reminder",
+      appType: widget.type,
+      docName: widget.doctorsName,
+      name: Constants.myName,
+      startTime: Timestamp.fromDate(startTime),
+      hospital: widget.hospital,
+      postHeading: null,
+      heading: null,
+      eventTitle: null,
+      drugName: null,
+    );
+    var notificationMap = notification.toAppReminderNotification(notification);
 
     Duration duration = startTime.add(Duration(minutes: 30)).difference(DateTime.now());
 
@@ -476,6 +490,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               provider.addEvent(event);
               databaseMethods.createUserReminder(reminderMap, firebaseAuth.currentUser.uid);
               databaseMethods.createAppointment(chatRoomId, eventMap);
+              databaseMethods.createNotification(notificationMap);
               Navigator.of(context).pop();
               displayToastMessage("Operation Successful! Created Appointment Reminder too", context);
             },
@@ -669,7 +684,7 @@ displaySnackBar({@required String message, @required BuildContext context, Funct
     ..showSnackBar(snackBar);
 }
 
-void scheduleAlarm({DateTime dateTimeNow, DateTime dateTime, int id, String docName, String speciality,
+scheduleAlarm({DateTime dateTimeNow, DateTime dateTime, int id, String docName, String speciality,
   bool isDoc, String duration}) async {
   var androidPlatformChannelSpecs = AndroidNotificationDetails(
     "Siro", "Siro", "Channel for Alarm notification",

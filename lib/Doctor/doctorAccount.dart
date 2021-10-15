@@ -50,6 +50,11 @@ class DoctorAccount extends StatefulWidget {
 class _DoctorAccountState extends State<DoctorAccount> {
   
   DatabaseMethods databaseMethods = DatabaseMethods();
+  TextEditingController appointmentTEC = TextEditingController();
+  TextEditingController inPersonTEC = TextEditingController();
+  TextEditingController videoCallTEC = TextEditingController();
+  TextEditingController voiceCallTEC = TextEditingController();
+  List<String> updateDays = [];
   Future<bool> _onBackPressed() async {}
 
   @override
@@ -179,7 +184,6 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                           ),
                                                           child: FocusedMenuHolder(
                                                             blurSize: 0,
-                                                            //blurBackgroundColor: Colors.transparent,
                                                             duration: Duration(milliseconds: 500),
                                                             menuWidth: MediaQuery.of(context).size.width * 0.3,
                                                             menuItemExtent: 40,
@@ -243,17 +247,45 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             fontSize: 2 * SizeConfig.textMultiplier,
                                           ),),
                                           onPressed: () async {
-                                            showDialog(
+                                            if ((profilePhoto == null || profilePhoto.isEmpty) && _yearsList.selectedValue.isEmpty) {
+                                              displaySnackBar(message: "Select new Profile Picture or years of experience to update", context: context, label: "OK");
+                                            } else {
+
+                                              if (profilePhoto.isNotEmpty && _yearsList.selectedValue.isEmpty) {
+                                              showDialog(
                                                 context: context,
                                                 barrierDismissible: false,
-                                                builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
-                                            );
-                                            await databaseMethods.updateDoctorDocField({"profile_photo": profilePhoto}, widget.uid);
-                                            await databaseMethods.updateDoctorDocField({"years": _yearsList.selectedValue}, widget.uid);
-                                            Navigator.pop(context);
-                                            Navigator.pop(context);
-                                            displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
-                                          },
+                                                builder: (BuildContext context) => ProgressDialog(message: "Please wait...",),
+                                              );
+                                              await databaseMethods.updateDoctorDocField({"profile_photo": profilePhoto}, widget.uid);
+                                              Navigator.pop(context);
+                                              Navigator.pop(context);
+                                              displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+
+                                              } else if (_yearsList.selectedValue.isNotEmpty && profilePhoto.isEmpty) {
+                                              showDialog(
+                                                context: context,
+                                                barrierDismissible: false,
+                                                builder: (BuildContext context) => ProgressDialog(message: "Please wait...",),
+                                              );
+                                              await databaseMethods.updateDoctorDocField({"years": _yearsList.selectedValue}, widget.uid);
+                                              Navigator.pop(context);
+                                              Navigator.pop(context);
+                                              displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                              } else if (_yearsList.selectedValue.isNotEmpty && profilePhoto.isNotEmpty){
+                                                showDialog(
+                                                  context: context,
+                                                  barrierDismissible: false,
+                                                  builder: (BuildContext context) => ProgressDialog(message: "Please wait...",),
+                                                );
+                                                await databaseMethods.updateDoctorDocField({"profile_photo": profilePhoto}, widget.uid);
+                                                await databaseMethods.updateDoctorDocField({"years": _yearsList.selectedValue}, widget.uid);
+                                                Navigator.pop(context);
+                                                Navigator.pop(context);
+                                                displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                              }
+                                            }
+                                            },
                                         ),
                                         FlatButton(
                                           child: Text("Cancel", style: TextStyle(
@@ -377,6 +409,9 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                         fontSize: 2 * SizeConfig.textMultiplier,
                                       ),),
                                       onPressed: () async {
+                                        if (bioTEC.text.isEmpty) {
+                                          displaySnackBar(message: "Input Bio to Update", context: context, label: "OK");
+                                        } else {
                                         showDialog(
                                             context: context,
                                             barrierDismissible: false,
@@ -386,7 +421,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                         Navigator.pop(context);
                                         Navigator.pop(context);
                                         displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
-                                      },
+                                      }},
                                     ),
                                     FlatButton(
                                       child: Text("Cancel", style: TextStyle(
@@ -428,7 +463,59 @@ class _DoctorAccountState extends State<DoctorAccount> {
                           ),
                           Spacer(),
                           GestureDetector(
-                            onTap: () {},
+                            onTap: () {
+                              return showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (context) => AlertDialog(
+                                  title: Text("Edit Appointment hours", style: TextStyle(
+                                    fontFamily: "Brand Bold",
+                                    fontSize: 2.5 * SizeConfig.textMultiplier,
+                                  ),),
+                                  content: Container(
+                                    height: 20 * SizeConfig.heightMultiplier,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                        _radioTile(title: "Choose appointment period:", controller: appointmentTEC),
+                                        SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                      ],
+                                    ),
+                                  ),
+                                  actions: <Widget>[
+                                    FlatButton(
+                                      child: Text("Update", style: TextStyle(
+                                        fontFamily: "Brand Bold",
+                                        fontSize: 2 * SizeConfig.textMultiplier,
+                                      ),),
+                                      onPressed: () async {
+                                        if (appointmentTEC.text == null || appointmentTEC.text.isEmpty) {
+                                          displaySnackBar(message: "Choose appointment hours to update", context: context, label: "OK");
+                                        } else if (appointmentTEC.text.isNotEmpty) {
+                                          showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                                          );
+                                          await databaseMethods.updateDoctorDocField({"hours": appointmentTEC.text}, widget.uid);
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                          displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                        }
+                                      },
+                                    ),
+                                    FlatButton(
+                                      child: Text("Cancel", style: TextStyle(
+                                        fontFamily: "Brand Bold",
+                                        fontSize: 2 * SizeConfig.textMultiplier,
+                                      ),),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                             child: Text("Edit", style: TextStyle(
                               color: Colors.red[300],
                               fontWeight: FontWeight.bold,
@@ -467,7 +554,155 @@ class _DoctorAccountState extends State<DoctorAccount> {
                         ),
                         Spacer(),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            return showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => AlertDialog(
+                                title: Text("Edit Consultation fees", style: TextStyle(
+                                  fontFamily: "Brand Bold",
+                                  fontSize: 2.5 * SizeConfig.textMultiplier,
+                                ),),
+                                content: Container(
+                                  height: 30.5 * SizeConfig.heightMultiplier,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                      _editFeeTile(
+                                        title: "In-Person fee",
+                                        textEditingController: inPersonTEC,
+                                        hintText: "Edit in-person fee...",
+                                      ),
+                                      SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                      _editFeeTile(
+                                        title: "Video call fee",
+                                        textEditingController: videoCallTEC,
+                                        hintText: "Edit video call fee...",
+                                      ),
+                                      SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                      _editFeeTile(
+                                        title: "Voice call fee",
+                                        textEditingController: voiceCallTEC,
+                                        hintText: "Edit voice call fee...",
+                                      ),
+                                      SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+
+                                    ],
+                                  ),
+                                ),
+                                actions: <Widget>[
+                                  FlatButton(
+                                    child: Text("Update", style: TextStyle(
+                                      fontFamily: "Brand Bold",
+                                      fontSize: 2 * SizeConfig.textMultiplier,
+                                    ),),
+                                    onPressed: () async {
+                                      Map feesToUp = await databaseMethods.getFees();
+                                      if (inPersonTEC.text.isEmpty && videoCallTEC.text.isEmpty && voiceCallTEC.text.isEmpty) {
+                                        displaySnackBar(message: "Edit all or any fee to update", context: context, label: "OK");
+                                      } else {
+                                        if (inPersonTEC.text.isNotEmpty && videoCallTEC.text.isEmpty && voiceCallTEC.text.isEmpty) {
+                                          showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                                          );
+                                          String voiceCall = feesToUp["voice_call"];
+                                          String videoCall = feesToUp["video_call"];
+
+                                          Map updateMap = {
+                                            "in_person": inPersonTEC.text,
+                                            "voice_call": voiceCall,
+                                            "video_call": videoCall,
+                                          };
+                                          await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
+                                          inPersonTEC.text = "";
+                                          videoCallTEC.text = "";
+                                          voiceCallTEC.text = "";
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                          displaySnackBar(message: "In-Person fee Changes will be seen next time you open the app", label: "OK", context: context);
+                                        } else if (inPersonTEC.text.isEmpty && videoCallTEC.text.isNotEmpty && voiceCallTEC.text.isEmpty) {
+                                          showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                                          );
+                                          String voiceCall = feesToUp["voice_call"];
+                                          String inPerson = feesToUp["in_person"];
+
+                                          Map updateMap = {
+                                            "in_person": inPerson,
+                                            "voice_call": voiceCall,
+                                            "video_call": videoCallTEC.text,
+                                          };
+                                          await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
+                                          inPersonTEC.text = "";
+                                          videoCallTEC.text = "";
+                                          voiceCallTEC.text = "";
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                          displaySnackBar(message: "Video call fee Changes will be seen next time you open the app", label: "OK", context: context);
+                                        } else if (inPersonTEC.text.isEmpty && videoCallTEC.text.isEmpty && voiceCallTEC.text.isNotEmpty) {
+                                          showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                                          );
+                                          String inPerson = feesToUp["in_person"];
+                                          String videoCall = feesToUp["video_call"];
+
+                                          Map updateMap = {
+                                            "in_person": inPerson,
+                                            "voice_call": voiceCallTEC.text,
+                                            "video_call": videoCall,
+                                          };
+                                          await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
+                                          inPersonTEC.text = "";
+                                          videoCallTEC.text = "";
+                                          voiceCallTEC.text = "";
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                          displaySnackBar(message: "Voice call fee Changes will be seen next time you open the app", label: "OK", context: context);
+                                        } else {
+                                          showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
+                                          );
+                                          Map updateMap = {
+                                            "in_person": inPersonTEC.text,
+                                            "voice_call": voiceCallTEC.text,
+                                            "video_call": videoCallTEC.text,
+                                          };
+                                          await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
+                                          inPersonTEC.text = "";
+                                          videoCallTEC.text = "";
+                                          voiceCallTEC.text = "";
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                          displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
+                                        }
+                                      }
+                                    },
+                                  ),
+                                  FlatButton(
+                                    child: Text("Cancel", style: TextStyle(
+                                      fontFamily: "Brand Bold",
+                                      fontSize: 2 * SizeConfig.textMultiplier,
+                                    ),),
+                                    onPressed: () {
+                                      inPersonTEC.text = "";
+                                      videoCallTEC.text = "";
+                                      voiceCallTEC.text = "";
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                           child: Text("Edit", style: TextStyle(
                             color: Colors.red[300],
                             fontWeight: FontWeight.bold,
@@ -506,6 +741,109 @@ class _DoctorAccountState extends State<DoctorAccount> {
               ),
             ),
           );
+  }
+
+  Column _editFeeTile({String title, TextEditingController textEditingController, String hintText}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(title, style: TextStyle(
+            fontFamily: "Brand Bold",
+            color: Colors.grey,
+          ),),
+        TextField(
+          controller: textEditingController,
+          keyboardType: TextInputType.number,
+          maxLines: 1,
+          decoration: InputDecoration(
+            hintText: hintText,
+            hintStyle: TextStyle(
+              color: Colors.grey,
+              fontFamily: "Brand-Regular",
+              fontSize: 2 * SizeConfig.textMultiplier,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+          ),
+          style: TextStyle(
+            fontSize: 2 * SizeConfig.textMultiplier,
+            fontFamily: "Brand-Regular",
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _radioTile({String title, width, TextEditingController controller}) {
+    String group = "";
+    return Container(
+      width: width == null ? 50 * SizeConfig.widthMultiplier : width,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(title, style: TextStyle(
+            fontFamily: "Brand Bold",
+            color: Colors.grey,
+          ),),
+          Container(
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          width: 7 * SizeConfig.widthMultiplier,
+                          child: Radio(
+                            value: "Morning: 08:00am - 11:30am",
+                            activeColor: Colors.red[300],
+                            groupValue: group,
+                            onChanged: (T) {
+                              setState(() {
+                                group = T;
+                                controller.text = T;
+                              });
+                            },
+                          ),
+                        ),
+                        Text("Morning (8:00am - 11:30am)", style: TextStyle(
+                          fontFamily: "Brand Bold",
+                          fontSize: 2 * SizeConfig.textMultiplier,
+                        ),),
+                      ],
+                    ),
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          width: 7 * SizeConfig.widthMultiplier,
+                          child: Radio(
+                            value: "Afternoon: 03:00pm - 04:30pm",
+                            activeColor: Colors.red[300],
+                            groupValue: group,
+                            onChanged: (T) {
+                              setState(() {
+                                group = T;
+                                controller.text = T;
+                              });
+                            },
+                          ),
+                        ),
+                        Text("Afternoon (3:00pm - 4:30pm)", style: TextStyle(
+                          fontFamily: "Brand Bold",
+                          fontSize: 2 * SizeConfig.textMultiplier,
+                        ),),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   _getDetails(String amount, String details) {

@@ -13,7 +13,9 @@ import 'package:creativedata_app/Services/helperFunctions.dart';
 import 'package:creativedata_app/Utilities/callUtils.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Widgets/onlineIndicator.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,10 +34,8 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
 
-  DatabaseMethods databaseMethods = new DatabaseMethods();
   Stream chatRoomStream;
   String myProfilePic;
-  QuerySnapshot chatSnap;
 
   Widget chatRoomList() {
 
@@ -82,11 +82,6 @@ class _ChatScreenState extends State<ChatScreen> {
         chatRoomStream = val;
       });
     });
-    await databaseMethods.getChatRoomSnap(Constants.myName).then((val) {
-      setState(() {
-        chatSnap = val;
-      });
-    });
 
     databaseMethods.getProfilePhoto().then((val) {
       myProfilePic = val;
@@ -114,8 +109,23 @@ class _ChatScreenState extends State<ChatScreen> {
               floatingActionButton: FloatingActionButton(
                 backgroundColor: Colors.red[300],
                 child: Icon(Icons.search_rounded, color: Colors.white,),
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => ChatSearch(isDoctor: widget.isDoctor,)));
+                onPressed: () async {
+                  List users = [];
+                  Stream usersStream = widget.isDoctor == true
+                      ? await databaseMethods.getUsers()
+                      : await databaseMethods.getDoctors();
+                  QuerySnapshot usersSnap = await usersStream.first;
+                  for (int i = 0; i <= usersSnap.size - 1; i++) {
+                    users.add(usersSnap.docs[i].get("name"));
+                  }
+                  print("Size ::: ${usersSnap.size}");
+                  Navigator.push(
+                    context, MaterialPageRoute(
+                    builder: (context) => ChatSearch(
+                      users: users,
+                      isDoctor: widget.isDoctor,
+                    ),
+                  ),);
                 },
               ),
               body: chatRoomList(),
@@ -143,16 +153,14 @@ class ChatRoomTile extends StatelessWidget {
   Widget build(BuildContext context) {
     DatabaseMethods databaseMethods = new DatabaseMethods();
     return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(
+      onTap: () => Navigator.push(context, MaterialPageRoute(
             builder: (context) => ConversationScreen(
               isDoctor: isDoctor,
               chatRoomId: chatRoomId,
               userName: userName,
               profilePhoto: profilePhoto,
-            ))
-        );
-      },
+            )),
+        ),
       child: Container(
         height: 9 * SizeConfig.heightMultiplier,
         color: Colors.grey[100],
@@ -176,6 +184,8 @@ class ChatRoomTile extends StatelessWidget {
               children: <Widget>[
                 GestureDetector(
                   onTap: () => profilePicView(
+                    isDoctor: isDoctor,
+                    isUser: false,
                     imageUrl: profilePhoto,
                     context: context,
                     isSender: false,
@@ -221,9 +231,14 @@ class ChatRoomTile extends StatelessWidget {
                 ),
                 Spacer(),
                 GestureDetector(
-                  onTap: () async =>
-                  await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                  goToVideoChat(databaseMethods, userName, context, isDoctor) : {},
+                  onTap: () async {
+                    showDialog(
+                      context: context,
+                      builder: (context) => ProgressDialog(message: "Please wait...",),
+                    );
+                    await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                    goToVideoChat(databaseMethods, userName, context, isDoctor) : {};
+                  },
                     child: Container(
                       height: 4 * SizeConfig.heightMultiplier,
                       width: 8 * SizeConfig.widthMultiplier,
@@ -240,9 +255,14 @@ class ChatRoomTile extends StatelessWidget {
                 ),
                 SizedBox(width: 2 * SizeConfig.widthMultiplier,),
                 GestureDetector(
-                  onTap: () async =>
-                  await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                  goToVoiceCall(databaseMethods, userName, context, isDoctor) : {},
+                  onTap: () async {
+                    showDialog(
+                      context: context,
+                      builder: (context) => ProgressDialog(message: "Please wait...",),
+                    );
+                    await Permissions.cameraAndMicrophonePermissionsGranted() ?
+                    goToVoiceCall(databaseMethods, userName, context, isDoctor) : {};
+                  },
                     child: Container(
                       height: 4 * SizeConfig.heightMultiplier,
                       width: 8 * SizeConfig.widthMultiplier,
@@ -373,7 +393,7 @@ class LastMessageContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return StreamBuilder(
       stream: stream,
-      builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+      builder: (context, snapshot) {
         if (snapshot.hasData) {
           var docList = snapshot.data.docs;
           if (docList.isNotEmpty) {
@@ -390,12 +410,12 @@ class LastMessageContainer extends StatelessWidget {
           }
           return Text("No Message...", style: TextStyle(
             color: Colors.grey,
-            fontSize: 1.4 * SizeConfig.textMultiplier,
+            fontSize: 2 * SizeConfig.textMultiplier,
           ),);
         }
         return Text("...", style: TextStyle(
           color: Colors.grey,
-          fontSize: 1.4 * SizeConfig.textMultiplier,
+          fontSize: 2 * SizeConfig.textMultiplier,
         ),);
       },
     );

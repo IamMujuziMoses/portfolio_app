@@ -1,3 +1,4 @@
+import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 /*
@@ -10,27 +11,29 @@ class ProgressDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     return Dialog(
-      backgroundColor: Colors.red[300],
+      insetPadding: EdgeInsets.zero,
+      elevation: 10,
       child: Container(
-        margin: EdgeInsets.all(15.0),
-        width: double.infinity,
+        width: 5 * SizeConfig.widthMultiplier,
+        margin: EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: Colors.red[300],
           borderRadius: BorderRadius.circular(6.0),
         ),
         child: Padding(
-          padding: EdgeInsets.all(15.0),
+          padding: EdgeInsets.all(5),
           child: Row(
             children: <Widget>[
-              SizedBox(width: 6.0,),
-              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white),),
-              SizedBox(width: 25.0,),
-              Text(message, style: TextStyle(
-                color: Colors.white,
-                fontSize: 15.0,
-                fontFamily: "Brand-Regular",
-              ),
+              CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),),
+              SizedBox(width: 2 * SizeConfig.widthMultiplier,),
+              Container(
+                child: Text(message, overflow: TextOverflow.ellipsis, maxLines: 2,
+                  style: TextStyle(
+                    color: Colors.red[300],
+                    fontSize: 1.8 * SizeConfig.textMultiplier,
+                    fontFamily: "Brand-Regular",
+                ),),
               ),
             ],
           ),

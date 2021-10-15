@@ -11,6 +11,7 @@ class Reminder{
   String hospital;
   String dosage;
   String tablets;
+  String description;
   String type;
   Timestamp date;
   String cycle;
@@ -33,6 +34,20 @@ class Reminder{
   Reminder.appointReminder({this.speciality, this.createdAt, this.apTime, this.name, this.hospital,
     this.type, this.howLong, this.id, this.status,
   });
+  Reminder.eventReminder({this.type, this.createdAt, this.name, this.date, this.description, this.status, this.id});
+
+  Map toEventReminder(Reminder reminder) {
+    Map<String, dynamic> reminderMap = Map();
+    reminderMap["type"] = reminder.type;
+    reminderMap["created_at"] = reminder.createdAt;
+    reminderMap["name"] = reminder.name;
+    reminderMap["date"] = reminder.date;
+    reminderMap["id"] = reminder.id;
+    reminderMap["status"] = reminder.status;
+    reminderMap["description"] = reminder.description;
+
+    return reminderMap;
+  }
 
   Map toAppointMap(Reminder reminder) {
     Map<String, dynamic> reminderMap = Map();
