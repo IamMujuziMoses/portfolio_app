@@ -1,4 +1,4 @@
-package com.mujuzimoses.creativedata_app
+package com.mujuzimoses.portfolio_app
 
 import io.flutter.embedding.android.FlutterActivity
 
