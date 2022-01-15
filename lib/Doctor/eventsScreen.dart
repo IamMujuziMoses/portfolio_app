@@ -1,9 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
-import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/Doctor/eventDetails.dart';
-import 'package:creativedata_app/Utilities/utils.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/AllScreens/Chat/cachedImage.dart';
+import 'package:portfolio_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:portfolio_app/Doctor/eventDetails.dart';
+import 'package:portfolio_app/Utilities/utils.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 /*
 * Created by Mujuzi Moses

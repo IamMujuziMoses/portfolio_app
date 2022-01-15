@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:creativedata_app/Enum/userState.dart';
-import 'package:creativedata_app/Models/user.dart';
-import 'package:creativedata_app/Services/database.dart';
-import 'package:creativedata_app/Utilities/utils.dart';
+import 'package:portfolio_app/Enum/userState.dart';
+import 'package:portfolio_app/Models/user.dart';
+import 'package:portfolio_app/Services/database.dart';
+import 'package:portfolio_app/Utilities/utils.dart';
 import 'package:flutter/material.dart';
 /*
 * Created by Mujuzi Moses

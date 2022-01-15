@@ -1,7 +1,7 @@
-import 'package:creativedata_app/CustomErrors/fault.dart';
-import 'package:creativedata_app/Models/venue.dart';
-import 'package:creativedata_app/Services/placesServices.dart';
-import 'package:creativedata_app/constants.dart';
+import 'package:portfolio_app/CustomErrors/fault.dart';
+import 'package:portfolio_app/Models/venue.dart';
+import 'package:portfolio_app/Services/placesServices.dart';
+import 'package:portfolio_app/constants.dart';
 import 'package:flutter/cupertino.dart';
 /*
 * Created by Mujuzi Moses

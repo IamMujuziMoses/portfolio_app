@@ -1,13 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
-import 'package:creativedata_app/AllScreens/siroWeb.dart';
-import 'package:creativedata_app/Covid-19/causesAndSpread.dart';
-import 'package:creativedata_app/Covid-19/preventiveMeasures.dart';
-import 'package:creativedata_app/Covid-19/signsAndSymptoms.dart';
-import 'package:creativedata_app/Covid-19/treatmentAndManagement.dart';
-import 'package:creativedata_app/Covid-19/vaccinationCenters.dart';
-import 'package:creativedata_app/main.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/AllScreens/Chat/cachedImage.dart';
+import 'package:portfolio_app/AllScreens/siroWeb.dart';
+import 'package:portfolio_app/Covid-19/causesAndSpread.dart';
+import 'package:portfolio_app/Covid-19/preventiveMeasures.dart';
+import 'package:portfolio_app/Covid-19/signsAndSymptoms.dart';
+import 'package:portfolio_app/Covid-19/treatmentAndManagement.dart';
+import 'package:portfolio_app/Covid-19/vaccinationCenters.dart';
+import 'package:portfolio_app/main.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /*

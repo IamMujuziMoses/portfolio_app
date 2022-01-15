@@ -1,4 +1,4 @@
-import 'package:creativedata_app/Models/labelledLatLng.dart';
+import 'package:portfolio_app/Models/labelledLatLng.dart';
 
 /*
 * Created by Mujuzi Moses

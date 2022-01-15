@@ -1,4 +1,4 @@
-import 'package:creativedata_app/Models/icon.dart';
+import 'package:portfolio_app/Models/icon.dart';
 /*
 * Created by Mujuzi Moses
 */

@@ -2,10 +2,10 @@ import 'dart:isolate';
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
-import 'package:creativedata_app/Utilities/permissions.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:portfolio_app/AllScreens/bookAppointmentScreen.dart';
+import 'package:portfolio_app/Utilities/permissions.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';

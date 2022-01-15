@@ -2,17 +2,16 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/AllScreens/addReminderScreen.dart';
-import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
-import 'package:creativedata_app/AllScreens/drugDetails.dart';
-import 'package:creativedata_app/AllScreens/loginScreen.dart';
-import 'package:creativedata_app/Doctor/doctorAccount.dart';
-import 'package:creativedata_app/Models/activity.dart';
-import 'package:creativedata_app/Models/reminder.dart';
-import 'package:creativedata_app/Utilities/utils.dart';
-import 'package:creativedata_app/Widgets/progressDialog.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:portfolio_app/AllScreens/addReminderScreen.dart';
+import 'package:portfolio_app/AllScreens/drugDetails.dart';
+import 'package:portfolio_app/AllScreens/loginScreen.dart';
+import 'package:portfolio_app/Doctor/doctorAccount.dart';
+import 'package:portfolio_app/Models/activity.dart';
+import 'package:portfolio_app/Models/reminder.dart';
+import 'package:portfolio_app/Utilities/utils.dart';
+import 'package:portfolio_app/Widgets/progressDialog.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 

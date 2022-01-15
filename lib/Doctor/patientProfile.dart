@@ -1,10 +1,10 @@
-import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
-import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
-import 'package:creativedata_app/Services/database.dart';
-import 'package:creativedata_app/Widgets/progressDialog.dart';
-import 'package:creativedata_app/constants.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/AllScreens/Chat/cachedImage.dart';
+import 'package:portfolio_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:portfolio_app/AllScreens/bookAppointmentScreen.dart';
+import 'package:portfolio_app/Services/database.dart';
+import 'package:portfolio_app/Widgets/progressDialog.dart';
+import 'package:portfolio_app/constants.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';

@@ -1,5 +1,5 @@
-import 'package:creativedata_app/AllScreens/loginScreen.dart';
-import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:portfolio_app/AllScreens/loginScreen.dart';
+import 'package:portfolio_app/Widgets/progressDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 /*

@@ -1,14 +1,14 @@
-import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/Assistants/requestAssistant.dart';
-import 'package:creativedata_app/Models/venueElement.dart';
-import 'package:creativedata_app/Provider/appData.dart';
-import 'package:creativedata_app/Models/address.dart';
-import 'package:creativedata_app/Models/placePredictions.dart';
-import 'package:creativedata_app/Widgets/divider.dart';
-import 'package:creativedata_app/Widgets/progressDialog.dart';
-import 'package:creativedata_app/configMaps.dart';
-import 'package:creativedata_app/constants.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:portfolio_app/Assistants/requestAssistant.dart';
+import 'package:portfolio_app/Models/venueElement.dart';
+import 'package:portfolio_app/Provider/appData.dart';
+import 'package:portfolio_app/Models/address.dart';
+import 'package:portfolio_app/Models/placePredictions.dart';
+import 'package:portfolio_app/Widgets/divider.dart';
+import 'package:portfolio_app/Widgets/progressDialog.dart';
+import 'package:portfolio_app/configMaps.dart';
+import 'package:portfolio_app/constants.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 /*

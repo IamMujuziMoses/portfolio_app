@@ -1,4 +1,4 @@
-import 'package:creativedata_app/Models/event.dart';
+import 'package:portfolio_app/Models/event.dart';
 import 'package:flutter/cupertino.dart';
 /*
 * Created by Mujuzi Moses

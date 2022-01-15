@@ -1,5 +1,5 @@
-import 'package:creativedata_app/Models/category.dart';
-import 'package:creativedata_app/Models/location.dart';
+import 'package:portfolio_app/Models/category.dart';
+import 'package:portfolio_app/Models/location.dart';
 /*
 * Created by Mujuzi Moses
 */

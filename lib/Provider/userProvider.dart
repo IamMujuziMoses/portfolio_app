@@ -1,6 +1,6 @@
-import 'package:creativedata_app/Models/doctor.dart';
-import 'package:creativedata_app/Models/user.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:portfolio_app/Models/doctor.dart';
+import 'package:portfolio_app/Models/user.dart';
+import 'package:portfolio_app/Services/database.dart';
 import 'package:flutter/cupertino.dart';
 /*
 * Created by Mujuzi Moses

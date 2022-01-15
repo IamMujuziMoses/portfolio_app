@@ -1,6 +1,6 @@
-import 'package:creativedata_app/Covid-19/covid19Center.dart';
-import 'package:creativedata_app/Covid-19/preventiveMeasures.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/Covid-19/covid19Center.dart';
+import 'package:portfolio_app/Covid-19/preventiveMeasures.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /*

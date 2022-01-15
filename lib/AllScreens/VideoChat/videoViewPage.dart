@@ -1,6 +1,6 @@
-import 'package:creativedata_app/AllScreens/VideoChat/videoView.dart';
-import 'package:creativedata_app/constants.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/AllScreens/VideoChat/videoView.dart';
+import 'package:portfolio_app/constants.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 /*

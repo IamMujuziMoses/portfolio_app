@@ -1,5 +1,5 @@
-import 'package:creativedata_app/constants.dart';
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/constants.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

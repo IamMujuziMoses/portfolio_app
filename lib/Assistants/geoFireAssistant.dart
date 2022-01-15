@@ -1,4 +1,4 @@
-import 'package:creativedata_app/Models/nearbyAvailableDrivers.dart';
+import 'package:portfolio_app/Models/nearbyAvailableDrivers.dart';
 /*
 * Created by Mujuzi Moses
 */

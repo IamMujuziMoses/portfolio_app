@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:creativedata_app/Models/meta.dart';
-import 'package:creativedata_app/Models/response.dart';
+import 'package:portfolio_app/Models/meta.dart';
+import 'package:portfolio_app/Models/response.dart';
 /*
 * Created by Mujuzi Moses
 */

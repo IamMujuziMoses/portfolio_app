@@ -1,4 +1,4 @@
-import 'package:creativedata_app/sizeConfig.dart';
+import 'package:portfolio_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 /*
