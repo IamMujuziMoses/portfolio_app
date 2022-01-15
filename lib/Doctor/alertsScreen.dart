@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 
 class AlertsScreen extends StatelessWidget {
   final Stream alertStream;
-  AlertsScreen({Key key, this.alertStream}) : super(key: key);
+  const AlertsScreen({Key key, this.alertStream}) : super(key: key);
 
   Widget alertList() {
     return StreamBuilder(
@@ -47,7 +47,7 @@ class AlertsScreen extends StatelessWidget {
           titleSpacing: 0,
           elevation: 0,
           backgroundColor: Colors.grey[100],
-          title: Text("Alerts", style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]),),
+          title: Text("Alerts", style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)),),
         ),
         body: Container(
           color: Colors.grey[100],
@@ -71,16 +71,14 @@ class AlertTile extends StatelessWidget {
   final String date;
   final String issuedBy;
 
-  AlertTile({Key key, this.time, this.heading, this.date, this.issuedBy}) : super(key: key);
+  const AlertTile({Key key, this.time, this.heading, this.date, this.issuedBy}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(
-        top: 1 * SizeConfig.heightMultiplier,
-        bottom: 1 * SizeConfig.heightMultiplier,
-        left: 3 * SizeConfig.widthMultiplier,
-        right: 3 * SizeConfig.widthMultiplier,
+      padding: EdgeInsets.symmetric(
+        vertical: 1 * SizeConfig.heightMultiplier,
+        horizontal: 3 * SizeConfig.widthMultiplier,
       ),
       child: Container(
         height: 15 * SizeConfig.heightMultiplier,
@@ -97,9 +95,7 @@ class AlertTile extends StatelessWidget {
           color: Colors.white,
         ),
         child: Padding(
-          padding: EdgeInsets.only(
-            top: 10, bottom: 10,
-          ),
+          padding: EdgeInsets.symmetric(vertical: 10),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -111,60 +107,66 @@ class AlertTile extends StatelessWidget {
                   child: Icon(
                     CupertinoIcons.exclamationmark_triangle,
                     size: 8 * SizeConfig.imageSizeMultiplier,
-                    color: Colors.red[300],
+                    color: Color(0xFFa81845),
                   ),
                 ),
               ),
               Container(
-                width: 80 * SizeConfig.widthMultiplier,
+                width: 79 * SizeConfig.widthMultiplier,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        Container(
-                          width: 22 * SizeConfig.widthMultiplier,
-                          child: Text(date, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontFamily: "Brand-Regular",
-                              fontSize: 2 * SizeConfig.textMultiplier,
-                            ),),
-                        ),
-                        Container(
-                          width: 15 * SizeConfig.widthMultiplier,
-                          child: Text(time, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontFamily: "Brand-Regular",
-                              fontSize: 2 * SizeConfig.textMultiplier,
-                            ),),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          Container(
+                            width: 25 * SizeConfig.widthMultiplier,
+                            child: Text(date, overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontFamily: "Brand-Regular",
+                                fontSize: 1.8 * SizeConfig.textMultiplier,
+                              ),),
+                          ),
+                          Container(
+                            width: 18 * SizeConfig.widthMultiplier,
+                            child: Text(time, overflow: TextOverflow.ellipsis, textAlign: TextAlign.end,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontFamily: "Brand-Regular",
+                                fontSize: 1.8 * SizeConfig.textMultiplier,
+                              ),),
+                          ),
+                        ],
+                      ),
                     ),
                     Container(
                       width: 85 * SizeConfig.widthMultiplier,
                       child: Text("Alert! $heading", overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: "Brand Bold",
-                          fontSize: 2.8 * SizeConfig.textMultiplier,
+                          fontSize: 2.5 * SizeConfig.textMultiplier,
                         ),),
                     ),
-                    Row(
-                      children: <Widget>[
-                        Spacer(),
-                        Container(
-                          //width: 40 * SizeConfig.widthMultiplier,
-                          child: Text("Issued by: $issuedBy", overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontFamily: "Brand-Regular",
-                              fontSize: 2 * SizeConfig.textMultiplier,
-                            ),),
-                        ),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Row(
+                        children: <Widget>[
+                          Spacer(),
+                          Container(
+                            //width: 40 * SizeConfig.widthMultiplier,
+                            child: Text("Issued by: $issuedBy", overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontFamily: "Brand-Regular",
+                                fontSize: 2 * SizeConfig.textMultiplier,
+                              ),),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

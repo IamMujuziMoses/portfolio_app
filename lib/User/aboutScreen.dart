@@ -1,4 +1,5 @@
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,7 @@ import 'package:flutter/material.dart';
 class AboutScreen extends StatelessWidget {
   final String title;
   final String heading;
-  AboutScreen({Key key,@required this.title, this.heading}) : super(key: key);
+  const AboutScreen({Key key,@required this.title, this.heading}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +22,7 @@ class AboutScreen extends StatelessWidget {
           elevation: 0,
           title: Text(title, style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
           backgroundColor: Colors.grey[100],
         ),
@@ -116,7 +117,7 @@ class AboutScreen extends StatelessWidget {
                 height: 13 * SizeConfig.heightMultiplier,
                 width: 50 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[100],
+                  gradient: kPrimaryGradientColor,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(10),
                   ),
@@ -125,7 +126,7 @@ class AboutScreen extends StatelessWidget {
                   child: Image.asset(image,
                     height: 12 * SizeConfig.heightMultiplier,
                     width: 16 * SizeConfig.widthMultiplier,
-                    color: Colors.red[300],
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -140,7 +141,7 @@ class AboutScreen extends StatelessWidget {
                 child: Material(
                   color: Colors.white,
                   child: InkWell(
-                    splashColor: Colors.red[200],
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
                     highlightColor: Colors.grey.withOpacity(0.1),
                     radius: 800,
                     borderRadius: BorderRadius.vertical(
@@ -151,8 +152,8 @@ class AboutScreen extends StatelessWidget {
                       child: Text(message, style: TextStyle(
                         fontSize: 2.5 * SizeConfig.textMultiplier,
                         fontWeight: FontWeight.w500,
-                        fontFamily: "Brand-Regular",
-                        color: Colors.red[900],
+                        fontFamily: "Brand Bold",
+                        color: Color(0xFFa81845),
                       ),),
                     ),
                   ),

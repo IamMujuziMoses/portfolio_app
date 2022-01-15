@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/Enum/userState.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/call.dart';
 import 'package:creativedata_app/Models/message.dart';
 import 'package:creativedata_app/Models/notification.dart';
@@ -11,6 +13,7 @@ import 'package:creativedata_app/Models/user.dart' as myUser;
 import 'package:creativedata_app/Models/doctor.dart';
 import 'package:creativedata_app/Provider/imageUploadProvider.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/cupertino.dart';
@@ -28,6 +31,7 @@ class DatabaseMethods{
   final CollectionReference recordsCollection = fireStore.collection("Call_Records");
   final CollectionReference appointmentCollection = fireStore.collection("Appointments");
   final CollectionReference rideRequestCollection = fireStore.collection("Ride_Requests");
+  final CollectionReference vacCentersCollection = fireStore.collection("Vaccination_Centers");
   final CollectionReference doctorsCollection = fireStore.collection("doctors");
   final CollectionReference driversCollection = fireStore.collection("Drivers");
   final CollectionReference hospitalsCollection = fireStore.collection("Hospitals");
@@ -387,19 +391,43 @@ class DatabaseMethods{
     });
   }
 
+  updateChatRoomDocField(updateMap, docId) {
+    chatRoomCollection.doc(docId).update(updateMap).catchError((e) {
+      print(e.toString());
+    });
+  }
+
+  updateCallRecordDocField(updateMap, docId) {
+    recordsCollection.doc(docId).update(updateMap).catchError((e) {
+      print(e.toString());
+    });
+  }
+
   createAppointment(String chatRoomId, appMap) {
     appointmentCollection.doc(chatRoomId).set(appMap).catchError((e) {
       print(e.toString());
     });
   }
-
-  addConversationMessages(String chatRoomId, messageMap, CustomNotification notification) {
+  
+  addConversationMessages(String chatRoomId, messageMap, CustomNotification notification, Activity activity, isDoctor) {
     chatRoomCollection.doc(chatRoomId).collection("chats").add(messageMap).catchError((e) {
           print(e.toString());
     });
     chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
     var notificationMap =  notification.toMessageNotification(notification);
     createNotification(notificationMap);
+    var activityMap = activity.toMessageActivity(activity);
+    if (isDoctor == true) {
+      createDoctorActivity(activityMap, currentUser.uid);
+    } else {
+      createUserActivity(activityMap, currentUser.uid);
+    }
+  }
+
+  updateConversationMessage(chatRoomId, Map<String, dynamic> update, docId) async {
+    chatRoomCollection.doc(chatRoomId).collection("chats").doc(docId).update(update).catchError((e) {
+      print("Update Message Field Error ::: ${e.toString()}");
+    });
   }
 
   getConversationMessages(String chatRoomId) async{
@@ -420,8 +448,6 @@ class DatabaseMethods{
     }
   }
 
-
-
   getPosts() async {
     return await postsCollection.orderBy("time", descending: true).snapshots();
   }
@@ -429,6 +455,10 @@ class DatabaseMethods{
   getPostByDoctorName(String name) async {
     return await postsCollection.where("sender_name", isEqualTo: name.trim())
         .orderBy("time", descending: true).snapshots();
+  }
+
+  getPostByDoctorNameSnap(String name) async {
+    return await postsCollection.where("sender_name", isEqualTo: name.trim()).get();
   }
 
   getAlerts() async {
@@ -447,10 +477,37 @@ class DatabaseMethods{
       print(e.toString());
     });
   }
-  
+
+  getLikes(docId) async {
+    return await postsCollection.doc(docId).collection("likes").get();
+  }
+
+  createShare(shareMap, docId) async {
+    postsCollection.doc(docId).collection("shares").add(shareMap).catchError((e) {
+      print(e.toString());
+    });
+  }
+
+  getShares(docId) async {
+    return await postsCollection.doc(docId).collection("shares").get();
+  }
+
   savePatient(patientMap, uid) async {
     String docId = await getDoctorDocId(uid);
     doctorsCollection.doc(docId).collection("Patients").add(patientMap).catchError((e) {
+      print(e.toString());
+    });
+  }
+
+  addDoctorReview(reviewMap, uid) async {
+    String docId = await getDoctorDocId(uid);
+    doctorsCollection.doc(docId).collection("Reviews").add(reviewMap).catchError((e) {
+      print(e.toString());
+    });
+  }
+
+  addHospitalReview(reviewMap, hospDocId) async {
+    hospitalsCollection.doc(hospDocId).collection("Reviews").add(reviewMap).catchError((e) {
       print(e.toString());
     });
   }
@@ -462,6 +519,13 @@ class DatabaseMethods{
     });
   }
 
+  createUserActivity(activityMap, uid) async {
+    String docId = await getUserDocId(uid);
+    usersCollection.doc(docId).collection("Activities").add(activityMap).catchError((e) {
+      print("Create Activity Error ::: ${e.toString()}");
+    });
+  }
+
   updateUserReminder(Map<String, dynamic> update, String uid, String remName) async {
     String docId = await getUserDocId(uid);
     QuerySnapshot snap = await usersCollection.doc(docId).collection("Reminders").where("name", isEqualTo: remName).get();
@@ -470,11 +534,18 @@ class DatabaseMethods{
       print("Update User Reminder Field Error ::: ${e.toString()}");
     });
   }
-
+  
   createDoctorReminder(reminderMap, uid) async {
     String docId = await getDoctorDocId(uid);
     doctorsCollection.doc(docId).collection("Reminders").add(reminderMap).catchError((e) {
       print("Create Reminder Error ::: ${e.toString()}");
+    });
+  }
+
+  createDoctorActivity(activityMap, uid) async {
+    String docId = await getDoctorDocId(uid);
+    doctorsCollection.doc(docId).collection("Activities").add(activityMap).catchError((e) {
+      print("Create Activiy Error ::: ${e.toString()}");
     });
   }
 
@@ -562,6 +633,10 @@ class DatabaseMethods{
         .orderBy("call_time", descending: true).snapshots();
   }
 
+  getCallRecordsSnap(String userName) async {
+    return await recordsCollection.where("users", arrayContains: userName).get();
+  }
+
   getSavedPatient(name, uid) async {
     String docId = await getDoctorDocId(uid);
     return await doctorsCollection.doc(docId).collection("Patients").where("name", isEqualTo: name).get();
@@ -589,6 +664,18 @@ class DatabaseMethods{
   getAllDoctorsBySpecialitySnap(String speciality) async {
     return await doctorsCollection
         .where("speciality", isEqualTo: speciality).get();
+  }
+
+  getVaccinationCentersByRegionSnap(String region) async {
+    return await vacCentersCollection.doc(region).get();
+  }
+
+  getVaccinationCenters() async {
+    return await vacCentersCollection.snapshots();
+  }
+
+  getVaccinationCentersByRegion(String region) async {
+    return await vacCentersCollection.where("region", isEqualTo: region).get();
   }
 
   getTopDoctorsBySpeciality(String speciality, String reviews) async {
@@ -623,6 +710,10 @@ class DatabaseMethods{
         .orderBy("last_time", descending: true).snapshots();
   }
 
+  getChatRoomsSnap(String userName) async {
+    return await chatRoomCollection.where("users", arrayContains: userName).get();
+  }
+
   getAppointments(String username) async {
     return await appointmentCollection
         .where("users", arrayContains: username)
@@ -635,9 +726,32 @@ class DatabaseMethods{
         .orderBy("time", descending: true).snapshots();
   }
 
+  getDoctorsReviews(String uid) async {
+    String docId = await getDoctorDocId(uid);
+    return await doctorsCollection.doc(docId).collection("Reviews")
+        .orderBy("created_at", descending: true).snapshots();
+  }
+
+  getHospitalsReviews(hospDocId) async {
+    return await hospitalsCollection.doc(hospDocId).collection("Reviews")
+        .orderBy("created_at", descending: true).snapshots();
+  }
+
   getUsersReminders(uid) async {
     String docId = await getUserDocId(uid);
     return await usersCollection.doc(docId).collection("Reminders")
+        .orderBy("created_at", descending: true).snapshots();
+  }
+
+  getUserActivities(uid) async {
+    String docId = await getUserDocId(uid);
+    return await usersCollection.doc(docId).collection("Activities")
+        .orderBy("created_at", descending: true).snapshots();
+  }
+
+  getDoctorActivities(uid) async {
+    String docId = await getDoctorDocId(uid);
+    return await doctorsCollection.doc(docId).collection("Activities")
         .orderBy("created_at", descending: true).snapshots();
   }
 
@@ -717,6 +831,12 @@ class DatabaseMethods{
     });
   }
 
+  updateHospitalDocField(Map<String, dynamic> update, String hospDocId) async {
+    hospitalsCollection.doc(hospDocId).update(update).catchError((e) {
+      print("Update Hospital Field Error ::: ${e.toString()}");
+    });
+  }
+
   updatePostDocField(Map<String, dynamic> update, String docId) async {
     postsCollection.doc(docId).update(update).catchError((e) {
       print("Update Post Field Error ::: ${e.toString()}");
@@ -765,6 +885,13 @@ class DatabaseMethods{
       token: FieldValue.delete(),
     }).catchError((e) {
       print("Delete Driver Field Error ::: ${e.toString()}");
+    });
+  }
+
+  createDocRequest(requestMap, hospUid) async {
+    String docId = await getHospitalDocId(hospUid);
+    hospitalsCollection.doc(docId).collection("DocRequests").add(requestMap).catchError((e) {
+      print("Create Doc Request Error ::: ${e.toString()}");
     });
   }
 
@@ -819,35 +946,37 @@ class DatabaseMethods{
   }
 
   void uploadImage(String chatRoomId, File image, String senderId, ImageUploadProvider imageUploadProvider,
-      CustomNotification notification) async {
+      CustomNotification notification, Activity activity, bool isDoctor) async {
     imageUploadProvider.setToLoading();
     int size = await Utils.getFileSize(image);
     final kb = size / 1024;
     final mb = kb / 1024;
     final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
-    // double size2 = size / 1000000;
-    // String sizeStr = size2.toStringAsFixed(2);
     String url = await uploadFileToStorage(image);
     imageUploadProvider.setToIdle();
-    setImageMsg(chatRoomId, url, senderId, sizeStr, notification);
+    assetsAudioPlayer = new AssetsAudioPlayer();
+    assetsAudioPlayer.open(Audio("sounds/msg_sent.mp3"));
+    assetsAudioPlayer.play();
+    setImageMsg(chatRoomId, url, senderId, sizeStr, notification, activity, isDoctor);
   }
 
   void uploadAudio(chatRoomId, File audio, senderId, ImageUploadProvider provider,
-      CustomNotification notification) async {
+      CustomNotification notification, Activity activity, bool isDoctor) async {
     provider.setToLoading();
     int size = await Utils.getFileSize(audio);
     final kb = size / 1024;
     final mb = kb / 1024;
     final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
-    // double size2 = size / 1000000;
-    // String sizeStr = size2.toStringAsFixed(2);
     String url = await uploadFileToStorage(audio);
     provider.setToIdle();
-    setAudioMsg(chatRoomId, url, senderId, sizeStr, notification);
+    assetsAudioPlayer = new AssetsAudioPlayer();
+    assetsAudioPlayer.open(Audio("sounds/msg_sent.mp3"));
+    assetsAudioPlayer.play();
+    setAudioMsg(chatRoomId, url, senderId, sizeStr, notification, activity, isDoctor);
   }
 
   void uploadDocument(chatRoomId, File document,senderId, ImageUploadProvider provider,
-      CustomNotification notification) async {
+      CustomNotification notification, Activity activity, bool isDoctor) async {
     provider.setToLoading();
     int size = await Utils.getFileSize(document);
     final kb = size / 1024;
@@ -855,22 +984,26 @@ class DatabaseMethods{
     final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
     String url = await uploadFileToStorage(document);
     provider.setToIdle();
-    setDocumentMsg(chatRoomId, url, senderId, sizeStr, notification);
+    assetsAudioPlayer = new AssetsAudioPlayer();
+    assetsAudioPlayer.open(Audio("sounds/msg_sent.mp3"));
+    assetsAudioPlayer.play();
+    setDocumentMsg(chatRoomId, url, senderId, sizeStr, notification, activity, isDoctor);
   }
 
   void uploadVideo(String chatRoomId, File video, String senderId, ImageUploadProvider imageUploadProvider,
-      CustomNotification notification) async {
+      CustomNotification notification, Activity activity, bool isDoctor) async {
     imageUploadProvider.setToLoading();
     int size = await Utils.getFileSize(video);
     final kb = size / 1024;
     final mb = kb / 1024;
     final sizeStr = mb >= 1 ? '${mb.toStringAsFixed(2)} MBs' : '${kb.toStringAsFixed(2)} KBs';
-    // double size2 = size / 1000000;
-    // String sizeStr = size2.toStringAsFixed(2);
     Uint8List thumbnail = await Utils.generateThumbnail(video);
     String url = await uploadFileToStorage(video);
     imageUploadProvider.setToIdle();
-    setVideoMsg(chatRoomId, url, senderId, sizeStr, thumbnail, notification);
+    assetsAudioPlayer = new AssetsAudioPlayer();
+    assetsAudioPlayer.open(Audio("sounds/msg_sent.mp3"));
+    assetsAudioPlayer.play();
+    setVideoMsg(chatRoomId, url, senderId, sizeStr, thumbnail, notification, activity, isDoctor);
   }
 
   Future<String> uploadFileToStorage(File file) async {
@@ -951,12 +1084,13 @@ class DatabaseMethods{
     }
   }
 
-  void setDocumentMsg(chatRoomId, url, senderId, sizeStr, notification) async {
+  void setDocumentMsg(chatRoomId, url, senderId, sizeStr, notification, activity, isDoctor) async {
     Message _message;
     _message = Message.documentMessage(
       message: "DOCUMENT",
       sendBy: senderId,
       size: sizeStr,
+      status: "waiting",
       docUrl: url,
       time: FieldValue.serverTimestamp(),
       type: "document",
@@ -969,13 +1103,20 @@ class DatabaseMethods{
     chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
     var notificationMap =  notification.toMessageNotification(notification);
     createNotification(notificationMap);
+    var activityMap = activity.toMessageActivity(activity);
+    if (isDoctor == true) {
+      createDoctorActivity(activityMap, currentUser.uid);
+    } else {
+      createUserActivity(activityMap, currentUser.uid);
+    }
   }
 
-  void setAudioMsg(chatRoomId, url, senderId, sizeStr, notification) async {
+  void setAudioMsg(chatRoomId, url, senderId, sizeStr, notification, activity, isDoctor) async {
     Message _message;
     _message = Message.audioMessage(
       message: "AUDIO",
       sendBy: senderId,
+      status: "waiting",
       size: sizeStr,
       audioUrl: url,
       time: FieldValue.serverTimestamp(),
@@ -989,15 +1130,22 @@ class DatabaseMethods{
     chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
     var notificationMap =  notification.toMessageNotification(notification);
     createNotification(notificationMap);
+    var activityMap = activity.toMessageActivity(activity);
+    if (isDoctor == true) {
+      createDoctorActivity(activityMap, currentUser.uid);
+    } else {
+      createUserActivity(activityMap, currentUser.uid);
+    }
   }
 
   void setVideoMsg(String chatRoomId, String url, String senderId, String size, Uint8List thumbnail,
-      CustomNotification notification) async {
+      CustomNotification notification, Activity activity, isDoctor) async {
     Message _message;
     _message = Message.videoMessage(
       message: "VIDEO",
       sendBy: senderId,
       videoUrl: url,
+      status: "waiting",
       time: FieldValue.serverTimestamp(),
       type: "video",
       thumbnail: thumbnail,
@@ -1011,15 +1159,24 @@ class DatabaseMethods{
     chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
     var notificationMap =  notification.toMessageNotification(notification);
     createNotification(notificationMap);
+    var activityMap = activity.toMessageActivity(activity);
+    if (isDoctor == true) {
+      createDoctorActivity(activityMap, currentUser.uid);
+    } else {
+      createUserActivity(activityMap, currentUser.uid);
+    }
   }
 
-  void setImageMsg(String chatRoomId, String url, String senderId, String size, CustomNotification notification) async {
+  void setImageMsg(String chatRoomId, String url, String senderId, String size,
+      CustomNotification notification, Activity activity, isDoctor
+      ) async {
     Message _message;
 
     _message = Message.imageMessage(
       message: "IMAGE",
       sendBy: senderId,
       photoUrl: url,
+      status: "waiting",
       size: size,
       time: FieldValue.serverTimestamp(),
       type: "image",
@@ -1032,7 +1189,13 @@ class DatabaseMethods{
     });
     chatRoomCollection.doc(chatRoomId).update({"last_time": FieldValue.serverTimestamp()});
     var notificationMap =  notification.toMessageNotification(notification);
+    var activityMap = activity.toMessageActivity(activity);
     createNotification(notificationMap);
+    if (isDoctor == true) {
+      createDoctorActivity(activityMap, currentUser.uid);
+    } else {
+      createUserActivity(activityMap, currentUser.uid);
+    }
   }
 
   Future<Map<String, dynamic>> userSnapToMap(String name, QuerySnapshot snap) async {

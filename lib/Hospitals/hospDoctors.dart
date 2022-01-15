@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/doctorProfileScreen.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 /*
@@ -13,7 +14,7 @@ class HospDoctors extends StatefulWidget {
   final IconData icon;
   final String hospitalName;
   final List doctorsList;
-  HospDoctors({Key key, this.service, this.icon, this.hospitalName, this.doctorsList}) : super(key: key);
+  const HospDoctors({Key key, this.service, this.icon, this.hospitalName, this.doctorsList}) : super(key: key);
 
   @override
   _HospDoctorsState createState() => _HospDoctorsState();
@@ -30,7 +31,7 @@ class _HospDoctorsState extends State<HospDoctors> {
         elevation: 0,
         title: Text(widget.service, style: TextStyle(
           fontFamily: "Brand Bold",
-          color: Colors.red[300]
+          color: Color(0xFFa81845)
         ),),
       ),
       body: Container(
@@ -108,7 +109,7 @@ class DoctorsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FlatButton(
-      splashColor: Colors.red[300],
+      splashColor: Color(0xFFa81845).withOpacity(0.6),
       highlightColor: Colors.grey.withOpacity(0.1),
       onPressed: () async{
         showDialog(
@@ -141,7 +142,6 @@ class DoctorsTile extends StatelessWidget {
         );
       },
       child: Container(
-        height: 6 * SizeConfig.heightMultiplier,
         width: double.infinity,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -150,35 +150,25 @@ class DoctorsTile extends StatelessWidget {
               height: 4 * SizeConfig.heightMultiplier,
               width:  8 * SizeConfig.widthMultiplier,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                gradient: kPrimaryGradientColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Icon(
                   icon,
-                  color: Colors.red[300],
-                  size: 5 * SizeConfig.imageSizeMultiplier,
+                  color: Colors.white,
+                  size: 4 * SizeConfig.imageSizeMultiplier,
                 ),
               ),
             ),
             SizedBox(width: 1.4 * SizeConfig.widthMultiplier,),
             Container(
               width: 60 * SizeConfig.widthMultiplier,
-              height: 4 * SizeConfig.heightMultiplier,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: 8,
-                  bottom: 8,
-                ),
-                child: Text(
-                  "Dr. $doctorsName",
-                  overflow: TextOverflow.ellipsis,
+              child: Text("Dr. $doctorsName", overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16.0,
                     fontFamily: "Brand Bold",
-                  ),
-                ),
-              ),
+                  ),),
             ),
           ],
         ),

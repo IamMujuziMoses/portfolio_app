@@ -12,7 +12,7 @@ class VideoView extends StatefulWidget {
   final bool looping;
   final bool showControls;
   final bool isAd;
-  VideoView({Key key, @required this.videoPlayerController, this.looping, this.showControls, this.isAd}) : super(key: key);
+  const VideoView({Key key, @required this.videoPlayerController, this.looping, this.showControls, this.isAd}) : super(key: key);
 
   @override
   _VideoViewState createState() => _VideoViewState();
@@ -71,7 +71,7 @@ class _VideoViewState extends State<VideoView> {
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Center(
-                  child: Icon(icon, color: Colors.red[300],),
+                  child: Icon(icon, color: Color(0xFFa81845),),
                 ),
               ),
             );
@@ -86,7 +86,7 @@ class _VideoViewState extends State<VideoView> {
     return Container(
       color: Colors.black,
       child: Center(
-        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),),
+        child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFa81845)),),
       ),
     );
   }

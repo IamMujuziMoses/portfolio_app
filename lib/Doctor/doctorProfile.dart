@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
-import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/siroWeb.dart';
 import 'package:creativedata_app/AllScreens/findADoctorScreen.dart';
@@ -12,17 +11,18 @@ import 'package:creativedata_app/Covid-19/covid19Center.dart';
 import 'package:creativedata_app/Doctor/activityLogsScreen.dart';
 import 'package:creativedata_app/Doctor/alertsScreen.dart';
 import 'package:creativedata_app/Doctor/appointmentsScreen.dart';
-import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Doctor/medicalStore.dart';
 import 'package:creativedata_app/Doctor/patientsScreen.dart';
 import 'package:creativedata_app/Doctor/postArticleScreen.dart';
 import 'package:creativedata_app/Doctor/eventsScreen.dart';
 import 'package:creativedata_app/Doctor/reminderScreen.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Enum/userState.dart';
+import 'package:creativedata_app/Notifications/pushNotificationServices.dart';
 import 'package:creativedata_app/User/aboutScreen.dart';
 import 'package:creativedata_app/User/helpScreen.dart';
 import 'package:creativedata_app/Widgets/divider.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -45,7 +45,7 @@ class DoctorProfile extends StatefulWidget {
   final String patients;
   final String experience;
   final String reviews;
-  DoctorProfile({Key key,
+  const DoctorProfile({Key key,
     this.name,
     this.speciality,
     this.userPic,
@@ -64,8 +64,99 @@ class DoctorProfile extends StatefulWidget {
 
 class _DoctorProfileState extends State<DoctorProfile> {
 
-  DatabaseMethods databaseMethods = DatabaseMethods();
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+  int notificationCounter = 0;
+  int appointmentCounter = 0;
+  int reminderCounter = 0;
+  int alertCounter = 0;
+  Stream notificationStream;
+  QuerySnapshot notificationSnap;
+  QuerySnapshot chatSnap;
+  QuerySnapshot callSnap;
+  QuerySnapshot postSnap;
+
+  @override
+  void initState() {
+    getInfo();
+    super.initState();
+  }
+
+  getInfo() async {
+
+    PushNotificationServices pushNotificationServices = PushNotificationServices();
+    pushNotificationServices.initialize(context);
+    pushNotificationServices.getToken(true);
+
+    await databaseMethods.getPostByDoctorNameSnap(Constants.myName).then((val) {
+      setState(() {
+        postSnap = val;
+      });
+    });
+    await databaseMethods.getChatRoomsSnap(Constants.myName).then((val) {
+      setState(() {
+        chatSnap = val;
+      });
+    });
+    await databaseMethods.getCallRecordsSnap(Constants.myName).then((val) {
+      setState(() {
+        callSnap = val;
+      });
+    });
+
+    await databaseMethods.getNotifications().then((val) {
+      setState(() {
+        notificationStream = val;
+      });
+    });
+    notificationSnap = await notificationStream.first;
+    for (int i = 0; i <= notificationSnap.size - 1; i++) {
+      String type = notificationSnap.docs[i].get("type");
+      if (type == "post") {
+        String from = notificationSnap.docs[i].get("from");
+        if (from != widget.name) {
+          int counter = int.parse(notificationSnap.docs[i].get("counter"));
+          String docId = notificationSnap.docs[i].id;
+          setState(() {
+            notificationCounter = notificationCounter + counter;
+          });
+          await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+        }
+      } else if (type == "appointment reminder") {
+        String docName = notificationSnap.docs[i].get("doctors_name");
+        if (docName == widget.name) {
+          int counter = int.parse(notificationSnap.docs[i].get("counter"));
+          String docId = notificationSnap.docs[i].id;
+          setState(() {
+            notificationCounter = notificationCounter + counter;
+          });
+          await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+        }
+      } else if (type == "event") {
+        int counter = int.parse(notificationSnap.docs[i].get("counter"));
+        String docId = notificationSnap.docs[i].id;
+        setState(() {
+          notificationCounter = notificationCounter + counter;
+        });
+        await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+      } else if (type == "alert") {
+        int counter = int.parse(notificationSnap.docs[i].get("counter"));
+        String docId = notificationSnap.docs[i].id;
+        setState(() {
+          notificationCounter = notificationCounter + counter;
+        });
+        await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+      } else if (type == "message") {
+        String receiverName = notificationSnap.docs[i].get("receiver_name");
+        if (receiverName == widget.name) {
+          int counter = int.parse(notificationSnap.docs[i].get("counter"));
+          String docId = notificationSnap.docs[i].id;
+          setState(() {
+            notificationCounter = notificationCounter + counter;
+          });
+          await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+        }
+      }
+    }
+  }
 
   Future<bool> _onBackPressed() async {
     return showDialog(
@@ -101,7 +192,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
             centerTitle: true,
             title: Text("Siro", style: TextStyle(
               fontFamily: "Brand Bold",
-              color: Colors.red[300],
+              color: Color(0xFFa81845),
             ),),
             actions: <Widget>[
               Stack(
@@ -110,14 +201,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
                     icon: Icon(
                       Icons.notifications_outlined,
                       size: 8 * SizeConfig.imageSizeMultiplier,
-                      color: Colors.red[300],
+                      color: Color(0xFFa81845),
                     ),
-                    onPressed: () async {
-                      Stream notificationStream;
-                      await databaseMethods.getNotifications().then((val) {
-                        setState(() {
-                          notificationStream = val;
-                        });
+                    onPressed: () {
+                      setState(() {
+                        notificationCounter = 0;
                       });
                       Navigator.push(
                         context,
@@ -136,19 +224,23 @@ class _DoctorProfileState extends State<DoctorProfile> {
                     top: 4,
                     left: 4,
                     child: Visibility(
-                      visible: true,
+                      visible: notificationCounter > 0 ? true : false,
                       child: Container(
-                        height: 2 * SizeConfig.heightMultiplier,
-                        width: 4 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.red[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(50),
                         ),
-                        child: Center(
-                          child: Text("5", style: TextStyle(
-                              fontFamily: "Brand-Regular",
-                              color: Colors.white
-                          ),),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 3,
+                          ),
+                          child: Center(
+                            child: Text("$notificationCounter", style: TextStyle(
+                                fontFamily: "Brand-Regular",
+                                color: Colors.white
+                            ),),
+                          ),
                         ),
                       ),
                     ),
@@ -158,17 +250,15 @@ class _DoctorProfileState extends State<DoctorProfile> {
             ],
           ),
           drawer: Container(
-            color: Colors.white,
             width: 65 * SizeConfig.widthMultiplier,
             child: Drawer(
+              elevation: 0,
               child: ListView(
                 children: [
-                  //drawer Header
-                  Container(
-                    color: Colors.white,
-                    height: 25 * SizeConfig.heightMultiplier,
-                    child: DrawerHeader(
-                      decoration: BoxDecoration(color: Colors.red[300]),
+                  DrawerHeader(
+                      decoration: BoxDecoration(
+                        gradient: kPrimaryGradientColor
+                      ),
                       child: Row(
                         children: [
                           CachedImage(
@@ -222,7 +312,6 @@ class _DoctorProfileState extends State<DoctorProfile> {
                         ],
                       ),
                     ),
-                  ),
                   DividerWidget(),
                   SizedBox(height: 12.0,),
                   //Drawer body controller
@@ -245,19 +334,22 @@ class _DoctorProfileState extends State<DoctorProfile> {
                       );
                     },
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
                           child: Icon(FontAwesomeIcons.users,
+                            color: Colors.white,
                           ),
                         ),),
-                      title: Text("My Patients", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                      title: Text("My Patients", style: TextStyle(
+                        fontSize: 15.0,
+                        fontFamily: "Brand-Regular",
+                      ),),
                     ),
                   ),
                   GestureDetector(
@@ -277,16 +369,16 @@ class _DoctorProfileState extends State<DoctorProfile> {
                       );
                     },
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
                           child: Icon(CupertinoIcons.calendar_today,
+                            color: Colors.white,
                           ),
                         ),),
                       title: Text("My Appointments", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
@@ -299,16 +391,16 @@ class _DoctorProfileState extends State<DoctorProfile> {
                     ),
                     ),
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
                           child: Icon(CupertinoIcons.question_circle_fill,
+                            color: Colors.white,
                           ),
                         ),),
                       title: Text("Help", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
@@ -323,16 +415,16 @@ class _DoctorProfileState extends State<DoctorProfile> {
                       ),
                     ),),
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
                           child: Icon(Icons.info,
+                            color: Colors.white,
                           ),
                         ),),
                       title: Text("About", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
@@ -341,27 +433,27 @@ class _DoctorProfileState extends State<DoctorProfile> {
                   GestureDetector(
                     onTap: () {
                       FirebaseAuth.instance.signOut();
+                      databaseMethods.setUserState(uid: currentUser.uid, userState: UserState.Offline, isDoctor: true);
                       Navigator.pushReplacement(context, MaterialPageRoute(
                           builder: (context) => LoginScreen()
                       ));
                     },
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
-                          child: Icon(Icons.logout, color: Colors.red[300],
+                          child: Icon(Icons.logout, color: Colors.white,
                           ),
                         ),),
                       title: Text("Log Out", style: TextStyle(
                         fontSize: 15.0,
                         fontFamily: "Brand Bold",
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                       ),),
                     ),
                   ),
@@ -375,97 +467,6 @@ class _DoctorProfileState extends State<DoctorProfile> {
             color: Colors.grey[100],
             child: Stack(
               children: <Widget>[
-                Container(
-                    height: 10 * SizeConfig.heightMultiplier,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      boxShadow: [
-                        BoxShadow(
-                          offset: Offset(2, 3),
-                          spreadRadius: 0.5,
-                          blurRadius: 2,
-                          color: Colors.black.withOpacity(0.1),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                          left: 20,
-                          right: 10,
-                      ),
-                      child: Column(
-                        children: <Widget>[
-                          Row(
-                            children: <Widget>[
-                              GestureDetector(
-                                onTap: () => profilePicView(
-                                  isDoctor: true,
-                                  isUser: true,
-                                  imageUrl: widget.userPic,
-                                  context: context,
-                                  isSender: true,
-                                ),
-                                child: CachedImage(
-                                  imageUrl: widget.userPic,
-                                  isRound: true,
-                                  radius: 60,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              SizedBox(width: 5 * SizeConfig.widthMultiplier,),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Expanded(
-                                    flex: 0,
-                                    child: Container(
-                                      width: 60 * SizeConfig.widthMultiplier,
-                                      child: Wrap(
-                                        children: [Text("Dr. " + widget.name, style: TextStyle(
-                                            color: Colors.red[300],
-                                            fontFamily: "Brand Bold",
-                                            fontSize: 3 * SizeConfig.textMultiplier,
-                                            fontWeight: FontWeight.bold,
-                                          ),),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 0.5 * SizeConfig.heightMultiplier,),
-                                  Row(
-                                    children: <Widget>[
-                                      Image.asset("images/doctor.png", color: Colors.black54,
-                                        height: 2 * SizeConfig.heightMultiplier,
-                                        width: 3.5 * SizeConfig.widthMultiplier,
-                                      ),
-                                      SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                                      Text(widget.speciality, style: TextStyle(
-                                        color: Colors.black54,
-                                        fontFamily: "Brand Bold",
-                                        fontSize: 2.3 * SizeConfig.textMultiplier,
-                                        fontWeight: FontWeight.bold,
-                                      ),),
-                                    ],
-                                  ),
-                                  SizedBox(height: 1 * SizeConfig.heightMultiplier,),
-                                  Text(
-                                    TimeOfDay.now().hour >= 12 && TimeOfDay.now().hour < 16
-                                        ? "Good Afternoon!"
-                                        : TimeOfDay.now().hour >= 16
-                                            ? "Good Evening!"
-                                            : "Good Morning!",
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 2.2 * SizeConfig.textMultiplier,
-                                    ),),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 Padding(
                   padding: EdgeInsets.only(
                     top: 11 * SizeConfig.heightMultiplier,
@@ -535,11 +536,11 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                                 ),
                                                 ),
                                               ),
-                                              ///TODO
+                                              /// TODO
                                               accessTile(
                                                 icon: CupertinoIcons.calendar_today,
                                                 title: "Appointments",
-                                                alert: "5",
+                                                alert: "$appointmentCounter",
                                                 onTap: () async {
                                                   Stream appointmentStream;
                                                   await databaseMethods.getAppointments(Constants.myName).then((val) {
@@ -559,7 +560,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                               accessTile(
                                                 icon: CupertinoIcons.alarm,
                                                 title: "Reminders",
-                                                alert: "2",
+                                                alert: "$reminderCounter",
                                                 onTap: () async {
                                                   Stream reminderStream;
                                                   await databaseMethods.getDoctorsReminders(firebaseAuth.currentUser.uid)
@@ -649,7 +650,7 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                               accessTile(
                                                 icon: CupertinoIcons.exclamationmark_triangle,
                                                 title: "Alerts",
-                                                alert: "3",
+                                                alert: "$alertCounter",
                                                 onTap: () async {
                                                   Stream alertStream;
                                                   await databaseMethods.getAlerts().then((val) {
@@ -670,11 +671,23 @@ class _DoctorProfileState extends State<DoctorProfile> {
                                                 icon: Icons.fact_check_outlined,
                                                 title: "Activity Log",
                                                 alert: "0",
-                                                onTap: () => Navigator.push(
-                                                  context, MaterialPageRoute(
-                                                  builder: (context) => ActivityLogsScreen(),
-                                                ),
-                                                ),
+                                                onTap: () async  {
+                                                  Stream activityStream;
+                                                  await databaseMethods.getDoctorActivities(firebaseAuth.currentUser.uid)
+                                                      .then((val) {
+                                                        setState(() {
+                                                          activityStream = val;
+                                                        });
+                                                  });
+                                                  Navigator.push(
+                                                    context, MaterialPageRoute(
+                                                    builder: (context) => ActivityLogsScreen(
+                                                      activityStream: activityStream,
+                                                      isDoctor: true,
+                                                    ),
+                                                  ),
+                                                  );
+                                                },
                                               ),
                                               accessTile(
                                                 icon: Icons.add_shopping_cart_rounded,
@@ -751,7 +764,6 @@ class _DoctorProfileState extends State<DoctorProfile> {
                             SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                             Container(
                               width: 95 * SizeConfig.widthMultiplier,
-                              height: 10 * SizeConfig.heightMultiplier,
                               child: Padding(
                                 padding: EdgeInsets.all(8.0),
                                 child: arrowBox(
@@ -765,6 +777,104 @@ class _DoctorProfileState extends State<DoctorProfile> {
                           ],
                         ),
                       ),
+                    ),
+                  ),
+                ),
+                Container(
+                  height: 12 * SizeConfig.heightMultiplier,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        offset: Offset(2, 3),
+                        spreadRadius: 0.5,
+                        blurRadius: 2,
+                        color: Colors.black.withOpacity(0.1),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: 20,
+                      right: 10,
+                    ),
+                    child: Column(
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            GestureDetector(
+                              onTap: () => profilePicView(
+                                chatSnap: chatSnap,
+                                callSnap: callSnap,
+                                postSnap: postSnap,
+                                isDoctor: true,
+                                isUser: true,
+                                imageUrl: widget.userPic,
+                                context: context,
+                                isSender: true,
+                              ),
+                              child: CachedImage(
+                                imageUrl: widget.userPic,
+                                isRound: true,
+                                radius: 60,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            SizedBox(width: 5 * SizeConfig.widthMultiplier,),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Expanded(
+                                  flex: 0,
+                                  child: Container(
+                                    width: 60 * SizeConfig.widthMultiplier,
+                                    child: Wrap(
+                                      children: [Text("Dr. " + widget.name, style: TextStyle(
+                                        color: Color(0xFFa81845),
+                                        fontFamily: "Brand Bold",
+                                        fontSize: 3 * SizeConfig.textMultiplier,
+                                        fontWeight: FontWeight.bold,
+                                      ),),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 0.5 * SizeConfig.heightMultiplier,),
+                                Row(
+                                  children: <Widget>[
+                                    Image.asset("images/doctor.png", color: Color(0xFFa81845).withOpacity(0.8),
+                                      height: 2 * SizeConfig.heightMultiplier,
+                                      width: 3.5 * SizeConfig.widthMultiplier,
+                                    ),
+                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                    Text(widget.speciality, style: TextStyle(
+                                      color: Color(0xFFa81845).withOpacity(0.8),
+                                      fontFamily: "Brand Bold",
+                                      fontSize: 2.3 * SizeConfig.textMultiplier,
+                                      fontWeight: FontWeight.bold,
+                                    ),),
+                                  ],
+                                ),
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                Text(
+                                  TimeOfDay.now().hour >= 12 && TimeOfDay.now().hour < 16
+                                      ? "Good Afternoon!"
+                                      : TimeOfDay.now().hour >= 16
+                                      ? "Good Evening!"
+                                      : "Good Morning!",
+                                  style: TextStyle(
+                                    color: Color(0xFFa81845).withOpacity(0.6),
+                                    fontSize: 2.2 * SizeConfig.textMultiplier,
+                                  ),),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -801,9 +911,9 @@ class _DoctorProfileState extends State<DoctorProfile> {
       child: Material(
         color: Colors.grey[100],
         child: InkWell(
-          splashColor: Colors.red[300],
+          splashColor: Color(0xFFa81845).withOpacity(0.6),
           highlightColor: Colors.grey.withOpacity(0.1),
-          radius: 800,
+          radius: 200,
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 4),
@@ -827,17 +937,21 @@ class _DoctorProfileState extends State<DoctorProfile> {
                       child: Visibility(
                         visible: alertVisible,
                         child: Container(
-                          height: 2 * SizeConfig.heightMultiplier,
-                          width: 4 * SizeConfig.widthMultiplier,
                           decoration: BoxDecoration(
-                            color: Colors.red[300],
+                            gradient: kPrimaryGradientColor,
                             borderRadius: BorderRadius.circular(50),
                           ),
-                          child: Center(
-                            child: Text(alert, style: TextStyle(
-                                fontFamily: "Brand-Regular",
-                                color: Colors.white
-                            ),),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 3,
+                            ),
+                            child: Center(
+                              child: Text(alert, style: TextStyle(
+                                  fontFamily: "Brand-Regular",
+                                  color: Colors.white
+                              ),),
+                            ),
                           ),
                         ),
                       ),

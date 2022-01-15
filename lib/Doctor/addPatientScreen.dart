@@ -2,12 +2,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/AllScreens/registerScreen.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/patient.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 /*
@@ -15,7 +16,7 @@ import 'package:flutter/material.dart';
 */
 
 class AddPatientScreen extends StatefulWidget {
-  AddPatientScreen({Key key}) : super(key: key);
+  const AddPatientScreen({Key key}) : super(key: key);
 
   @override
   _AddPatientScreenState createState() => _AddPatientScreenState();
@@ -23,8 +24,6 @@ class AddPatientScreen extends StatefulWidget {
 
 class _AddPatientScreenState extends State<AddPatientScreen> {
 
-  DatabaseMethods databaseMethods = DatabaseMethods();
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   TextEditingController healthDepTEC = TextEditingController();
   TextEditingController prescriptionTEC = TextEditingController();
   TextEditingController allergyPresTEC = TextEditingController();
@@ -68,7 +67,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
           backgroundColor: Colors.grey[100],
           title: Text("Add Patient", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         body: Container(
@@ -157,7 +156,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                   Text("Medication", style: TextStyle(
                     fontFamily: "Brand Bold",
                     color: Colors.black54,
-                    fontSize: 2.5 * SizeConfig.textMultiplier,
+                    fontSize: 2.3 * SizeConfig.textMultiplier,
                   ),),
                   medList.isNotEmpty && medList.length > 0
                       ? SizedBox(height: 2 * SizeConfig.heightMultiplier,)
@@ -171,7 +170,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                   Text("Medication for Allergies", style: TextStyle(
                     fontFamily: "Brand Bold",
                     color: Colors.black54,
-                    fontSize: 2.5 * SizeConfig.textMultiplier,
+                    fontSize: 2.3 * SizeConfig.textMultiplier,
                   ),),
                   allergyMedList.isNotEmpty && allergyMedList.length > 0
                       ? SizedBox(height: 2 * SizeConfig.heightMultiplier,)
@@ -185,13 +184,13 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                   Text("Other Records", style: TextStyle(
                     fontFamily: "Brand Bold",
                     color: Colors.black,
-                    fontSize: 3 * SizeConfig.textMultiplier,
+                    fontSize: 2.7 * SizeConfig.textMultiplier,
                   ),),
                   SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                   Text("Family Health History", style: TextStyle(
                     fontFamily: "Brand Bold",
                     color: Colors.black45,
-                    fontSize: 2.5 * SizeConfig.textMultiplier,
+                    fontSize: 2.3 * SizeConfig.textMultiplier,
                   ),),
                   SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                   radioTile(title: "Anyone With Pressure:",
@@ -322,6 +321,14 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                                 builder: (BuildContext context) {
                                   return ProgressDialog(message: "Please wait...",);
                                 });
+
+                            Activity activity = Activity.saveActivity(
+                              type: "saved",
+                              createdAt: FieldValue.serverTimestamp(),
+                              savedType: "patient",
+                              patientName: nameTEC.text.trim(),
+                            );
+
                             Patient patient = Patient(
                               time: FieldValue.serverTimestamp(),
                               healthDep: healthDepTEC.text,
@@ -354,22 +361,31 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                               allergyMed: allergyMedList,
                               private: false,
                             );
+                            var activityMap = activity.toSaveActivity(activity);
                             var patientMap = patient.toMap(patient);
-                            await databaseMethods.savePatient(patientMap, firebaseAuth.currentUser.uid);
+                            await databaseMethods.savePatient(patientMap, currentUser.uid);
+                            await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                             Navigator.pop(context);
                             Navigator.pop(context);
                           }
                         },
-                        color: Colors.red[300],
-                        splashColor: Colors.white,
-                        highlightColor: Colors.grey.withOpacity(0.1),
+                        clipBehavior: Clip.hardEdge,
+                        padding: EdgeInsets.zero,
+                        elevation: 8,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        child: Center(
-                          child: Text("Submit", style: TextStyle(
-                            fontFamily: "Brand Bold",
-                            color: Colors.white,
-                            fontSize: 2.5 * SizeConfig.textMultiplier,
-                          ),),
+                        child: Container(
+                          width: 100 * SizeConfig.widthMultiplier,
+                          height: 5 * SizeConfig.heightMultiplier,
+                          decoration: BoxDecoration(
+                            gradient: kPrimaryGradientColor,
+                          ),
+                          child: Center(
+                            child: Text("Submit", style: TextStyle(
+                              fontFamily: "Brand Bold",
+                              color: Colors.white,
+                              fontSize: 2.5 * SizeConfig.textMultiplier,
+                            ),),
+                          ),
                         ),
                       ),
                     ),
@@ -399,7 +415,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
               itemBuilder: (context, index) {
                 return Container(
                   width: double.infinity,
-                  height: 5 * SizeConfig.heightMultiplier,
+                  height: 4 * SizeConfig.heightMultiplier,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
@@ -412,7 +428,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                     ],
                   ),
                   child: Padding(
-                    padding: EdgeInsets.all(8.0),
+                    padding: EdgeInsets.all(4),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -421,7 +437,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                           list[index],
                           style: TextStyle(
                             fontFamily: "Brand Bold",
-                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                            fontSize: 2.2 * SizeConfig.textMultiplier,
                           ),
                         ),
                         IconButton(
@@ -433,7 +449,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                           padding: EdgeInsets.all(2),
                           icon: Icon(
                             CupertinoIcons.clear_thick,
-                            color: Colors.red[300],
+                            color: Color(0xFFa81845),
                             size: 4 * SizeConfig.imageSizeMultiplier,
                           ),
                         ),
@@ -465,7 +481,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                 hintStyle: TextStyle(
                   fontFamily: "Brand-Regular",
                   color: Colors.grey,
-                  fontSize: 2 * SizeConfig.textMultiplier,
+                  fontSize: 1.8 * SizeConfig.textMultiplier,
                 ),
                 isDense: true,
                 contentPadding: EdgeInsets.fromLTRB(5, 10, 10, 5),
@@ -474,7 +490,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                 ),
               ),
               style: TextStyle(
-                fontSize: 2 * SizeConfig.textMultiplier,
+                fontSize: 1.8 * SizeConfig.textMultiplier,
                 fontFamily: "Brand-Regular",
               ),
             ),
@@ -489,14 +505,14 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
               }
             },
             color: Colors.white,
-            splashColor: Colors.red[200],
+            splashColor: Color(0xFFa81845).withOpacity(0.6),
             highlightColor: Colors.grey.withOpacity(0.1),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             child: Center(
               child: Text("Add", style: TextStyle(
                 fontFamily: "Brand Bold",
-                color: Colors.red[300],
-                fontSize: 2.5 * SizeConfig.textMultiplier,
+                color: Color(0xFFa81845),
+                fontSize: 2.2 * SizeConfig.textMultiplier,
               ),),
             ),
           ),
@@ -514,10 +530,10 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         children: <Widget>[
           Text(title, style: TextStyle(
               fontFamily: "Brand Bold",
-              fontSize: 2.3 * SizeConfig.textMultiplier,
+              fontSize: 2 * SizeConfig.textMultiplier,
             ),),
           Container(
-            width: 20 * SizeConfig.widthMultiplier,
+            width: 18 * SizeConfig.widthMultiplier,
             child: TextField(
               controller: controller,
               maxLines: 1,
@@ -530,7 +546,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                 ),
               ),
               style: TextStyle(
-                fontSize: 2 * SizeConfig.textMultiplier,
+                fontSize: 1.8 * SizeConfig.textMultiplier,
                 fontFamily: "Brand-Regular",
               ),
             ),
@@ -549,10 +565,10 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         children: <Widget>[
           Text(title, style: TextStyle(
               fontFamily: "Brand Bold",
-              fontSize: 2.3 * SizeConfig.textMultiplier,
+              fontSize: 2 * SizeConfig.textMultiplier,
             ),),
           Container(
-            width: 20 * SizeConfig.widthMultiplier,
+            width: 18 * SizeConfig.widthMultiplier,
             child: downList,
           ),
         ],
@@ -569,13 +585,13 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         children: <Widget>[
           Text(title, style: TextStyle(
             fontFamily: "Brand Bold",
-            fontSize: 2.3 * SizeConfig.textMultiplier,
+            fontSize: 2 * SizeConfig.textMultiplier,
           ),),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Container(
-                width: 16 * SizeConfig.widthMultiplier,
+                width: 14 * SizeConfig.widthMultiplier,
                 child: TextField(
                   controller: controller,
                   maxLines: 1,
@@ -588,14 +604,14 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                     ),
                   ),
                   style: TextStyle(
-                    fontSize: 2 * SizeConfig.textMultiplier,
+                    fontSize: 1.8 * SizeConfig.textMultiplier,
                     fontFamily: "Brand-Regular",
                   ),
                 ),
               ),
               Text(trailing, style: TextStyle(
                 fontFamily: "Brand-Regular",
-                fontSize: 2 * SizeConfig.textMultiplier,
+                fontSize: 1.8 * SizeConfig.textMultiplier,
               ),),
             ],
           ),
@@ -630,10 +646,10 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         children: <Widget>[
           Text(title, style: TextStyle(
               fontFamily: "Brand Bold",
-              fontSize: 2.3 * SizeConfig.textMultiplier,
+              fontSize: 2 * SizeConfig.textMultiplier,
             ),),
           Container(
-              width: 20 * SizeConfig.widthMultiplier,
+              width: 18 * SizeConfig.widthMultiplier,
               child: TextField(
                     controller: controller,
                     maxLines: 1,
@@ -648,7 +664,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                       ),
                     ),
                     style: TextStyle(
-                      fontSize: 2 * SizeConfig.textMultiplier,
+                      fontSize: 1.8 * SizeConfig.textMultiplier,
                       fontFamily: "Brand-Regular",
                     ),
                   ),
@@ -667,10 +683,10 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
         children: <Widget>[
           Text(title, style: TextStyle(
               fontFamily: "Brand Bold",
-              fontSize: 2.3 * SizeConfig.textMultiplier,
+              fontSize: 2 * SizeConfig.textMultiplier,
             ),),
           Container(
-            width: containerWidth == null ? 30 * SizeConfig.widthMultiplier : containerWidth,
+            width: containerWidth == null ? 28 * SizeConfig.widthMultiplier : containerWidth,
             child: TextField(
               controller: controller,
               maxLines: 1,
@@ -683,7 +699,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                 ),
               ),
               style: TextStyle(
-                fontSize: 2 * SizeConfig.textMultiplier,
+                fontSize: 1.8 * SizeConfig.textMultiplier,
                 fontFamily: "Brand-Regular",
               ),
             ),
@@ -703,19 +719,19 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
             children: <Widget>[
               Text(title, style: TextStyle(
                 fontFamily: "Brand Bold",
-                fontSize: 2.3 * SizeConfig.textMultiplier,
+                fontSize: 2 * SizeConfig.textMultiplier,
               ),),
               Container(
-                width: 30 * SizeConfig.widthMultiplier,
+                width: 28 * SizeConfig.widthMultiplier,
                 child: StatefulBuilder(
                   builder: (context, setState) {
                     return Row(
                       children: <Widget>[
                         Container(
-                          width: 7 * SizeConfig.widthMultiplier,
+                          width: 6 * SizeConfig.widthMultiplier,
                           child: Radio(
                             value: "Yes",
-                            activeColor: Colors.red[300],
+                            activeColor: Color(0xFFa81845),
                             groupValue: group,
                             onChanged: (T) {
                               setState(() {
@@ -727,14 +743,14 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                         ),
                         Text("Yes", style: TextStyle(
                           fontFamily: "Brand Bold",
-                          fontSize: 2 * SizeConfig.textMultiplier,
+                          fontSize: 1.8 * SizeConfig.textMultiplier,
                         ),),
                         Spacer(),
                         Container(
-                          width: 7 * SizeConfig.widthMultiplier,
+                          width: 6 * SizeConfig.widthMultiplier,
                           child: Radio(
                             value: "No",
-                            activeColor: Colors.red[300],
+                            activeColor: Color(0xFFa81845),
                             groupValue: group,
                             onChanged: (T) {
                               setState(() {
@@ -746,7 +762,7 @@ class _AddPatientScreenState extends State<AddPatientScreen> {
                         ),
                         Text("No", style: TextStyle(
                           fontFamily: "Brand Bold",
-                          fontSize: 2 * SizeConfig.textMultiplier,
+                          fontSize: 1.8 * SizeConfig.textMultiplier,
                         ),),
                       ],
                     );

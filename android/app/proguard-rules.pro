@@ -7,3 +7,6 @@
 -keep class io.flutter.plugins.** {*;}
 -keep class io.agora.** {*;}
 -keep class com.dexterous.** {*;}
+-keep class com.google.firebase.** {*;}
+-dontwarn io.flutter.embedding.**
+-ignorewarnings

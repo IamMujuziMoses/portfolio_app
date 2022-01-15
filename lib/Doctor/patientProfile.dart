@@ -3,6 +3,7 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -41,10 +42,9 @@ class PatientProfile extends StatefulWidget {
   final String sex;
   final List medicine;
   final List allergyMed;
-  bool private;
-  PatientProfile({Key key, this.healthDep, this.height, this.weight, this.bmi, this.pressure, this.pulse,
+  const PatientProfile({Key key, this.healthDep, this.height, this.weight, this.bmi, this.pressure, this.pulse,
     this.fileNo, this.name, this.dob, this.recruited, this.pt, this.diagnosis, this.residence, this.street,
-    this.city, this.phone, this.email, this.private, this.kin, this.smoking, this.famDiabetes, this.famPressure,
+    this.city, this.phone, this.email, this.kin, this.smoking, this.famDiabetes, this.famPressure,
     this.famCancer, this.alcoholic, this.allergies, this.sex, this.medicine, this.allergyMed, this.pic,
   }) : super(key: key);
 
@@ -81,12 +81,19 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
           backgroundColor: Colors.grey[100],
           title: Text("Patient's Profile", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.red[300],
-          child: Icon(CupertinoIcons.trash_fill, color: Colors.white,),
+          clipBehavior: Clip.hardEdge,
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: kPrimaryGradientColor,
+            ),
+            child: Icon(CupertinoIcons.trash_fill, color: Colors.white,),
+          ),
           onPressed: () async {
             showDialog(
               context: context,
@@ -97,7 +104,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                     title: Center(
                       child: Text("Delete Patient", style: TextStyle(
                         fontFamily: "Brand Bold",
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         fontSize: 3 * SizeConfig.textMultiplier,
                       ),),
                     ),
@@ -117,7 +124,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                       FlatButton(
                         child: Text("Delete", style: TextStyle(
                           fontFamily: "Brand Bold",
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                           fontSize: 2 * SizeConfig.textMultiplier,
                         ),),
                         onPressed: () async {
@@ -167,7 +174,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(50),
                             color: Colors.white,
-                            border: Border.all(color: Colors.red[300], style: BorderStyle.solid, width: 2),
+                            border: Border.all(color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                           ),
                           child: widget.pic == null
                               ? Image.asset("images/user_icon.png")
@@ -192,16 +199,20 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                               height: 4 * SizeConfig.heightMultiplier,
                               width: 8 * SizeConfig.widthMultiplier,
                               child: RaisedButton(
+                                clipBehavior: Clip.hardEdge,
+                                padding: EdgeInsets.zero,
+                                elevation: 8,
                                 onPressed: () => launch(('tel:${widget.phone}')),
-                                color: Colors.red[300],
-                                padding: EdgeInsets.all(0),
-                                splashColor: Colors.white,
-                                highlightColor: Colors.grey.withOpacity(0.1),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                                child: Center(
-                                  child: Icon(Icons.phone_rounded,
-                                    color: Colors.white,
-                                    size: 6 * SizeConfig.imageSizeMultiplier,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: kPrimaryGradientColor
+                                  ),
+                                  child: Center(
+                                    child: Icon(Icons.phone_rounded,
+                                      color: Colors.white,
+                                      size: 6 * SizeConfig.imageSizeMultiplier,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -212,7 +223,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                   Text("Basic Information", style: TextStyle(
                     fontFamily: "Brand Bold",
                     color: Colors.grey,
-                    fontSize: 3 * SizeConfig.textMultiplier,
+                    fontSize: 2.8 * SizeConfig.textMultiplier,
                   ),),
                   SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                   Row(
@@ -234,7 +245,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                       infoTile(title: "D.O.B:", message: widget.dob),
                       infoTile(title: "Recr on:", message: widget.recruited,
                         width: 40 * SizeConfig.widthMultiplier,
-                        containerWidth: 25 * SizeConfig.widthMultiplier,
+                        containerWidth: 20 * SizeConfig.widthMultiplier,
                       ),
                     ],
                   ),
@@ -328,8 +339,8 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                             child: Center(
                               child: Text("Add", style: TextStyle(
                                 fontFamily: "Brand Bold",
-                                color: Colors.red[300],
-                                fontSize: 2.5 * SizeConfig.textMultiplier,
+                                color: Color(0xFFa81845),
+                                fontSize: 2.2 * SizeConfig.textMultiplier,
                               ),
                               ),
                             ),
@@ -386,8 +397,8 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                             child: Center(
                               child: Text("Add", style: TextStyle(
                                 fontFamily: "Brand Bold",
-                                color: Colors.red[300],
-                                fontSize: 2.5 * SizeConfig.textMultiplier,
+                                color: Color(0xFFa81845),
+                                fontSize: 2.2 * SizeConfig.textMultiplier,
                               ),
                               ),
                             ),
@@ -409,7 +420,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                     style: TextStyle(
                       fontFamily: "Brand Bold",
                       color: Colors.black,
-                      fontSize: 3 * SizeConfig.textMultiplier,
+                      fontSize: 2.7 * SizeConfig.textMultiplier,
                     ),
                   ),
                   SizedBox(height: 1 * SizeConfig.heightMultiplier,),
@@ -417,22 +428,22 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                     style: TextStyle(
                       fontFamily: "Brand Bold",
                       color: Colors.black54,
-                      fontSize: 2.5 * SizeConfig.textMultiplier,
+                      fontSize: 2.2 * SizeConfig.textMultiplier,
                     ),
                   ),
                   SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                   infoTile(title: "Anyone with Diabetes:", message: widget.famDiabetes,
-                    width: 60 * SizeConfig.widthMultiplier,
+                    width: 70 * SizeConfig.widthMultiplier,
                     containerWidth: 20 * SizeConfig.widthMultiplier,
                   ),
                   SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                   infoTile(title: "Anyone with Pressure:", message: widget.famPressure,
-                    width: 60 * SizeConfig.widthMultiplier,
+                    width: 70 * SizeConfig.widthMultiplier,
                     containerWidth: 20 * SizeConfig.widthMultiplier,
                   ),
                   SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                   infoTile(title: "Anyone with Cancer:", message: widget.famCancer,
-                    width: 60 * SizeConfig.widthMultiplier,
+                    width: 70 * SizeConfig.widthMultiplier,
                     containerWidth: 20 * SizeConfig.widthMultiplier,
                   ),
                   SizedBox(height: 4 * SizeConfig.heightMultiplier,),
@@ -547,8 +558,8 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                   child: Center(
                     child: Text("Add", style: TextStyle(
                         fontFamily: "Brand Bold",
-                        color: Colors.red[300],
-                        fontSize: 2.5 * SizeConfig.textMultiplier,
+                        color: Color(0xFFa81845),
+                        fontSize: 2 * SizeConfig.textMultiplier,
                       ),
                     ),
                   ),
@@ -573,7 +584,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                     }
               },
               padding: EdgeInsets.all(0),
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
                   splashColor: Colors.white,
                   highlightColor: Colors.grey.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -581,7 +592,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                     child: Text("Cancel", style: TextStyle(
                         fontFamily: "Brand Bold",
                         color: Colors.white,
-                        fontSize: 2.5 * SizeConfig.textMultiplier,
+                        fontSize: 2 * SizeConfig.textMultiplier,
                       ),
                     ),
                   ),
@@ -629,7 +640,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                     list[index],
                     style: TextStyle(
                       fontFamily: "Brand Bold",
-                      fontSize: 2.5 * SizeConfig.textMultiplier,
+                      fontSize: 2.2 * SizeConfig.textMultiplier,
                     ),
                   ),
                   IconButton(
@@ -652,7 +663,7 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
                     padding: EdgeInsets.all(2),
                     icon: Icon(
                       CupertinoIcons.clear_thick,
-                      color: Colors.red[300],
+                      color: Color(0xFFa81845),
                       size: 4 * SizeConfig.imageSizeMultiplier,
                     ),
                   ),
@@ -675,15 +686,15 @@ class _PatientProfileState extends State<PatientProfile> with TickerProviderStat
         children: <Widget>[
           Text(title, style: TextStyle(
             fontFamily: "Brand Bold",
-            fontSize: 2.3 * SizeConfig.textMultiplier,
+            fontSize: 2 * SizeConfig.textMultiplier,
           ),),
           Container(
-            width: containerWidth == null ? 30 * SizeConfig.widthMultiplier : containerWidth,
+            width: containerWidth == null ? 27 * SizeConfig.widthMultiplier : containerWidth,
             child: Text(message, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: "Brand-Regular",
                 color: Colors.grey,
-                fontSize: 2.3 * SizeConfig.textMultiplier,
+                fontSize: 2 * SizeConfig.textMultiplier,
             ),),
           ),
         ],

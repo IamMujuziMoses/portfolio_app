@@ -3,7 +3,7 @@ import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/cartScreen.dart';
 import 'package:creativedata_app/AllScreens/drugDetails.dart';
-import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -16,7 +16,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class MedicalStore extends StatefulWidget {
   final Stream drugStream;
   final int items;
-  MedicalStore({Key key, this.drugStream, this.items}) : super(key: key);
+  const MedicalStore({Key key, this.drugStream, this.items}) : super(key: key);
 
   @override
   _MedicalStoreState createState() => _MedicalStoreState();
@@ -111,7 +111,7 @@ class _MedicalStoreState extends State<MedicalStore> {
                 visible: titleVisible,
                 child: Text("Medical Store", style: TextStyle(
                   fontFamily: "Brand Bold",
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
             ),),
               ),
               Visibility(
@@ -164,7 +164,7 @@ class _MedicalStoreState extends State<MedicalStore> {
                         padding: EdgeInsets.all(4),
                         child: Center(
                           child: Icon(Icons.shopping_cart_outlined,
-                            color: Colors.red[300],
+                            color: Color(0xFFa81845),
                           ),
                         ),
                       ),
@@ -176,19 +176,22 @@ class _MedicalStoreState extends State<MedicalStore> {
                   child: Visibility(
                     visible: _cartItems == 0 ? false : true,
                     child: Container(
-                      height: 2.5 * SizeConfig.heightMultiplier,
-                      width: 5 * SizeConfig.widthMultiplier,
                       decoration: BoxDecoration(
-                        color: Colors.red[300],
+                        gradient: kPrimaryGradientColor,
                         border: Border.all(color: Colors.grey[100], width: 2),
                         borderRadius: BorderRadius.circular(50),
                       ),
-                      child: Center(
-                        child: Text(_cartItems.toString(), style: TextStyle(
-                          fontFamily: "Brand Bold",
-                          color: Colors.white,
-                          fontSize: 1.5 * SizeConfig.textMultiplier,
-                        ),),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 3,
+                        ),
+                        child: Center(
+                          child: Text(_cartItems.toString(), style: TextStyle(
+                            fontFamily: "Brand Bold",
+                            color: Colors.white,
+                          ),),
+                        ),
                       ),
                     ),
                   ),
@@ -201,8 +204,8 @@ class _MedicalStoreState extends State<MedicalStore> {
                   visible: titleVisible,
                   child: IconButton(
                     onPressed: () => showHideSearchBar(),
-                    splashColor: Colors.red[200],
-                    icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
+                    icon: Icon(CupertinoIcons.search, color: Color(0xFFa81845),
                   ),),
                 ),
                 Visibility(
@@ -213,8 +216,8 @@ class _MedicalStoreState extends State<MedicalStore> {
                       drugOnSearch.clear();
                       showHideSearchBar();
                     },
-                    color: Colors.red[300],
-                    splashColor: Colors.red[200],
+                    color: Color(0xFFa81845),
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
                     icon: Icon(CupertinoIcons.clear,
                   ),),
                 ),
@@ -270,10 +273,16 @@ class _MedicalStoreState extends State<MedicalStore> {
                     },
                     child: Row(
                       children: <Widget>[
-                        CircleAvatar(
-                          backgroundColor: Colors.red[100],
-                          foregroundColor: Colors.red[300],
-                          child: Icon(FontAwesomeIcons.pills),
+                        Container(
+                          height: 5 * SizeConfig.heightMultiplier,
+                          width: 10 * SizeConfig.widthMultiplier,
+                          decoration: BoxDecoration(
+                            gradient: kPrimaryGradientColor,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Center(
+                            child: Icon(FontAwesomeIcons.pills, color: Colors.white,),
+                          ),
                         ),
                         SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                         Text(drugOnSearch[index], style: TextStyle(
@@ -344,7 +353,7 @@ class _MedicalStoreState extends State<MedicalStore> {
                         child: Text("$drugName $dosage", maxLines: 1, overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                           fontFamily: "Brand Bold",
-                          fontSize: 2.5 * SizeConfig.textMultiplier,
+                          fontSize: 2.4 * SizeConfig.textMultiplier,
                         ),),
                       ),
                       Container(
@@ -353,7 +362,7 @@ class _MedicalStoreState extends State<MedicalStore> {
                           style: TextStyle(
                           fontFamily: "Brand-Regular",
                           color: Colors.grey,
-                          fontSize: 1.8 * SizeConfig.textMultiplier,
+                          fontSize: 1.6 * SizeConfig.textMultiplier,
                         ),),
                       ),
                       Container(
@@ -362,7 +371,7 @@ class _MedicalStoreState extends State<MedicalStore> {
                           style: TextStyle(
                           fontFamily: "Brand-Regular",
                           color: Colors.grey[600],
-                          fontSize: 2.2 * SizeConfig.textMultiplier,
+                          fontSize: 2 * SizeConfig.textMultiplier,
                         ),),
                       ),
                     ],

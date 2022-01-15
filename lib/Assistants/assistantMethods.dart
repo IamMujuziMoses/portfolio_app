@@ -26,8 +26,9 @@ class AssistantMethods {
       st1 = response["results"][0]["address_components"][0]["long_name"];
       st2 = response["results"][0]["address_components"][1]["long_name"];
       st3 = response["results"][0]["address_components"][3]["long_name"];
-      st4 = response["results"][0]["address_components"][5]["short_name"];
-      placeAddress = st1 + ", " + st2 + ", " + st3 + " " + st4;
+      //st4 = response["results"][0]["address_components"][5]["short_name"];
+      placeAddress = st1 + ", " + st2 + ", " + st3;// + " " + st4;
+      print("PlaceHolder ::: $placeAddress");
 
       Address userPickupAddress = new Address();
       userPickupAddress.longitude = position.longitude;
@@ -60,23 +61,29 @@ class AssistantMethods {
 
   }
 
-  static sendNotification(String token, context, String rideRequestId) async {
-    var destination = Provider.of<AppData>(context, listen: false).dropOffLocation;
-
+  static alertNewMessage(String token, context, fromUserName, fromUid, fromPhoto, bool sendToDoc, chatroomId) async {
     Map<String, String> headerMap = {
       "Content-Type": "application/json",
       "Authorization": serverToken,
     };
+
     Map notificationMap = {
-      "body": "DropOff Address, ${destination.placeName}",
-      "title": "You have a new Ambulance Request",
+      "body": "You have a new message from ${sendToDoc == true ? fromUserName : "Dr. $fromUserName"}",
+      "title": "Siro Message",
     };
+
     Map dataMap = {
       "click_action": "FLUTTER_NOTIFICATION_CLICK",
       "id": "1",
       "status": "done",
-      "ride_request_id": rideRequestId,
+      "sender_name": "$fromUserName",
+      "sender_uid": "$fromUid",
+      "sender_photo": "$fromPhoto",
+      "send_to_doctor": "$sendToDoc",
+      "chatroomId": chatroomId,
+      "type": "message",
     };
+
     Map sendNotificationMap = {
       "notification": notificationMap,
       "priority": "high",
@@ -91,4 +98,37 @@ class AssistantMethods {
     );
   }
 
+  static sendNotification(String token, context, String rideRequestId) async {
+    var destination = Provider.of<AppData>(context, listen: false).dropOffLocation;
+
+    Map<String, String> headerMap = {
+      "Content-Type": "application/json",
+      "Authorization": serverToken,
+      //"Access-Control-Allow-Origin": "*",
+    };
+
+    Map notificationMap = {
+      "body": "DropOff Address, ${destination.placeName}",
+      "title": "You have a new Ambulance Request",
+    };
+    Map dataMap = {
+      "click_action": "FLUTTER_NOTIFICATION_CLICK",
+      "id": "1",
+      "status": "done",
+      "ride_request_id": rideRequestId,
+    };
+
+    Map sendNotificationMap = {
+      "notification": notificationMap,
+      "priority": "high",
+      "data": dataMap,
+      "to": token,
+    };
+
+    var res = await http.post(
+      'https://fcm.googleapis.com/fcm/send',
+      headers: headerMap,
+      body: jsonEncode(sendNotificationMap),
+    );
+  }
 }

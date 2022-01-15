@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
@@ -6,9 +7,11 @@ import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/AllScreens/registerScreen.dart';
 import 'package:creativedata_app/AllScreens/reviewsScreen.dart';
 import 'package:creativedata_app/Doctor/doctorRegistration.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -36,9 +39,9 @@ class DoctorAccount extends StatefulWidget {
   final String patients;
   final String experience;
   final String reviews;
-  Map fees;
-  List days;
-  DoctorAccount({Key key,
+  final Map fees;
+  final List days;
+  const DoctorAccount({Key key,
     this.about, this.age, this.hospital, this.hours, this.patients, this.experience, this.reviews,
     this.name, this.speciality, this.userPic, this.email, this.fees, this.days, this.uid,
   }) : super(key: key);
@@ -48,8 +51,7 @@ class DoctorAccount extends StatefulWidget {
 }
 
 class _DoctorAccountState extends State<DoctorAccount> {
-  
-  DatabaseMethods databaseMethods = DatabaseMethods();
+
   TextEditingController appointmentTEC = TextEditingController();
   TextEditingController inPersonTEC = TextEditingController();
   TextEditingController videoCallTEC = TextEditingController();
@@ -152,7 +154,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                       decoration: BoxDecoration(
                                                         borderRadius: BorderRadius.circular(50),
                                                         color: Colors.white,
-                                                        border: Border.all(color: Colors.red[300], style: BorderStyle.solid, width: 2),
+                                                        border: Border.all(color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                                                       ),
                                                       child: profilePhoto == null
                                                           ? Image.asset("images/user_icon.png")
@@ -166,12 +168,12 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                   ),
                                                   Container(
                                                     height: 6 * SizeConfig.heightMultiplier,
-                                                    width: 55 * SizeConfig.widthMultiplier,
+                                                    width: 60 * SizeConfig.widthMultiplier,
                                                     child: Row(
                                                       children: <Widget>[
                                                         Text("Update Your Profile Picture", style: TextStyle(
                                                           fontFamily: "Brand-Regular",
-                                                          fontSize: 2 * SizeConfig.textMultiplier,
+                                                          fontSize: 1.8 * SizeConfig.textMultiplier,
                                                           fontWeight: FontWeight.w500,
                                                         ),),
                                                         Spacer(),
@@ -192,7 +194,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                             },
                                                             menuItems: <FocusedMenuItem>[
                                                               FocusedMenuItem(title: Text("Gallery", style: TextStyle(
-                                                                  color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                                                  color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                                                                 onPressed: () async =>
                                                                 await Permissions.cameraAndMicrophonePermissionsGranted() ?
                                                                 pickImage(
@@ -203,10 +205,10 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                                     profilePhoto = val;
                                                                   });
                                                                 }) : {},
-                                                                trailingIcon: Icon(Icons.photo_library_outlined, color: Colors.red[300],),
+                                                                trailingIcon: Icon(Icons.photo_library_outlined, color: Color(0xFFa81845),),
                                                               ),
                                                               FocusedMenuItem(title: Text("Capture", style: TextStyle(
-                                                                  color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                                                  color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                                                                 onPressed: () async =>
                                                                 await Permissions.cameraAndMicrophonePermissionsGranted() ?
                                                                 pickImage(
@@ -217,10 +219,10 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                                     profilePhoto = val;
                                                                   });
                                                                 }) : {},
-                                                                trailingIcon: Icon(Icons.camera, color: Colors.red[300],),
+                                                                trailingIcon: Icon(Icons.camera, color: Color(0xFFa81845),),
                                                               ),
                                                             ],
-                                                            child: Icon(Icons.camera_alt_outlined, color: Colors.red[300],),
+                                                            child: Icon(Icons.camera_alt_outlined, color: Color(0xFFa81845),),
                                                           ),
                                                         ),
                                                       ],
@@ -232,7 +234,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                                             Text("Update your experience", style: TextStyle(
                                               fontFamily: "Brand-Regular",
-                                              fontSize: 2 * SizeConfig.textMultiplier,
+                                              fontSize: 1.8 * SizeConfig.textMultiplier,
                                             ),),
                                             SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                                             _yearsList,
@@ -250,14 +252,47 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             if ((profilePhoto == null || profilePhoto.isEmpty) && _yearsList.selectedValue.isEmpty) {
                                               displaySnackBar(message: "Select new Profile Picture or years of experience to update", context: context, label: "OK");
                                             } else {
+                                              QuerySnapshot chatSnap;
+                                              QuerySnapshot callSnap;
+                                              QuerySnapshot postSnap;
 
+                                              await databaseMethods.getPostByDoctorNameSnap(Constants.myName).then((val) {
+                                                setState(() {
+                                                  postSnap = val;
+                                                });
+                                              });
+                                              await databaseMethods.getChatRoomsSnap(Constants.myName).then((val) {
+                                                setState(() {
+                                                  chatSnap = val;
+                                                });
+                                              });
+                                              await databaseMethods.getCallRecordsSnap(Constants.myName).then((val) {
+                                                setState(() {
+                                                  callSnap = val;
+                                                });
+                                              });
+
+                                              Activity activity;
                                               if (profilePhoto.isNotEmpty && _yearsList.selectedValue.isEmpty) {
                                               showDialog(
                                                 context: context,
                                                 barrierDismissible: false,
                                                 builder: (BuildContext context) => ProgressDialog(message: "Please wait...",),
                                               );
+                                              activity = Activity.editActivity(
+                                                createdAt: FieldValue.serverTimestamp(),
+                                                type: "edit",
+                                                editType: "profile photo",
+                                              );
+                                              var activityMap = activity.toEditActivity(activity);
+                                              await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                               await databaseMethods.updateDoctorDocField({"profile_photo": profilePhoto}, widget.uid);
+                                              await updatePostChatCallPics(
+                                                postSnap: postSnap,
+                                                chatSnap: chatSnap,
+                                                callSnap : callSnap,
+                                                updatePic: profilePhoto,
+                                              );
                                               Navigator.pop(context);
                                               Navigator.pop(context);
                                               displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
@@ -268,6 +303,13 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                 barrierDismissible: false,
                                                 builder: (BuildContext context) => ProgressDialog(message: "Please wait...",),
                                               );
+                                              activity = Activity.editActivity(
+                                                createdAt: FieldValue.serverTimestamp(),
+                                                type: "edit",
+                                                editType: "years of experience",
+                                              );
+                                              var activityMap = activity.toEditActivity(activity);
+                                              await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                               await databaseMethods.updateDoctorDocField({"years": _yearsList.selectedValue}, widget.uid);
                                               Navigator.pop(context);
                                               Navigator.pop(context);
@@ -278,7 +320,20 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                                   barrierDismissible: false,
                                                   builder: (BuildContext context) => ProgressDialog(message: "Please wait...",),
                                                 );
+                                                activity = Activity.editActivity(
+                                                  createdAt: FieldValue.serverTimestamp(),
+                                                  type: "edit",
+                                                  editType: "profile",
+                                                );
+                                                var activityMap = activity.toEditActivity(activity);
+                                                await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                                 await databaseMethods.updateDoctorDocField({"profile_photo": profilePhoto}, widget.uid);
+                                                await updatePostChatCallPics(
+                                                  postSnap: postSnap,
+                                                  chatSnap: chatSnap,
+                                                  callSnap: callSnap,
+                                                  updatePic: profilePhoto,
+                                                );
                                                 await databaseMethods.updateDoctorDocField({"years": _yearsList.selectedValue}, widget.uid);
                                                 Navigator.pop(context);
                                                 Navigator.pop(context);
@@ -302,7 +357,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.red[300],
+                                gradient: kPrimaryGradientColor,
                                 boxShadow: [
                                   BoxShadow(
                                     offset: Offset(3, 5),
@@ -341,9 +396,26 @@ class _DoctorAccountState extends State<DoctorAccount> {
                           _getDetails(widget.reviews, "Ratings"),
                           Spacer(),
                           GestureDetector(
-                            onTap: () {
+                            onTap: () async {
+                              showDialog(
+                                context: context,
+                                builder: (context) => ProgressDialog(message: "Please wait..."),
+                              );
+                              Stream reviewStream;
+                              await databaseMethods.getDoctorsReviews(widget.uid).then((val) {
+                                setState(() {
+                                  reviewStream = val;
+                                });
+                              });
+                              Navigator.pop(context);
                               Navigator.push(
-                                  context, MaterialPageRoute(builder: (context) => ReviewsScreen()));
+                                  context, MaterialPageRoute(builder: (context) => ReviewsScreen(
+                                isDoctor: true,
+                                reviewStream: reviewStream,
+                                doctorsName: widget.name,
+                                doctorsUID: widget.uid,
+                              ),
+                              ),);
                             },
                             child: getReviews(widget.reviews, "See All Reviews"),
                           ),
@@ -363,7 +435,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                               color: Colors.grey[700],
                               fontWeight: FontWeight.bold,
                               fontFamily: "Brand Bold",
-                              fontSize: 3 * SizeConfig.textMultiplier,
+                              fontSize: 2.8 * SizeConfig.textMultiplier,
                             ),),
                           Spacer(),
                           GestureDetector(
@@ -417,6 +489,13 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             barrierDismissible: false,
                                             builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
                                         );
+                                        Activity activity = Activity.editActivity(
+                                          createdAt: FieldValue.serverTimestamp(),
+                                          type: "edit",
+                                          editType: "bio",
+                                        );
+                                        var activityMap = activity.toEditActivity(activity);
+                                        await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                         await databaseMethods.updateDoctorDocField({"about": bioTEC.text.trim()}, widget.uid);
                                         Navigator.pop(context);
                                         Navigator.pop(context);
@@ -435,7 +514,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                               );
                             },
                             child: Text("Edit", style: TextStyle(
-                                color: Colors.red[300],
+                                color: Color(0xFFa81845),
                                 fontWeight: FontWeight.bold,
                                 fontFamily: "Brand Bold",
                                 fontSize: 2 * SizeConfig.textMultiplier,
@@ -458,7 +537,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                               color: Colors.grey[700],
                               fontWeight: FontWeight.bold,
                               fontFamily: "Brand Bold",
-                              fontSize: 3 * SizeConfig.textMultiplier,
+                              fontSize: 2.8 * SizeConfig.textMultiplier,
                             ),
                           ),
                           Spacer(),
@@ -498,6 +577,13 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                               barrierDismissible: false,
                                               builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
                                           );
+                                          Activity activity = Activity.editActivity(
+                                            createdAt: FieldValue.serverTimestamp(),
+                                            type: "edit",
+                                            editType: "appointment hours",
+                                          );
+                                          var activityMap = activity.toEditActivity(activity);
+                                          await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                           await databaseMethods.updateDoctorDocField({"hours": appointmentTEC.text}, widget.uid);
                                           Navigator.pop(context);
                                           Navigator.pop(context);
@@ -517,7 +603,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                               );
                             },
                             child: Text("Edit", style: TextStyle(
-                              color: Colors.red[300],
+                              color: Color(0xFFa81845),
                               fontWeight: FontWeight.bold,
                               fontFamily: "Brand Bold",
                               fontSize: 2 * SizeConfig.textMultiplier,
@@ -536,7 +622,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                         getDays(widget.days),
                       ],
                     ),
-                  ),///TODO fee and days in doc register
+                  ),
                   SizedBox(height: 5 * SizeConfig.heightMultiplier,),
                   Padding(
                     padding: EdgeInsets.only(
@@ -549,7 +635,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                           color: Colors.grey[700],
                           fontWeight: FontWeight.bold,
                           fontFamily: "Brand Bold",
-                          fontSize: 3 * SizeConfig.textMultiplier,
+                          fontSize: 2.8 * SizeConfig.textMultiplier,
                         ),
                         ),
                         Spacer(),
@@ -564,7 +650,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                   fontSize: 2.5 * SizeConfig.textMultiplier,
                                 ),),
                                 content: Container(
-                                  height: 30.5 * SizeConfig.heightMultiplier,
+                                  height: 34 * SizeConfig.heightMultiplier,
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: <Widget>[
@@ -587,7 +673,6 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                         hintText: "Edit voice call fee...",
                                       ),
                                       SizedBox(height: 1 * SizeConfig.heightMultiplier,),
-
                                     ],
                                   ),
                                 ),
@@ -602,12 +687,14 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                       if (inPersonTEC.text.isEmpty && videoCallTEC.text.isEmpty && voiceCallTEC.text.isEmpty) {
                                         displaySnackBar(message: "Edit all or any fee to update", context: context, label: "OK");
                                       } else {
+                                        Activity activity;
                                         if (inPersonTEC.text.isNotEmpty && videoCallTEC.text.isEmpty && voiceCallTEC.text.isEmpty) {
                                           showDialog(
                                               context: context,
                                               barrierDismissible: false,
                                               builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
                                           );
+
                                           String voiceCall = feesToUp["voice_call"];
                                           String videoCall = feesToUp["video_call"];
 
@@ -616,6 +703,13 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             "voice_call": voiceCall,
                                             "video_call": videoCall,
                                           };
+                                          activity = Activity.editActivity(
+                                            createdAt: FieldValue.serverTimestamp(),
+                                            type: "edit",
+                                            editType: "in-person fee",
+                                          );
+                                          var activityMap = activity.toEditActivity(activity);
+                                          await databaseMethods.createDoctorActivity(activityMap, widget.uid);
                                           await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
                                           inPersonTEC.text = "";
                                           videoCallTEC.text = "";
@@ -637,6 +731,13 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             "voice_call": voiceCall,
                                             "video_call": videoCallTEC.text,
                                           };
+                                          activity = Activity.editActivity(
+                                            createdAt: FieldValue.serverTimestamp(),
+                                            type: "edit",
+                                            editType: "video call fee",
+                                          );
+                                          var activityMap = activity.toEditActivity(activity);
+                                          await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                           await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
                                           inPersonTEC.text = "";
                                           videoCallTEC.text = "";
@@ -658,6 +759,13 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             "voice_call": voiceCallTEC.text,
                                             "video_call": videoCall,
                                           };
+                                          activity = Activity.editActivity(
+                                            createdAt: FieldValue.serverTimestamp(),
+                                            type: "edit",
+                                            editType: "voice call fee",
+                                          );
+                                          var activityMap = activity.toEditActivity(activity);
+                                          await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                           await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
                                           inPersonTEC.text = "";
                                           videoCallTEC.text = "";
@@ -676,6 +784,13 @@ class _DoctorAccountState extends State<DoctorAccount> {
                                             "voice_call": voiceCallTEC.text,
                                             "video_call": videoCallTEC.text,
                                           };
+                                          activity = Activity.editActivity(
+                                            createdAt: FieldValue.serverTimestamp(),
+                                            type: "edit",
+                                            editType: "consultation fee",
+                                          );
+                                          var activityMap = activity.toEditActivity(activity);
+                                          await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                           await databaseMethods.updateDoctorDocField({"fee": updateMap}, widget.uid);
                                           inPersonTEC.text = "";
                                           videoCallTEC.text = "";
@@ -704,7 +819,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                             );
                           },
                           child: Text("Edit", style: TextStyle(
-                            color: Colors.red[300],
+                            color: Color(0xFFa81845),
                             fontWeight: FontWeight.bold,
                             fontFamily: "Brand Bold",
                             fontSize: 2 * SizeConfig.textMultiplier,
@@ -743,7 +858,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
           );
   }
 
-  Column _editFeeTile({String title, TextEditingController textEditingController, String hintText}) {
+  Widget _editFeeTile({String title, TextEditingController textEditingController, String hintText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -778,7 +893,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
   Widget _radioTile({String title, width, TextEditingController controller}) {
     String group = "";
     return Container(
-      width: width == null ? 50 * SizeConfig.widthMultiplier : width,
+      width: width == null ? 60 * SizeConfig.widthMultiplier : width,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -798,7 +913,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                           width: 7 * SizeConfig.widthMultiplier,
                           child: Radio(
                             value: "Morning: 08:00am - 11:30am",
-                            activeColor: Colors.red[300],
+                            activeColor: Color(0xFFa81845),
                             groupValue: group,
                             onChanged: (T) {
                               setState(() {
@@ -820,7 +935,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                           width: 7 * SizeConfig.widthMultiplier,
                           child: Radio(
                             value: "Afternoon: 03:00pm - 04:30pm",
-                            activeColor: Colors.red[300],
+                            activeColor: Color(0xFFa81845),
                             groupValue: group,
                             onChanged: (T) {
                               setState(() {
@@ -858,7 +973,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
           SizedBox(height: 1 * SizeConfig.heightMultiplier,),
           Container(
             height: 5 * SizeConfig.heightMultiplier,
-            width: 16 * SizeConfig.widthMultiplier,
+            width: 18 * SizeConfig.widthMultiplier,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(15),
@@ -877,7 +992,7 @@ class _DoctorAccountState extends State<DoctorAccount> {
                 child: Text(
                       amount,
                       style: TextStyle(
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         fontFamily: "Brand Bold",
                         fontSize: 1.5 * SizeConfig.textMultiplier,
                         fontWeight: FontWeight.bold,
@@ -888,6 +1003,37 @@ class _DoctorAccountState extends State<DoctorAccount> {
           ),
         ],
       );
+  }
+}
+
+Future<void> updatePostChatCallPics({QuerySnapshot postSnap, QuerySnapshot chatSnap, QuerySnapshot callSnap,
+  updatePic,}) async {
+
+  if (postSnap != null) {
+    for (int i = 0; i <= (postSnap.size - 1); i++) {
+      String docId = postSnap.docs[i].id;
+      await databaseMethods.updatePostDocField({"sender_pic": updatePic}, docId);
+    }
+  }
+
+  for (int i = 0; i <= (chatSnap.size - 1); i++) {
+    String docId = chatSnap.docs[i].id;
+    String createdBy = chatSnap.docs[i].get("createdBy");
+    if (createdBy == Constants.myName) {
+      await databaseMethods.updateChatRoomDocField({"sender_profile_photo": updatePic}, docId);
+    } else {
+      await databaseMethods.updateChatRoomDocField({"receiver_profile_photo": updatePic}, docId);
+    }
+  }
+
+  for (int i = 0; i <= (callSnap.size - 1); i++) {
+    String docId = callSnap.docs[i].id;
+    String createdBy = callSnap.docs[i].get("createdBy");
+   if (createdBy == Constants.myName) {
+     await databaseMethods.updateCallRecordDocField({"caller_pic": updatePic}, docId);
+   } else {
+     await databaseMethods.updateCallRecordDocField({"receiver_pic": updatePic}, docId);
+   }
   }
 }
 
@@ -993,11 +1139,11 @@ Widget specTile({IconData icon, String title, String text, double width, double 
               child: icon == null
                   ? Text(text, style: TextStyle(
                 fontFamily: "Brand Bold",
-                color: Colors.red[300],
-                fontSize: 2 * SizeConfig.textMultiplier,
+                color: Color(0xFFa81845),
+                fontSize: 1.8 * SizeConfig.textMultiplier,
               ),)
                   : Icon(icon,
-                color: Colors.red[300],
+                color: Color(0xFFa81845),
                 size: 5 * SizeConfig.imageSizeMultiplier,
               ),
             ),
@@ -1011,7 +1157,7 @@ Widget specTile({IconData icon, String title, String text, double width, double 
             textAlign: TextAlign.start,
             style: TextStyle(
               fontFamily: "Brand-Regular",
-              fontSize: 2.3 * SizeConfig.textMultiplier,
+              fontSize: 1.8 * SizeConfig.textMultiplier,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -1027,23 +1173,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1052,23 +1198,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_half,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1077,23 +1223,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1102,23 +1248,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_half,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1127,23 +1273,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1152,23 +1298,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_half,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1177,23 +1323,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1202,23 +1348,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_half,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1227,23 +1373,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1252,23 +1398,23 @@ _getStar(amount) {
       children: <Widget>[
         Icon(
           Icons.star_half,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
         Icon(
           Icons.star_border_rounded,
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),
       ],
     );
@@ -1283,16 +1429,10 @@ getReviews(amount, String desc) {
   } catch (e) {
     amount2 = 0;
   }
-  return Padding(
-    padding: EdgeInsets.only(
-      left: 3 * SizeConfig.widthMultiplier,
-      right: 3 * SizeConfig.widthMultiplier,
-    ),
-    child: desc == ""
+  return desc == ""
         ? Row(
             children: <Widget>[
               _getStar(amount2),
-              SizedBox(width: 2 * SizeConfig.widthMultiplier,),
               Text(amount2.toString(), style: TextStyle(fontFamily: "Brand-Regular"),),
             ],
           )
@@ -1305,11 +1445,10 @@ getReviews(amount, String desc) {
                 style: TextStyle(
                   color: Colors.grey,
                   fontFamily: "Brand Bold",
-                  fontSize: 2.2 * SizeConfig.textMultiplier,
+                  fontSize: 1.8 * SizeConfig.textMultiplier,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
-          ),
-  );
+          );
 }

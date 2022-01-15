@@ -1,11 +1,13 @@
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/Assistants/requestAssistant.dart';
+import 'package:creativedata_app/Models/venueElement.dart';
 import 'package:creativedata_app/Provider/appData.dart';
 import 'package:creativedata_app/Models/address.dart';
 import 'package:creativedata_app/Models/placePredictions.dart';
 import 'package:creativedata_app/Widgets/divider.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
 import 'package:creativedata_app/configMaps.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +16,7 @@ import 'package:provider/provider.dart';
 */
 
 class SearchScreen extends StatefulWidget {
+  const SearchScreen({Key key}) : super(key: key);
 
   @override
   _SearchScreenState createState() => _SearchScreenState();
@@ -28,7 +31,9 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
 
-    String placeAddress = Provider.of<AppData>(context).pickUpLocation.placeName ?? "";
+    String placeAddress = Provider.of<AppData>(context).pickUpLocation != null
+        ? Provider.of<AppData>(context).pickUpLocation.placeName
+        : "Please wait address loading...";
     pickUpTEC.text = placeAddress != null ? placeAddress : CircularProgressIndicator();
 
     SizeConfig().init(context);
@@ -45,14 +50,13 @@ class _SearchScreenState extends State<SearchScreen> {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.red[300],
+                      color: Color(0xFFa81845),
                       blurRadius: 6.0,
                       spreadRadius: 0.5,
                       offset: Offset(0.7, 0.7),
                     ),
                   ],
                 ),
-
                 child: Padding(
                   padding: EdgeInsets.only(left: 20.0, top: 25.0, right: 20.0, bottom: 15.0),
                   child: Column(
@@ -66,32 +70,45 @@ class _SearchScreenState extends State<SearchScreen> {
                             },
                               child: Icon(
                                   Icons.arrow_back,
-                                color: Colors.red[300],
+                                color: Color(0xFFa81845),
                               ),
                           ),
                           Center(
-                            child: Text("Search Hospital", style: TextStyle(fontSize: 18.0, fontFamily: "Brand Bold"),),
+                            child: Text("Search Hospital", style: TextStyle(
+                              fontSize: 18.0,
+                              fontFamily: "Brand Bold",
+                              color: Color(0xFFa81845)
+                            ),),
                           ),
                         ],
                       ),
                       SizedBox(height: 16.0,),
                       Row(
-                        children: [
+                        children: <Widget>[
                           Image.asset("images/pickicon.png", height: 16.0, width: 16.0,),
                           SizedBox(height: 18.0),
                           Expanded(
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.red[300],
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black54,
+                                    blurRadius: 6.0,
+                                    spreadRadius: 0.5,
+                                    offset: Offset(0.7, 0.7),
+                                  ),
+                                ],
+                                color: Colors.grey[100],
                                 borderRadius: BorderRadius.circular(5.0),
                               ),
                               child: Padding(
                                 padding: EdgeInsets.all(3.0),
                                 child: TextField(
                                   controller: pickUpTEC,
+                                  enabled: false,
                                   decoration: InputDecoration(
                                     hintText: "...PickUp Location",
-                                    fillColor: Colors.white,
+                                    fillColor: Colors.grey[100],
                                     filled: true,
                                     border: InputBorder.none,
                                     isDense: true,
@@ -112,7 +129,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           Expanded(
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.red[300],
+                                gradient: kPrimaryGradientColor,
                                 borderRadius: BorderRadius.circular(5.0),
                               ),
                               child: Padding(
@@ -123,7 +140,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   },
                                   controller: dropOffTEC,
                                   decoration: InputDecoration(
-                                    hintText: "...Which Hospital",
+                                    hintText: "...Hospital Name",
                                     fillColor: Colors.white,
                                     filled: true,
                                     border: InputBorder.none,
@@ -189,7 +206,7 @@ class _SearchScreenState extends State<SearchScreen> {
 class PredictionTile extends StatelessWidget {
 
   final PlacePredictions placePredictions;
-  PredictionTile({Key key, this.placePredictions}) : super(key: key);
+  const PredictionTile({Key key, this.placePredictions}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -208,13 +225,13 @@ class PredictionTile extends StatelessWidget {
                   height: 4 * SizeConfig.heightMultiplier,
                   width:  8 * SizeConfig.widthMultiplier,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    gradient: kPrimaryGradientColor,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
                     child: Icon(
                       Icons.add_location,
-                      color: Colors.red[300],
+                      color: Colors.white,
                       size: 5 * SizeConfig.imageSizeMultiplier,
                     ),
                   ),
@@ -228,7 +245,7 @@ class PredictionTile extends StatelessWidget {
                       SizedBox(height: 8.0,),
                       Text(placePredictions.mainText, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 16.0),),
                       SizedBox(height: 2.0,),
-                      Text(placePredictions.secondaryText,overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.0, color: Colors.red[300]),),
+                      Text(placePredictions.secondaryText,overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.0, color: Color(0xFFa81845)),),
                       SizedBox(height: 8.0,),
                     ],
                   ),
@@ -243,12 +260,12 @@ class PredictionTile extends StatelessWidget {
   }
 
   void getPlaceAddressDetails(String placeId, context) async{
-
     showDialog(
       context: context,
       builder: (BuildContext context) => ProgressDialog(message: "Setting Hospital, Please wait...",)
     );
 
+    print("PlaceId ::: $placeId");
     String placeDetailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$mapKey";
     var res = await RequestAssistant.getStringRequest(placeDetailsUrl);
     Navigator.pop(context);
@@ -269,4 +286,20 @@ class PredictionTile extends StatelessWidget {
       Navigator.pop(context, "obtainDirection");
     }
   }
+}
+
+Future<String> getPlaceAddressDetails2(VenueElement venueElement, context) async {
+  showDialog(
+      context: context,
+      builder: (BuildContext context) => ProgressDialog(message: "Setting Hospital, Please wait...",)
+  );
+  Address address = Address();
+  address.placeName = venueElement.name;
+  address.placeId = venueElement.id;
+  address.longitude = venueElement.location.lng;
+  address.latitude = venueElement.location.lat;
+  Navigator.pop(context);
+
+  Provider.of<AppData>(context, listen: false).updateDropOffLocationAddress(address);
+  return "obtainDirection";
 }

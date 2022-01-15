@@ -1,6 +1,5 @@
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
-import 'package:creativedata_app/AllScreens/userProfileScreen.dart';
 import 'package:creativedata_app/Doctor/doctorRegistration.dart';
 import 'package:creativedata_app/Services/auth.dart';
 import 'package:creativedata_app/Services/database.dart';
@@ -9,11 +8,13 @@ import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/customBottomNavBar.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 /*
 * Created by Mujuzi Moses
 */
@@ -156,22 +157,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     SizedBox(height: 10.0,),
                     RaisedButton(
-                      color: Colors.red[300],
+                      clipBehavior: Clip.hardEdge,
+                      padding: EdgeInsets.zero,
+                      elevation: 8,
                       textColor: Colors.white,
                       child: Container(
                         height: 6.5 * SizeConfig.heightMultiplier,
+                        width: 100 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          gradient: kPrimaryGradientColor,
+                        ),
                         child: Center(
-                          child: Text(
-                            "Create Account",
-                            style: TextStyle(
-                                fontSize: 2.5 * SizeConfig.textMultiplier, fontFamily: "Brand Bold"),
-                          ),
+                          child: Text("Create Account", style: TextStyle(
+                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                            fontFamily: "Brand Bold",
+                            color: Colors.white,
+                          ),),
                         ),
                       ),
                       shape: new RoundedRectangleBorder(
                         borderRadius: new BorderRadius.circular(24.0),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
+                        bool hasInternet = await InternetConnectionChecker().hasConnection;
+                        if (hasInternet == true) {} else {
+                          displayToastMessage("No internet Connection", context);
+                          return;
+                        }
                         String regId = _dropDownList.selectedValue;
                         if (nameTEC.text.length <= 4) {
                           displayToastMessage("Name must be at least 4 characters ", context);
@@ -244,10 +256,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onPressed: () {
                   Navigator.pushNamedAndRemoveUntil(context, LoginScreen.screenId, (route) => false);
                 },
-                child: Text(
-                  "Already have an Account? Login Here",
-                  style: TextStyle(decoration: TextDecoration.underline),
-                ),
+                child: Text("Already have an Account? Login Here", style: TextStyle(
+                  decoration: TextDecoration.underline,
+                  color: Color(0xFFa81845),
+                  ),),
               ),
             ],
           ),
@@ -284,7 +296,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     borderRadius: BorderRadius.circular(80),
                                     color: Colors.white,
                                     border: Border.all(
-                                        color: Colors.red[300], style: BorderStyle.solid, width: 2),
+                                        color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                                   ),
                                   child: profilePhoto == null
                                       ? Image.asset("images/user_icon.png")
@@ -332,7 +344,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                             },
                                             menuItems: <FocusedMenuItem>[
                                               FocusedMenuItem(title: Text("Gallery", style: TextStyle(
-                                                  color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                                  color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                                                 onPressed: () async =>
                                                 await Permissions.cameraAndMicrophonePermissionsGranted() ?
                                                 pickImage(
@@ -344,10 +356,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                   });
                                                 }) : {},
                                                 trailingIcon: Icon(
-                                                  Icons.photo_library_outlined, color: Colors.red[300],),
+                                                  Icons.photo_library_outlined, color: Color(0xFFa81845),),
                                               ),
                                               FocusedMenuItem(title: Text("Capture", style: TextStyle(
-                                                  color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                                  color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                                                 onPressed: () async =>
                                                 await Permissions.cameraAndMicrophonePermissionsGranted() ?
                                                 pickImage(
@@ -358,21 +370,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                                     profilePhoto = val;
                                                   });
                                                 }) : {},
-                                                trailingIcon: Icon(Icons.camera, color: Colors.red[300],),
+                                                trailingIcon: Icon(Icons.camera, color: Color(0xFFa81845),),
                                               ),
                                             ],
-                                            child: Icon(Icons.camera_alt_outlined, color: Colors.red[300],),
+                                            child: Icon(Icons.camera_alt_outlined, color: Color(0xFFa81845),),
                                           ),
                                         ),
                                       ],
                                     ),
                                     Spacer(),
                                     RaisedButton(
-                                      color: Colors.red[300],
+                                      clipBehavior: Clip.hardEdge,
+                                      padding: EdgeInsets.zero,
                                       textColor: Colors.white,
                                       child: Container(
-                                        height: 6.5 * SizeConfig.heightMultiplier,
-                                        width: 30 * SizeConfig.widthMultiplier,
+                                        height: 5 * SizeConfig.heightMultiplier,
+                                        width: 100 * SizeConfig.widthMultiplier,
+                                        decoration: BoxDecoration(
+                                          gradient: kPrimaryGradientColor
+                                        ),
                                         child: Center(
                                           child: Text("Submit", style: TextStyle(
                                             fontSize: 2.5 * SizeConfig.textMultiplier,
@@ -399,6 +415,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                           "profile_photo": profilePhoto,
                                           "state": null,
                                           "status": null,
+                                          "token": null,
                                           "regId": "User",
                                         };
                                         databaseMethods.uploadUserInfo(userDataMap);
@@ -449,14 +466,14 @@ class _DropDownListState extends State<DropDownList> {
         child: DropdownButtonHideUnderline(
           child: DropdownButton(
             hint: Text(widget.placeholder, style: TextStyle(
-              fontFamily: "brand-Regular",
-              fontSize: 2.5 * SizeConfig.textMultiplier,
+              fontFamily: "Brand-Regular",
+              fontSize: 2.1 * SizeConfig.textMultiplier,
               color: Colors.grey,
             ),),
             dropdownColor: Colors.white,
             icon: Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: Colors.red[300],
+              color: Color(0xFFa81845),
               size: 5 * SizeConfig.imageSizeMultiplier,
             ),
             iconSize: 8 * SizeConfig.imageSizeMultiplier,

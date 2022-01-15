@@ -4,7 +4,7 @@ import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
 import 'package:creativedata_app/AllScreens/Chat/conversationScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Widgets/onlineIndicator.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
@@ -73,7 +73,7 @@ class _ChatSearchState extends State<ChatSearch> {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.redAccent,
+                      color: Color(0xFFa81845),
                       blurRadius: 6.0,
                       spreadRadius: 0.5,
                       offset: Offset(0.7, 0.7),
@@ -91,7 +91,7 @@ class _ChatSearchState extends State<ChatSearch> {
                             onTap: () => Navigator.pop(context),
                             child: Icon(
                               Icons.arrow_back,
-                              color: Colors.redAccent,
+                              color: Color(0xFFa81845),
                             ),
                           ),
                           Center(
@@ -100,6 +100,7 @@ class _ChatSearchState extends State<ChatSearch> {
                               style: TextStyle(
                                 fontSize: 20.0,
                                 fontFamily: "Brand Bold",
+                                color: Color(0xFFa81845),
                               ),),
                           ),
                         ],
@@ -173,6 +174,10 @@ goToChat(String username, String profilePhoto, bool isDoctor, String uid,
     Map<String, dynamic> chartRoomMap = {
       "users" : users,
       "chatroomId" : chatRoomId,
+      "sender_counter": "0",
+      "sender_status": "online",
+      "receiver_counter": "0",
+      "receiver_status": "offline",
       "createdBy" : Constants.myName,
       "receiver_profile_photo" : profilePhoto,
       "sender_profile_photo" : myProfilePhoto,
@@ -237,7 +242,7 @@ class _SearchTileState extends State<SearchTile> {
         height: 4 * SizeConfig.heightMultiplier,
         child: Center(
           child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFa81845)),
           ),
         ),
       ),
@@ -308,7 +313,7 @@ class _SearchTileState extends State<SearchTile> {
                       child: Icon(
                         Icons.message_rounded,
                         size: 5 * SizeConfig.imageSizeMultiplier,
-                        color: Colors.redAccent,
+                        color: Color(0xFFa81845),
                       ),),
                   ),
                 ),
@@ -319,21 +324,27 @@ class _SearchTileState extends State<SearchTile> {
                       context: context,
                       builder: (context) => ProgressDialog(message: "Please wait...",),
                     );
+                    Activity activity = Activity.callActivity(
+                      createdAt: FieldValue.serverTimestamp(),
+                      type: "call",
+                      callType: "video",
+                      receiver: name,
+                    );
                     await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                    goToVideoChat(databaseMethods, name, context, widget.isDoctor) : {};
+                    goToVideoChat(databaseMethods, name, context, widget.isDoctor, activity) : {};
                   },
                   child: Container(
                     height: 5 * SizeConfig.heightMultiplier,
                     width: 10 * SizeConfig.widthMultiplier,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      gradient: kPrimaryGradientColor,
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Center(
                       child: Icon(
                         CupertinoIcons.video_camera_solid,
                         size: 5 * SizeConfig.imageSizeMultiplier,
-                        color: Colors.redAccent,
+                        color: Colors.white,
                       ),),
                   ),
                 ),
@@ -344,8 +355,14 @@ class _SearchTileState extends State<SearchTile> {
                       context: context,
                       builder: (context) => ProgressDialog(message: "Please wait...",),
                     );
+                    Activity activity = Activity.callActivity(
+                      createdAt: FieldValue.serverTimestamp(),
+                      type: "call",
+                      callType: "voice",
+                      receiver: name,
+                    );
                     await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                    goToVoiceCall(databaseMethods, name, context, widget.isDoctor) : {};
+                    goToVoiceCall(databaseMethods, name, context, widget.isDoctor, activity) : {};
                   },
                   child: Container(
                     height: 5 * SizeConfig.heightMultiplier,
@@ -358,7 +375,7 @@ class _SearchTileState extends State<SearchTile> {
                       child: Icon(
                         Icons.phone_rounded,
                         size: 5 * SizeConfig.imageSizeMultiplier,
-                        color: Colors.redAccent,
+                        color: Color(0xFFa81845),
                       ),),
                   ),
                 ),

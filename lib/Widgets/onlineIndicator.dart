@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 class OnlineIndicator extends StatefulWidget {
   final String uid;
   final bool isDoctor;
-  OnlineIndicator({Key key, @required this.uid, @required this.isDoctor}) : super(key: key);
+  const OnlineIndicator({Key key, @required this.uid, @required this.isDoctor}) : super(key: key);
 
   @override
   _OnlineIndicatorState createState() => _OnlineIndicatorState();

@@ -6,12 +6,11 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/addReminderScreen.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/reminder.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 /*
 * Created by Mujuzi Moses
@@ -61,7 +60,7 @@ class AppointmentsScreen extends StatelessWidget {
           backgroundColor: Colors.grey[100],
           title: Text("Appointments", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         body: Container(
@@ -85,15 +84,13 @@ class AppointmentTile extends StatefulWidget {
   final DateTime dateTime;
   final String hospital;
   final String speciality;
-  AppointmentTile({Key key, this.patientName, this.hospital, this.speciality, this.dateTime,}) : super(key: key);
+  const AppointmentTile({Key key, this.patientName, this.hospital, this.speciality, this.dateTime,}) : super(key: key);
 
   @override
   _AppointmentTileState createState() => _AppointmentTileState();
 }
 
 class _AppointmentTileState extends State<AppointmentTile> {
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
-  DatabaseMethods databaseMethods = DatabaseMethods();
   String phone = "";
   String pic = "";
   String action = "Loading...";
@@ -148,9 +145,7 @@ class _AppointmentTileState extends State<AppointmentTile> {
           color: Colors.white,
         ),
         child: Padding(
-          padding: EdgeInsets.only(
-            top: 10, bottom: 10,
-          ),
+          padding: EdgeInsets.symmetric(vertical: 1 * SizeConfig.heightMultiplier,),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -162,20 +157,20 @@ class _AppointmentTileState extends State<AppointmentTile> {
                     height: 8 * SizeConfig.heightMultiplier,
                     width: 30 * SizeConfig.widthMultiplier,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(4),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text("Patient's Name", style: TextStyle(
                             fontFamily: "Brand-Regular",
                             fontWeight: FontWeight.w400,
-                            fontSize: 2 * SizeConfig.textMultiplier,
+                            fontSize: 1.8 * SizeConfig.textMultiplier,
                           ),),
                           Container(
                             child: Text(widget.patientName, style: TextStyle(
                               fontFamily: "Brand Bold",
-                              fontSize: 2.5 * SizeConfig.textMultiplier,
+                              fontSize: 2.1 * SizeConfig.textMultiplier,
                             ), overflow: TextOverflow.ellipsis,),
                           ),
                         ],
@@ -186,20 +181,20 @@ class _AppointmentTileState extends State<AppointmentTile> {
                     height: 8 * SizeConfig.heightMultiplier,
                     width: 30 * SizeConfig.widthMultiplier,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(4),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text("Date", style: TextStyle(
                             fontFamily: "Brand-Regular",
                             fontWeight: FontWeight.w400,
-                            fontSize: 2 * SizeConfig.textMultiplier,
+                            fontSize: 1.8 * SizeConfig.textMultiplier,
                           ),),
                           Container(
                             child: Text("${Utils.formatDate(widget.dateTime)}", style: TextStyle(
                               fontFamily: "Brand Bold",
-                              fontSize: 2.5 * SizeConfig.textMultiplier,
+                              fontSize: 2.1 * SizeConfig.textMultiplier,
                             ), overflow: TextOverflow.ellipsis,),
                           ),
                         ],
@@ -210,20 +205,20 @@ class _AppointmentTileState extends State<AppointmentTile> {
                     height: 8 * SizeConfig.heightMultiplier,
                     width: 30 * SizeConfig.widthMultiplier,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(4),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text("Time", style: TextStyle(
                             fontFamily: "Brand-Regular",
                             fontWeight: FontWeight.w400,
-                            fontSize: 2 * SizeConfig.textMultiplier,
+                            fontSize: 1.8 * SizeConfig.textMultiplier,
                           ),),
                           Container(
                             child: Text("${Utils.formatTime(widget.dateTime)}", style: TextStyle(
                               fontFamily: "Brand Bold",
-                              fontSize: 2.5 * SizeConfig.textMultiplier,
+                              fontSize: 2.1 * SizeConfig.textMultiplier,
                             ), overflow: TextOverflow.ellipsis,),
                           ),
                         ],
@@ -241,8 +236,8 @@ class _AppointmentTileState extends State<AppointmentTile> {
                     Container(
                       height: 6 * SizeConfig.heightMultiplier,
                       child: RaisedButton(
-                        onPressed: () {},
-                        color: Colors.red[300],
+                        onPressed: () => displaySnackBar(message: "Can't cancel appointment", context: context),
+                        color: Color(0xFFa81845),
                         splashColor: Colors.white,
                         highlightColor: Colors.red.withOpacity(0.1),
                         child: Center(
@@ -270,6 +265,21 @@ class _AppointmentTileState extends State<AppointmentTile> {
                               "time": FieldValue.serverTimestamp(),
                               "private": true,
                             };
+
+                            Activity activity = Activity.saveActivity(
+                              type: "saved",
+                              createdAt: FieldValue.serverTimestamp(),
+                              savedType: "patient",
+                              patientName: widget.patientName,
+                            );
+
+                            Activity reminderAct = Activity.appReminderActivity(
+                              appTime: Timestamp.fromDate(widget.dateTime),
+                              createdAt: FieldValue.serverTimestamp(),
+                              reminderType: "appointment",
+                              type: "reminder",
+                              user: widget.patientName,
+                            );
 
                             Duration duration = widget.dateTime.add(Duration(hours: 1)).difference(DateTime.now());
 
@@ -308,10 +318,14 @@ class _AppointmentTileState extends State<AppointmentTile> {
                             scheduleAlarm(dateTime: widget.dateTime, id: id, docName: widget.patientName, speciality: widget.speciality, isDoc: true,);
                             Timer(duration, () {cancelDocAlarm(name: widget.patientName.trim(), id: id);});
 
+                            var activityMap = activity.toSaveActivity(activity);
+                            var appActivityMap = reminderAct.toAppReminderActivity(reminderAct);
                             Map<String, dynamic> reminderMap = reminder.toAppointMap(reminder);
-                            databaseMethods.createDoctorReminder(reminderMap, firebaseAuth.currentUser.uid);
+                            databaseMethods.createDoctorReminder(reminderMap, currentUser.uid);
 
-                            await databaseMethods.savePatient(patientMap, firebaseAuth.currentUser.uid);
+                            await databaseMethods.savePatient(patientMap, currentUser.uid);
+                            await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
+                            await databaseMethods.createDoctorActivity(appActivityMap, currentUser.uid);
                             setState(() {
                               action = "Added";
                             });
@@ -322,12 +336,12 @@ class _AppointmentTileState extends State<AppointmentTile> {
                           }
                         },
                         color: Colors.white,
-                        splashColor: Colors.red[300],
+                        splashColor: Color(0xFFa81845),
                         highlightColor: Colors.grey.withOpacity(0.1),
                         child: Center(
                           child: Text(action, style: TextStyle(
                             fontFamily: "Brand Bold",
-                            color: Colors.red[300],
+                            color: Color(0xFFa81845),
                             fontSize: 2 * SizeConfig.textMultiplier,
                           ),),
                         ),

@@ -3,6 +3,7 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/doctorProfileScreen.dart';
 import 'package:creativedata_app/AllScreens/userProfileScreen.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -16,7 +17,7 @@ class SpecialityScreen extends StatefulWidget {
   static const String screenId = "specialityScreen";
   final String speciality;
   final List doctors;
-  SpecialityScreen({Key key, this.speciality, this.doctors}) : super(key: key);
+  const SpecialityScreen({Key key, this.speciality, this.doctors}) : super(key: key);
 
   @override
   _SpecialityScreenState createState() => _SpecialityScreenState();
@@ -79,27 +80,30 @@ Widget doctorsList({@required Stream doctorStream}) {
     stream: doctorStream,
     builder: (context, snapshot) {
       return snapshot.hasData
-          ? ListView.builder(
-          itemCount: snapshot.data.docs.length,
-          shrinkWrap: true,
-          physics: ClampingScrollPhysics(),
-          itemBuilder: (context, index) {
-            String profilePic = snapshot.data.docs[index].get("profile_photo");
-            String doctorsName = snapshot.data.docs[index].get("name");
-            String speciality = snapshot.data.docs[index].get("speciality");
-            String hospital = snapshot.data.docs[index].get("hospital");
-            String reviews = snapshot.data.docs[index].get("reviews");
-            String uid = snapshot.data.docs[index].get("uid");
-            return InfoView(
-              doctorsName: doctorsName,
-              speciality: speciality,
-              hospital: hospital,
-              imageUrl: profilePic,
-              reviews: reviews,
-              uid: uid,
-            );
-          }
-      ) : Container();
+          ? Container(
+            height: (snapshot.data.docs.length * 22.5) * SizeConfig.heightMultiplier,
+            child: ListView.builder(
+            itemCount: snapshot.data.docs.length,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemBuilder: (context, index) {
+              String profilePic = snapshot.data.docs[index].get("profile_photo");
+              String doctorsName = snapshot.data.docs[index].get("name");
+              String speciality = snapshot.data.docs[index].get("speciality");
+              String hospital = snapshot.data.docs[index].get("hospital");
+              String reviews = snapshot.data.docs[index].get("reviews");
+              String uid = snapshot.data.docs[index].get("uid");
+              return InfoView(
+                doctorsName: doctorsName,
+                speciality: speciality,
+                hospital: hospital,
+                imageUrl: profilePic,
+                reviews: reviews,
+                uid: uid,
+              );
+            }
+      ),
+          ) : Container();
     },
   );
 }
@@ -125,7 +129,7 @@ class _SpecBodyState extends State<SpecBody> {
       padding: EdgeInsets.only(left: 1.8 * SizeConfig.widthMultiplier),
       child: RaisedButton(
         color: Colors.white,
-        textColor: Colors.red[300],
+        textColor: Color(0xFFa81845),
         child: Container(
           height: 5 * SizeConfig.heightMultiplier,
           width: 20.8 * SizeConfig.widthMultiplier,
@@ -168,7 +172,6 @@ class _SpecBodyState extends State<SpecBody> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
       decoration: BoxDecoration(
         color: Colors.grey[100],
       ),
@@ -186,14 +189,7 @@ class _SpecBodyState extends State<SpecBody> {
                       left: 3 * SizeConfig.widthMultiplier,
                       right: 3 * SizeConfig.widthMultiplier,
                     ),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      color: Colors.grey[100],
-                      height: 82 * SizeConfig.heightMultiplier,
-                        child: SingleChildScrollView(
-                          child: doctorsList(doctorStream: widget.allStream),
-                        ),
-                      ),
+                    child: doctorsList(doctorStream: widget.allStream),
                   ),
                 ),
               ),
@@ -206,14 +202,7 @@ class _SpecBodyState extends State<SpecBody> {
                       left: 3 * SizeConfig.widthMultiplier,
                       right: 3 * SizeConfig.widthMultiplier,
                     ),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      color: Colors.grey[100],
-                      height: 82 * SizeConfig.heightMultiplier,
-                        child: SingleChildScrollView(
-                          child: doctorsList(doctorStream: widget.topStream),
-                        ),
-                      ),
+                    child: doctorsList(doctorStream: widget.topStream),
                   ),
                 ),
               ),
@@ -226,14 +215,7 @@ class _SpecBodyState extends State<SpecBody> {
                       left: 3 * SizeConfig.widthMultiplier,
                       right: 3 * SizeConfig.widthMultiplier,
                     ),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      color: Colors.grey[100],
-                      height: 82 * SizeConfig.heightMultiplier,
-                        child: SingleChildScrollView(
-                          child: doctorsList(doctorStream: widget.seniorStream)
-                        ),
-                      ),
+                    child: doctorsList(doctorStream: widget.seniorStream)
                   ),
                 ),
               ),
@@ -333,8 +315,8 @@ class _SpecCustomState extends State<SpecCustom> {
                   visible: titleVisible,
                   child: IconButton(
                     onPressed: () => showHideSearchBar(),
-                    splashColor: Colors.red[200],
-                    icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
+                    icon: Icon(CupertinoIcons.search, color: Color(0xFFa81845),
                     ),),
                 ),
                 Visibility(
@@ -345,8 +327,8 @@ class _SpecCustomState extends State<SpecCustom> {
                       // drugOnSearch.clear();
                       showHideSearchBar();
                     },
-                    color: Colors.red[300],
-                    splashColor: Colors.red[200],
+                    color: Color(0xFFa81845),
+                    splashColor: Color(0xFFa81845).withOpacity(0.5),
                     icon: Icon(CupertinoIcons.clear,
                     ),),
                 ),
@@ -367,7 +349,7 @@ class _SpecCustomState extends State<SpecCustom> {
                         padding: EdgeInsets.all(8.0),
                         child: Text(widget.speciality, style: TextStyle(
                           fontFamily: "Brand Bold",
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                         ),),
                       ),
                     ),
@@ -473,10 +455,16 @@ class _SpecCustomState extends State<SpecCustom> {
                   ),
                   child: Row(
                     children: <Widget>[
-                      CircleAvatar(
-                        backgroundColor: Colors.red[100],
-                        foregroundColor: Colors.red[300],
-                        child: Icon(FontAwesomeIcons.userMd),
+                      Container(
+                        height: 5 * SizeConfig.heightMultiplier,
+                        width: 10 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          gradient: kPrimaryGradientColor,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: Icon(FontAwesomeIcons.userMd, color: Colors.white,),
+                        ),
                       ),
                       SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                       Text("Dr. ${doctorOnSearch[index]}", style: TextStyle(

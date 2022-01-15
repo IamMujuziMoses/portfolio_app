@@ -17,7 +17,7 @@ import 'package:path_provider/path_provider.dart';
 
 class SiroWeb extends StatefulWidget {
   final String url;
-  SiroWeb({Key key, this.url}) : super(key: key);
+  const SiroWeb({Key key, this.url}) : super(key: key);
 
   @override
   _SiroWebState createState() => _SiroWebState();
@@ -89,13 +89,13 @@ class _SiroWebState extends State<SiroWeb> {
                 children: <Widget>[
                   Text("Siro", style: TextStyle(
                       fontFamily: "Brand Bold",
-                      color: Colors.red[300]
+                      color: Color(0xFFa81845)
                   ),),
                   Spacer(),
                   FlatButton(
                     child: Row(
                       children: <Widget>[
-                        Icon(CupertinoIcons.arrowshape_turn_up_right, color: Colors.red[300],),
+                        Icon(CupertinoIcons.arrowshape_turn_up_right, color: Color(0xFFa81845),),
                         Text("forward", style: TextStyle(
                           fontFamily: "Brand-Regular",
                         ),),
@@ -116,7 +116,7 @@ class _SiroWebState extends State<SiroWeb> {
                   FlatButton(
                     child: Row(
                       children: <Widget>[
-                        Icon(CupertinoIcons.arrowshape_turn_up_left, color: Colors.red[300],),
+                        Icon(CupertinoIcons.arrowshape_turn_up_left, color: Color(0xFFa81845),),
                         Text("back", style: TextStyle(
                           fontFamily: "Brand-Regular",
                         ),),
@@ -185,7 +185,7 @@ class _SiroWebState extends State<SiroWeb> {
                     child: LinearProgressIndicator(
                       value: progressInt / 100,
                       backgroundColor: Colors.grey[100],
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFa81845)),
                     ),
                   ),
                 ),

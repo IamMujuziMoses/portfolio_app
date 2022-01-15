@@ -2,10 +2,12 @@ import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/doctorProfileScreen.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
+import 'package:creativedata_app/Enum/userState.dart';
 import 'package:creativedata_app/User/aboutScreen.dart';
 import 'package:creativedata_app/User/helpScreen.dart';
 import 'package:creativedata_app/User/personalDetails.dart';
 import 'package:creativedata_app/Widgets/divider.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -21,7 +23,7 @@ class UserAccount extends StatefulWidget {
   final String userPic;
   final String email;
   final String phone;
-  UserAccount({Key key,
+  const UserAccount({Key key,
     this.name,
     this.userPic,
     this.email,
@@ -95,7 +97,7 @@ class _UserAccountState extends State<UserAccount> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     child: InkWell(
-                      splashColor: Colors.red[300],
+                      splashColor: Color(0xFFa81845),
                       highlightColor: Colors.grey.withOpacity(0.1),
                       radius: 800,
                       borderRadius: BorderRadius.circular(10),
@@ -129,7 +131,7 @@ class _UserAccountState extends State<UserAccount> {
                                       width: 50 * SizeConfig.widthMultiplier,
                                       child: Wrap(
                                         children: [Text(widget.name, style: TextStyle(
-                                          color: Colors.red[300],
+                                          color: Color(0xFFa81845),
                                           fontFamily: "Brand Bold",
                                           fontSize: 3 * SizeConfig.textMultiplier,
                                           fontWeight: FontWeight.bold,
@@ -164,7 +166,7 @@ class _UserAccountState extends State<UserAccount> {
                                   ),),
                                   child: Center(
                                     child: Icon(Icons.arrow_forward_ios_rounded,
-                                      color: Colors.red,
+                                      color: Color(0xFFa81845),
                                       size: 4 * SizeConfig.imageSizeMultiplier,
                                     ),
                                   ),
@@ -207,7 +209,7 @@ class _UserAccountState extends State<UserAccount> {
                       _tiles(
                         icon: CupertinoIcons.question_circle,
                         message: "Help",
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         onTap: () => Navigator.push(
                           context, MaterialPageRoute(
                           builder: (context) => HelpScreen(),
@@ -219,7 +221,7 @@ class _UserAccountState extends State<UserAccount> {
                       _tiles(
                         icon: CupertinoIcons.info_circle,
                         message: "About",
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         onTap: () => Navigator.push(
                           context, MaterialPageRoute(
                           builder: (context) => AboutScreen(
@@ -234,9 +236,10 @@ class _UserAccountState extends State<UserAccount> {
                       _tiles(
                         icon: Icons.logout,
                         message: "Log out",
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         onTap: () {
                           FirebaseAuth.instance.signOut();
+                          databaseMethods.setUserState(uid: currentUser.uid, userState: UserState.Offline, isDoctor: false);
                           Navigator.pushReplacement(context, MaterialPageRoute(
                               builder: (context) => LoginScreen()
                           ));
@@ -268,12 +271,12 @@ class _UserAccountState extends State<UserAccount> {
                             Text("Version:", style: TextStyle(
                               fontSize: 2 * SizeConfig.textMultiplier,
                               fontWeight: FontWeight.w500,
-                              color: Colors.red[700],
+                              color: Color(0xFFa81845),
                             ),),
                             Text("1.0.0", style: TextStyle(
                               fontSize: 2 * SizeConfig.textMultiplier,
                               fontWeight: FontWeight.w400,
-                              color: Colors.red[900],
+                              color: Color(0xFF851699),
                             ),),
                             Spacer(),
                           ],
@@ -293,7 +296,7 @@ class _UserAccountState extends State<UserAccount> {
     return Material(
       color: Colors.white,
       child: InkWell(
-        splashColor: Colors.red[300],
+        splashColor: Color(0xFFa81845),
         highlightColor: Colors.grey.withOpacity(0.1),
         radius: 800,
         borderRadius: BorderRadius.circular(10),

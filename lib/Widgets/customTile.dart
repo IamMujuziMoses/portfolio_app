@@ -14,7 +14,7 @@ class CustomTile extends StatelessWidget {
   final GestureTapCallback onTap;
   final GestureLongPressCallback onLongPress;
 
-  CustomTile({Key key,
+  const CustomTile({Key key,
     @required this.leading,
     @required this.title,
     this.icon,
@@ -44,7 +44,7 @@ class CustomTile extends StatelessWidget {
                   border: Border(
                     bottom: BorderSide(
                       width: 1,
-                      color: Colors.redAccent,
+                      color: Color(0xFFa81845),
                     ),
                   ),
                 ),

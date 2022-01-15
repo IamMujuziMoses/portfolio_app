@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
@@ -8,13 +10,14 @@ import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Doctor/doctorProfile.dart';
 import 'package:creativedata_app/Enum/userState.dart';
 import 'package:creativedata_app/Provider/userProvider.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 /*
 * Created by Mujuzi Moses
@@ -33,8 +36,6 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> with WidgetsBin
 
   int _currentIndex = 0;
   UserProvider userProvider;
-  DatabaseMethods databaseMethods = DatabaseMethods();
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   String regId = "";
   String name = "";
   String phone = "";
@@ -55,15 +56,41 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> with WidgetsBin
   QuerySnapshot generalSnap;
   QuerySnapshot dentistSnap;
   QuerySnapshot cardiologySnap;
+  StreamSubscription subscription;
 
   @override
   void initState() {
     getUserInfo();
     super.initState();
+
+    subscription = InternetConnectionChecker().onStatusChange.listen((status) {
+      bool hasInternet = status == InternetConnectionStatus.connected;
+
+      if (hasInternet == true) {
+        showSimpleNotification(
+          Text("Connected", style: TextStyle(
+            fontFamily: "Brand Bold",
+            color: Colors.white,
+          ),),
+          background: Color(0xFFa81845),
+          elevation: 0,
+        );
+      } else {
+        showSimpleNotification(
+          Text("No Internet Connection", style: TextStyle(
+            fontFamily: "Brand Bold",
+            color: Colors.white,
+          ),),
+          background: Color(0xFFa81845),
+          elevation: 0,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    subscription.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -187,7 +214,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> with WidgetsBin
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    String currentUserId = firebaseAuth.currentUser.uid;
+    String currentUserId = currentUser.uid;
     super.didChangeAppLifecycleState(state);
 
     switch (state) {
@@ -267,26 +294,26 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> with WidgetsBin
           selectedLabelStyle: TextStyle(
             fontWeight: FontWeight.w500, fontFamily: "Brand Bold",
           ),
-          selectedItemColor: Colors.red[300],
+          selectedItemColor: Color(0xFFa81845),
           currentIndex: index,
           items: [
             BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.house, color: Colors.red[300],),
+              icon: Icon(CupertinoIcons.house, color: Color(0xFFa81845),),
               label: "Home",
               activeIcon: selectedIcon(CupertinoIcons.house_fill),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.call_outlined, color: Colors.red[300],),
+              icon: Icon(Icons.call_outlined, color: Color(0xFFa81845),),
               label: "Calls",
               activeIcon: selectedIcon(Icons.call),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.chat_outlined, color: Colors.red[300]),
+              icon: Icon(Icons.chat_outlined, color: Color(0xFFa81845)),
               label: "Chat",
               activeIcon: selectedIcon(Icons.chat),
             ),
             BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.person_circle, color: Colors.red[300]),
+              icon: Icon(CupertinoIcons.person_circle, color: Color(0xFFa81845)),
               label: "Profile",
               activeIcon: selectedIcon(CupertinoIcons.person_circle_fill),
             ),
@@ -301,7 +328,7 @@ class _CustomBottomNavBarState extends State<CustomBottomNavBar> with WidgetsBin
       height: 3.5 * SizeConfig.heightMultiplier,
       width: 28 * SizeConfig.widthMultiplier,
       decoration: BoxDecoration(
-        color: Colors.red[300],
+        gradient: kPrimaryGradientColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Center(

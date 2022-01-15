@@ -5,6 +5,7 @@ import 'package:creativedata_app/Hospitals/hospitalProfileScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -18,7 +19,7 @@ class HospitalsScreen extends StatefulWidget {
   static const String screenId = "hospitalsScreen";
 
   final List hospitals;
-  HospitalsScreen({Key key, this.hospitals}) : super(key: key);
+  const HospitalsScreen({Key key, this.hospitals}) : super(key: key);
 
   @override
   _HospitalsScreenState createState() => _HospitalsScreenState();
@@ -32,6 +33,7 @@ class _HospitalsScreenState extends State<HospitalsScreen> {
 
   @override
   void initState() {
+    if (!mounted) return;
     getHospitals();
     super.initState();
   }
@@ -73,28 +75,33 @@ Widget hospitalList({@required Stream hospitalStream}) {
     stream: hospitalStream,
     builder: (context, snapshot) {
       return snapshot.hasData
-          ? ListView.builder(
-              itemCount: snapshot.data.docs.length,
-              shrinkWrap: true,
-              physics: ClampingScrollPhysics(),
-              itemBuilder: (context, index) {
-                String imageUrl = snapshot.data.docs[index].get("hospital_photo");
-                String name = snapshot.data.docs[index].get("name");
-                String phone = snapshot.data.docs[index].get("phone");
-                Map ratingsMap = snapshot.data.docs[index].get("ratings");
-                String ratings = ratingsMap["percentage"];
-                String people = ratingsMap["people"];
-                String uid = snapshot.data.docs[index].get("uid");
-                return HospView(
-                  hospitalName: name,
-                  imageUrl: imageUrl,
-                  phone: phone,
-                  ratings: ratings,
-                  people: people,
-                  uid: uid,
-                );
-              },
-            ) : Container();
+          ? Container(
+            height: (snapshot.data.docs.length * 17.5) * SizeConfig.heightMultiplier,
+            child: ListView.builder(
+                itemCount: snapshot.data.docs.length,
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  String imageUrl = snapshot.data.docs[index].get("hospital_photo");
+                  String name = snapshot.data.docs[index].get("name");
+                  String docId = snapshot.data.docs[index].id;
+                  String phone = snapshot.data.docs[index].get("phone");
+                  Map ratingsMap = snapshot.data.docs[index].get("ratings");
+                  String ratings = ratingsMap["percentage"];
+                  String people = ratingsMap["people"];
+                  String uid = snapshot.data.docs[index].get("uid");
+                  return HospView(
+                    docId: docId,
+                    hospitalName: name,
+                    imageUrl: imageUrl,
+                    phone: phone,
+                    ratings: ratings,
+                    people: people,
+                    uid: uid,
+                  );
+                },
+              ),
+          ) : Container();
     },
   );
 }
@@ -106,7 +113,8 @@ class HospView extends StatefulWidget {
   final String people;
   final String ratings;
   final String uid;
-  const HospView({Key key, this.hospitalName, this.imageUrl, this.phone, this.ratings, this.uid, this.people}) : super(key: key);
+  final String docId;
+  const HospView({Key key, this.hospitalName, this.imageUrl, this.phone, this.ratings, this.uid, this.people, this.docId}) : super(key: key);
 
   @override
   _HospViewState createState() => _HospViewState();
@@ -160,13 +168,14 @@ class _HospViewState extends State<HospView> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
             child: InkWell(
-              splashColor: Colors.red[200],
+              splashColor: Color(0xFFa81845).withOpacity(0.6),
               highlightColor: Colors.grey.withOpacity(0.1),
               radius: 800,
               borderRadius: BorderRadius.circular(15),
               onTap: () => Navigator.push(
                 context, MaterialPageRoute(
                 builder: (context) => HospitalProfileScreen(
+                  docId: widget.docId,
                   uid: widget.uid,
                   imageUrl: widget.imageUrl,
                   ratings: widget.ratings,
@@ -252,7 +261,7 @@ class _HospBodyState extends State<HospBody> {
       padding: EdgeInsets.only(left: 1.8 * SizeConfig.widthMultiplier),
       child: RaisedButton(
         color: Colors.white,
-        textColor: Colors.red[300],
+        textColor: Color(0xFFa81845),
         child: Container(
           height: 5 * SizeConfig.heightMultiplier,
           width: 35 * SizeConfig.widthMultiplier,
@@ -287,7 +296,6 @@ class _HospBodyState extends State<HospBody> {
   Widget build(BuildContext context) {
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: MediaQuery.of(context).size.height - 10 * SizeConfig.heightMultiplier,
       color: Colors.grey[100],
       child: Column(
         children: <Widget>[
@@ -303,14 +311,7 @@ class _HospBodyState extends State<HospBody> {
                       left: 3 * SizeConfig.widthMultiplier,
                       right: 3 * SizeConfig.widthMultiplier,
                     ),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      color: Colors.grey[100],
-                      height: 82 * SizeConfig.heightMultiplier,
-                      child: SingleChildScrollView(
-                        child: hospitalList(hospitalStream: widget.allStream),
-                      ),
-                    ),
+                    child: hospitalList(hospitalStream: widget.allStream),
                   ),
                 ),
               ),
@@ -323,14 +324,7 @@ class _HospBodyState extends State<HospBody> {
                       left: 3 * SizeConfig.widthMultiplier,
                       right: 3 * SizeConfig.widthMultiplier,
                     ),
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      color: Colors.grey[100],
-                      height: 82 * SizeConfig.heightMultiplier,
-                      child: SingleChildScrollView(
-                          child: hospitalList(hospitalStream: widget.topStream),
-                        ),
-                    ),
+                    child: hospitalList(hospitalStream: widget.topStream),
                   ),
                 ),
               ),
@@ -430,8 +424,8 @@ class _HospCustomState extends State<HospCustom> {
                   visible: titleVisible,
                   child: IconButton(
                     onPressed: () => showHideSearchBar(),
-                    splashColor: Colors.red[200],
-                    icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
+                    icon: Icon(CupertinoIcons.search, color: Color(0xFFa81845),
                     ),),
                 ),
                 Visibility(
@@ -442,8 +436,8 @@ class _HospCustomState extends State<HospCustom> {
                       // drugOnSearch.clear();
                       showHideSearchBar();
                     },
-                    color: Colors.red[300],
-                    splashColor: Colors.red[200],
+                    color: Color(0xFFa81845),
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
                     icon: Icon(CupertinoIcons.clear,
                     ),),
                 ),
@@ -464,7 +458,7 @@ class _HospCustomState extends State<HospCustom> {
                         padding: EdgeInsets.all(8.0),
                         child: Text(widget.title, style: TextStyle(
                           fontFamily: "Brand Bold",
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                         ),),
                       ),
                     ),
@@ -541,6 +535,7 @@ class _HospCustomState extends State<HospCustom> {
                     Navigator.push(
                       context, MaterialPageRoute(
                       builder: (context) => HospitalProfileScreen(
+                        docId: hospitalSnap.docs[0].id,
                         uid: hospitalSnap.docs[0].get("uid"),
                         imageUrl: hospitalSnap.docs[0].get("hospital_photo"),
                         ratings: ratings,
@@ -570,10 +565,16 @@ class _HospCustomState extends State<HospCustom> {
                     ),
                     child: Row(
                       children: <Widget>[
-                        CircleAvatar(
-                          backgroundColor: Colors.red[100],
-                          foregroundColor: Colors.red[300],
-                          child: Icon(FontAwesomeIcons.hospital),
+                        Container(
+                          height: 5 * SizeConfig.heightMultiplier,
+                          width: 10 * SizeConfig.widthMultiplier,
+                          decoration: BoxDecoration(
+                            gradient: kPrimaryGradientColor,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Center(
+                            child: Icon(FontAwesomeIcons.hospital, color: Colors.white,),
+                          ),
                         ),
                         SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                         Text(hospitalOnSearch[index], style: TextStyle(

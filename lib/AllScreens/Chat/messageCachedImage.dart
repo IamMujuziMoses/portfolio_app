@@ -16,7 +16,7 @@ class MessageCachedImage extends StatelessWidget {
       "https://firebasestorage.googleapis.com/v0/b/emalert-2788e.appspot.com/o/logo.png?alt=media&token=" +
       "f040ba3d-c7da-4e77-b8ef-4ad3746994c9";
 
-  MessageCachedImage({Key key,
+  const MessageCachedImage({Key key,
     this.imageUrl,
     this.isSender,
     this.isRound = false,
@@ -51,7 +51,7 @@ class MessageCachedImage extends StatelessWidget {
                  Center(
                    child: CircularProgressIndicator(valueColor: isSender
                        ? new AlwaysStoppedAnimation<Color>(Colors.black)
-                       : new AlwaysStoppedAnimation<Color>(Colors.redAccent),
+                       : new AlwaysStoppedAnimation<Color>(Color(0xFFa81845)),
                    ),
                  ),
              errorWidget: (context, url, error) =>

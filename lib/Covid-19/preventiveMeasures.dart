@@ -18,7 +18,7 @@ class PreventiveMeasures extends StatelessWidget {
         backgroundColor: Colors.grey[100],
         title: Text("Preventive Measures", style: TextStyle(
           fontFamily: "Brand Bold",
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),),
       ),
       body: Container(

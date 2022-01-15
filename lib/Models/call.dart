@@ -55,12 +55,13 @@ class Call{
   String receiverName;
   String receiverPic;
   String channelId;
+  String token;
   bool hasDialled;
   bool isVoiceCall;
 
   Call({
     this.callerId, this.callerName, this.callerPic, this.receiverId, this.receiverName, this.receiverPic,
-    this.channelId, this.hasDialled, this.isVoiceCall,
+    this.channelId, this.hasDialled, this.isVoiceCall, this.token,
   });
 
   Map<String, dynamic> toMap(Call call) {
@@ -71,6 +72,7 @@ class Call{
     callMap["receiver_id"] = call.receiverId;
     callMap["receiver_name"] = call.receiverName;
     callMap["receiver_pic"] = call.receiverPic;
+    callMap["token"] = call.token;
     callMap["channel_id"] = call.channelId;
     callMap["has_dialled"] = call.hasDialled;
     callMap["is_voice_call"] = call.isVoiceCall;
@@ -84,6 +86,7 @@ class Call{
     this.callerPic = callMap["caller_pic"];
     this.receiverId = callMap["receiver_id"];
     this.receiverName = callMap["receiver_name"];
+    this.token = callMap["token"];
     this.receiverPic = callMap["receiver_pic"];
     this.channelId = callMap["channel_id"];
     this.hasDialled = callMap["has_dialled"];

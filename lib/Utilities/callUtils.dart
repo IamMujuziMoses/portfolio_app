@@ -1,22 +1,24 @@
-import 'dart:math';
-
 import 'package:creativedata_app/AllScreens/Chat/voiceCallScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/callScreen.dart';
 import 'package:creativedata_app/Models/call.dart';
 import 'package:creativedata_app/Models/doctor.dart';
 import 'package:creativedata_app/Models/user.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:random_string/random_string.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert' as convert;
 /*
 * Created by Mujuzi Moses
 */
 
 class CallUtils{
 
-  static final DatabaseMethods databaseMethods = new DatabaseMethods();
-
   static videoDialUser(User from, Doctor to, context) async {
+    String channelId = randomAlphaNumeric(25);
+    String token = await getToken(channelId);
+
     Call call = Call(
       callerId: from.uid,
       callerName: from.name,
@@ -25,8 +27,8 @@ class CallUtils{
       receiverName: to.name,
       receiverPic: to.profilePhoto,
       isVoiceCall: false,
-      // TODO Create a more robust randomly generated alpha-numeric String
-      channelId: Random().nextInt(1000).toString(),
+      token: token,
+      channelId: channelId,
     );
 
    bool callMade = await databaseMethods.makeCall(call: call);
@@ -37,13 +39,35 @@ class CallUtils{
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => CallScreen(call: call, isDoctor: false,),
+          builder: (context) => CallScreen(isReceiving: false, call: call, isDoctor: false,),
         ),
       );
     }
   }
 
+  static Future<String> getToken(channelName) async {
+    //String baseUrl = "http://10.0.2.2:8082"; // testing emulator
+    // String baseUrl = "http://192.168.43.73:8082"; // testing phone
+    String baseUrl = "https://server-ksnvexj7ta-uc.a.run.app";
+    int uid = 0;
+    String token;
+    final response = await http.post(
+      Uri.parse(baseUrl + '/rtc/' + channelName + '/publisher/' + uid.toString()),
+    );
+
+    if (response.statusCode == 200) {
+      token = convert.jsonDecode(response.body)['token'];
+      return token;
+    } else {
+      print("Failed to fetch the Token ::: ${response.statusCode}");
+      return null;
+    }
+  }
+
   static voiceDialUser(User from, Doctor to, context) async {
+    String channelId = randomAlphaNumeric(25);
+    String token = await getToken(channelId);
+
     Call call = Call(
       callerId: from.uid,
       callerName: from.name,
@@ -51,9 +75,9 @@ class CallUtils{
       receiverId: to.uid,
       receiverName: to.name,
       receiverPic: to.profilePhoto,
+      token: token,
       isVoiceCall: true,
-      // TODO Create a more robust randomly generated alpha-numeric String
-      channelId: Random().nextInt(1000).toString(),
+      channelId: channelId,
     );
 
    bool callMade = await databaseMethods.makeCall(call: call);
@@ -64,13 +88,16 @@ class CallUtils{
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => VoiceCallScreen(call: call, isDoctor: false,),
+          builder: (context) => VoiceCallScreen(isReceiving: false, call: call, isDoctor: false,),
         ),
       );
     }
   }
 
   static videoDialDoctor(Doctor from, User to, context) async {
+    String channelId = randomAlphaNumeric(25);
+    String token = await getToken(channelId);
+
     Call call = Call(
       callerId: from.uid,
       callerName: from.name,
@@ -79,8 +106,8 @@ class CallUtils{
       receiverName: to.name,
       receiverPic: to.profilePhoto,
       isVoiceCall: false,
-      // TODO Create a more robust randomly generated alpha-numeric String
-      channelId: Random().nextInt(1000).toString(),
+      token: token,
+      channelId: channelId,
     );
 
    bool callMade = await databaseMethods.makeCall(call: call);
@@ -91,13 +118,16 @@ class CallUtils{
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => CallScreen(call: call, isDoctor: true,),
+          builder: (context) => CallScreen(isReceiving: false, call: call, isDoctor: true,),
         ),
       );
     }
   }
-
+  
   static voiceDialDoctor(Doctor from, User to, context) async {
+    String channelId = randomAlphaNumeric(25);
+    String token = await getToken(channelId);
+
     Call call = Call(
       callerId: from.uid,
       callerName: from.name,
@@ -106,8 +136,8 @@ class CallUtils{
       receiverName: to.name,
       receiverPic: to.profilePhoto,
       isVoiceCall: true,
-      // TODO Create a more robust randomly generated alpha-numeric String
-      channelId: Random().nextInt(1000).toString(),
+      token: token,
+      channelId: channelId,
     );
 
    bool callMade = await databaseMethods.makeCall(call: call);
@@ -118,7 +148,7 @@ class CallUtils{
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => VoiceCallScreen(call: call, isDoctor: true,),
+          builder: (context) => VoiceCallScreen(isReceiving: false, call: call, isDoctor: true,),
         ),
       );
     }

@@ -5,7 +5,6 @@ import 'package:creativedata_app/AllScreens/Chat/chatSearch.dart';
 import 'package:creativedata_app/AllScreens/Chat/voiceCallScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/callScreen.dart';
 import 'package:creativedata_app/Models/call.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
@@ -19,9 +18,7 @@ class PickUpScreen extends StatelessWidget {
   final Call call;
   final bool isDoctor;
   final bool isVoiceCall;
-  PickUpScreen({Key key, @required this.call, this.isDoctor, this.isVoiceCall}) : super(key: key);
-
-  final DatabaseMethods databaseMethods = new DatabaseMethods();
+  const PickUpScreen({Key key, @required this.call, this.isDoctor, this.isVoiceCall}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +49,7 @@ class PickUpScreen extends StatelessWidget {
             Text(isDoctor == true
                 ? call.callerName
                 : "Dr. " + call.callerName, style: TextStyle(
-              color: Colors.redAccent,
+              color: Color(0xFFa81845),
               fontWeight: FontWeight.bold,
               fontSize: 3 * SizeConfig.textMultiplier,
             ),),
@@ -69,8 +66,10 @@ class PickUpScreen extends StatelessWidget {
                   ),
                   child: IconButton(
                     icon: Icon(Icons.call_end_rounded),
-                    color: Colors.redAccent,
+                    color: Color(0xFFa81845),
                     onPressed: () async {
+                      assetsAudioPlayer.stop();
+                      assetsAudioPlayer = new AssetsAudioPlayer();
                       String chatRoomId = getChatRoomId(username: call.receiverName, myName: call.callerName, isVoiceCall: true);
                       Records records = Records(
                         callerId: call.callerId,
@@ -105,8 +104,8 @@ class PickUpScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => isVoiceCall == true
-                              ? VoiceCallScreen(call: call, isDoctor: isDoctor,)
-                              : CallScreen(call: call, isDoctor: isDoctor,),
+                              ? VoiceCallScreen(isReceiving: true, call: call, isDoctor: isDoctor,)
+                              : CallScreen(isReceiving: true, call: call, isDoctor: isDoctor,),
                         ),
                       ) : {};
                     },

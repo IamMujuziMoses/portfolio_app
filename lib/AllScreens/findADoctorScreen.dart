@@ -9,6 +9,7 @@ import 'package:creativedata_app/Hospitals/hospitalProfileScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Hospitals/hospitalsScreen.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -25,7 +26,7 @@ class FindADoctorScreen extends StatefulWidget {
   final List doctors;
   static const String screenId = "findADoctorScreen";
 
-  FindADoctorScreen({Key key, this.adSnap, this.doctors, this.hospSnap}) : super(key: key);
+  const FindADoctorScreen({Key key, this.adSnap, this.doctors, this.hospSnap}) : super(key: key);
 
   @override
   _FindADoctorScreenState createState() => _FindADoctorScreenState();
@@ -38,14 +39,23 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
   bool titleVisible = true;
   List doctorOnSearch = [];
   List doctors = [];
+  VideoPlayerController controller;
 
   @override
   void initState() {
+    if (!mounted) return;
     getDoctorsList();
     super.initState();
   }
 
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
   getDoctorsList() {
+    controller = VideoPlayerController.network(widget.adSnap.docs[0].get("url"));
     setState(() {
       doctors = widget.doctors;
     });
@@ -80,7 +90,7 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                     visible: titleVisible,
                     child: Text("Find A Doctor", style: TextStyle(
                       fontFamily: "Brand Bold",
-                      color: Colors.red[300],
+                      color: Color(0xFFa81845),
                     ),),
                   ),
                   Visibility(
@@ -124,8 +134,8 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                     visible: titleVisible,
                     child: IconButton(
                       onPressed: () => showHideSearchBar(),
-                      splashColor: Colors.red[200],
-                      icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                      splashColor: Color(0xFFa81845).withOpacity(0.6),
+                      icon: Icon(CupertinoIcons.search, color: Color(0xFFa81845),
                       ),),
                   ),
                   Visibility(
@@ -136,8 +146,8 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                         doctorOnSearch.clear();
                         showHideSearchBar();
                       },
-                      color: Colors.red[300],
-                      splashColor: Colors.red[200],
+                      color: Color(0xFFa81845),
+                      splashColor: Color(0xFFa81845).withOpacity(0.6),
                       icon: Icon(CupertinoIcons.clear,
                       ),),
                   ),
@@ -155,6 +165,7 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                     itemCount: doctorOnSearch.length,
                     itemBuilder: (context, index) => GestureDetector(
                       onTap: () async {
+                        controller.pause();
                         showDialog(
                             context: context,
                             builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
@@ -202,10 +213,16 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                         ),
                         child: Row(
                           children: <Widget>[
-                            CircleAvatar(
-                              backgroundColor: Colors.red[100],
-                              foregroundColor: Colors.red[300],
-                              child: Icon(FontAwesomeIcons.userMd),
+                            Container(
+                              height: 5 * SizeConfig.heightMultiplier,
+                              width: 10 * SizeConfig.widthMultiplier,
+                              decoration: BoxDecoration(
+                                gradient: kPrimaryGradientColor,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: Center(
+                                child: Icon(FontAwesomeIcons.userMd, color: Colors.white,),
+                              ),
                             ),
                             SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                             Text("Dr. ${doctorOnSearch[index]}", style: TextStyle(
@@ -218,10 +235,8 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                   ) : SingleChildScrollView(
                     child: Column(
                       children: <Widget>[
-                        SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                         Container(
-                          height: 4 * SizeConfig.heightMultiplier,
-                          width: 94 * SizeConfig.widthMultiplier,
+                          width: double.infinity,
                           child: Padding(
                             padding: EdgeInsets.all(4),
                             child: Row(
@@ -230,16 +245,19 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: "Brand Bold",
-                                  fontSize: 3.3 * SizeConfig.textMultiplier,
+                                  fontSize: 2.8 * SizeConfig.textMultiplier,
                                 ),),
                                 Spacer(),
                                 GestureDetector(
-                                  onTap: () => Navigator.push(
-                                    context, MaterialPageRoute(
-                                    builder: (context) => SpecialitiesScreen(),
-                                  ),),
+                                  onTap: () {
+                                    controller.pause();
+                                    Navigator.push(
+                                      context, MaterialPageRoute(
+                                      builder: (context) => SpecialitiesScreen(),
+                                    ),);
+                                  },
                                   child: Text("View All", style: TextStyle(
-                                    color: Colors.red[300],
+                                    color: Color(0xFFa81845),
                                     fontFamily: "Brand Bold",
                                     fontSize: 2 * SizeConfig.textMultiplier,
                                   ),),
@@ -250,7 +268,7 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                         ),
                         SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                         Container(
-                          width: 94 * SizeConfig.widthMultiplier,
+                          width: double.infinity,
                           child: Padding(
                             padding: EdgeInsets.only(
                               top: 8,
@@ -261,49 +279,41 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                             child: Column(
                               children: <Widget>[
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: <Widget>[
                                     _getSpec(logo:"images/stethoscope.png", speciality: "General Doctor"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(logo: "images/heart.png", speciality: "Cardiology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(logo: "images/tooth.png",speciality: "Dentist"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: FontAwesomeIcons.baby, speciality: "Pediatrics"),
                                   ],
                                 ),
                                 SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: <Widget>[
                                     _getSpec(logo: "images/eye.png",speciality: "Ophthalmology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(logo: "images/lungs.png",speciality: "Pneumology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(logo: "images/brain.png", speciality: "Neurology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Obstetrics"),
                                   ],
                                 ),
                                 SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: <Widget>[
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Gynecology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Rheumatology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Nephrology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Gastroenterology"),
                                   ],
                                 ),
                                 SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                                 Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: <Widget>[
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Dermatology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Psychiatry"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Oncology"),
-                                    SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                                     _getSpec(icon: Icons.do_not_disturb, speciality: "Plastic Surgery"),
                                   ],
                                 ),
@@ -313,8 +323,7 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                         ),
                         SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                         Container(
-                          height: 4 * SizeConfig.heightMultiplier,
-                          width: 94 * SizeConfig.widthMultiplier,
+                          width: double.infinity,
                           child: Padding(
                             padding: EdgeInsets.all(4),
                             child: Row(
@@ -323,11 +332,12 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                                   color: Colors.black,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: "Brand Bold",
-                                  fontSize: 3.3 * SizeConfig.textMultiplier,
+                                  fontSize: 2.8 * SizeConfig.textMultiplier,
                                 ),),
                                 Spacer(),
                                 GestureDetector(
                                   onTap: () async {
+                                    controller.pause();
                                     Stream allStream;
                                     List hospitals = [];
                                     QuerySnapshot hospitalSnap;
@@ -350,7 +360,7 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                                     ),);
                                   },
                                   child: Text("View All", style: TextStyle(
-                                    color: Colors.red[300],
+                                    color: Color(0xFFa81845),
                                     fontFamily: "Brand Bold",
                                     fontSize: 2 * SizeConfig.textMultiplier,
                                   ),),
@@ -363,19 +373,11 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                         Padding(
                           padding: EdgeInsets.only(
                             left: 3 * SizeConfig.widthMultiplier,
-                            right: 3 * SizeConfig.widthMultiplier,
                           ),
                           child: Container(
-                            height: 25 * SizeConfig.heightMultiplier,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                            height: 28 * SizeConfig.heightMultiplier,
                             child: Padding(
-                              padding: EdgeInsets.only(
-                                top: 8,
-                                bottom: 8,
-                              ),
+                              padding: EdgeInsets.symmetric(vertical: 8),
                               child: widget.hospSnap.length <= 0 ? Center(
                                   child: Text("No Health Centers Currently", style: TextStyle(
                                     fontSize: 3 * SizeConfig.textMultiplier,
@@ -385,12 +387,9 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                                 itemCount: widget.hospSnap.length <= 5 ? widget.hospSnap.length : 5,
                                 scrollDirection: Axis.horizontal,
                                 itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 4),
-                                    child: _topRatedHC(
+                                  return _topRatedHC(
                                       hospitalSnap: widget.hospSnap[index],
-                                    ),
-                                  );
+                                    );
                                 },
                               ),
                             ),
@@ -426,8 +425,7 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
                               child: Text("AD", style: TextStyle(fontSize: 10 * SizeConfig.textMultiplier, color: Colors.black12),),
                             ) : VideoView(
                               isAd: true,
-                              videoPlayerController: VideoPlayerController.network(widget.adSnap.docs[0].get("url"),
-                              ),
+                              videoPlayerController: controller,
                             ),
                           ),
                         ),
@@ -446,12 +444,13 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
         vertical: 4,
         horizontal: 2,
       ),
-      splashColor: Colors.red[300],
-      highlightColor: Colors.red[100],
+      splashColor: Color(0xFFa81845),
+      highlightColor: Colors.grey[100],
       shape: new RoundedRectangleBorder(
         borderRadius: new BorderRadius.circular(10),
       ),
       onPressed: () async {
+        controller.pause();
         QuerySnapshot doctorSnap;
         await databaseMethods.getAllDoctorsBySpecialitySnap(speciality).then((val) {
           setState(() {
@@ -490,12 +489,13 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
           ),
           SizedBox(height: 0.5 * SizeConfig.heightMultiplier),
           Container(
-            width: 21 * SizeConfig.widthMultiplier,
-            child: Text(speciality, textAlign: TextAlign.center ,style: TextStyle(
-              color: Colors.black54,
-              fontFamily: "Brand Bold",
-              fontSize: 1.8 * SizeConfig.textMultiplier,
-              fontWeight: FontWeight.w500,
+            width: 22 * SizeConfig.widthMultiplier,
+            child: Text(speciality, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.black54,
+                fontFamily: "Brand Bold",
+                fontSize: 1.8 * SizeConfig.textMultiplier,
+                fontWeight: FontWeight.w500,
             ),),
           )
         ],
@@ -504,6 +504,7 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
   }
 
   _topRatedHC({QuerySnapshot hospitalSnap}) {
+    String docId = hospitalSnap.docs[0].id;
     String name = hospitalSnap.docs[0].get("name");
     String imageUrl = hospitalSnap.docs[0].get("hospital_photo");
     String about = hospitalSnap.docs[0].get("about");
@@ -516,126 +517,129 @@ class _FindADoctorScreenState extends State<FindADoctorScreen> {
     String address = hospitalSnap.docs[0].get("address");
     List services = hospitalSnap.docs[0].get("services");
 
-    onTap() => Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HospitalProfileScreen(
-          uid: uid,
-          imageUrl: imageUrl,
-          ratings: ratings,
-          people: people,
-          phone: phone,
-          name: name,
-          email: email,
-          about: about,
-          address: address,
-          services: services,
+    onTap() {
+      controller.pause();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HospitalProfileScreen(
+            docId: docId,
+            uid: uid,
+            imageUrl: imageUrl,
+            ratings: ratings,
+            people: people,
+            phone: phone,
+            name: name,
+            email: email,
+            about: about,
+            address: address,
+            services: services,
+          ),
         ),
-      ),
-    );
+      );
+    }
 
-    return Container(
-        width: 50 * SizeConfig.widthMultiplier,
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              offset: Offset(0, 1),
-              spreadRadius: 0.5,
-              blurRadius: 2,
-              color: Colors.black.withOpacity(0.1),
-            ),
-          ],
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.0),
-          border: Border.all(color: Colors.red[300], width: 1.0),
-        ),
-      child: Padding(
-        padding: EdgeInsets.all(2),
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: EdgeInsets.all(2),
-              child: GestureDetector(
-                onTap: onTap,
-                child: Container(
-                  clipBehavior: Clip.hardEdge,
-                  height: 13 * SizeConfig.heightMultiplier,
-                  width: 50 * SizeConfig.widthMultiplier,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(20),
-                    ),
-                  ),
-                  child: CachedImage(
-                    height: 10 * SizeConfig.heightMultiplier,
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: Container(
+          width: 50 * SizeConfig.widthMultiplier,
+          clipBehavior: Clip.hardEdge,
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                offset: Offset(2, 3),
+                spreadRadius: 0.5,
+                blurRadius: 2,
+                color: Colors.black.withOpacity(0.5),
+              ),
+            ],
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.0),
+            border: Border.all(color: Color(0xFFa81845), width: 1),
+          ),
+        child: Padding(
+          padding: EdgeInsets.all(2),
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.all(2),
+                child: GestureDetector(
+                  onTap: onTap,
+                  child: Container(
+                    clipBehavior: Clip.hardEdge,
+                    height: 13 * SizeConfig.heightMultiplier,
                     width: double.infinity,
-                    imageUrl: imageUrl,
-                    radius: 10,
-                    fit: BoxFit.cover,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                    ),
+                    child: CachedImage(
+                      height: 10 * SizeConfig.heightMultiplier,
+                      width: double.infinity,
+                      imageUrl: imageUrl,
+                      radius: 10,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Container(
-              child: Padding(
-                padding: EdgeInsets.all(2),
-                child: Container(
-                  height: 8 * SizeConfig.heightMultiplier,
-                  width: 50 * SizeConfig.widthMultiplier,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(20),
-                    ),
-                  ),
-                  child: Material(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(20),
-                    ),
-                    child: InkWell(
-                      splashColor: Colors.red[200],
-                      highlightColor: Colors.grey.withOpacity(0.1),
-                      radius: 800,
+              Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
                       borderRadius: BorderRadius.vertical(
                         bottom: Radius.circular(20),
                       ),
-                      onTap: onTap,
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: 8,
-                          right: 8,
+                    ),
+                    child: Material(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.vertical(
+                        bottom: Radius.circular(20),
+                      ),
+                      child: InkWell(
+                        splashColor: Color(0xFFa81845).withOpacity(0.6),
+                        highlightColor: Colors.grey.withOpacity(0.1),
+                        radius: 800,
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(20),
                         ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: <Widget>[
-                            Container(
-                              child: Text(name, style: TextStyle(
-                                fontFamily: "Brand Bold",
-                                fontSize: 2.5 * SizeConfig.textMultiplier,
-                              ), overflow: TextOverflow.ellipsis,),
-                            ),
-                            Container(
-                              child: Text(about, style: TextStyle(
-                                fontFamily: "Brand-Regular",
-                                fontSize: 2 * SizeConfig.textMultiplier,
-                              ), overflow: TextOverflow.ellipsis,),
-                            ),
-                            getReviews(ratings, ""),
-                          ],
+                        onTap: onTap,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            left: 8,
+                            right: 8,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: <Widget>[
+                              Container(
+                                child: Text(name, maxLines: 1,
+                                  style: TextStyle(
+                                    fontFamily: "Brand Bold",
+                                    fontSize: 2.5 * SizeConfig.textMultiplier,
+                                ), overflow: TextOverflow.ellipsis,),
+                              ),
+                              Container(
+                                child: Text(about, maxLines: 2,
+                                  style: TextStyle(
+                                    fontFamily: "Brand-Regular",
+                                    fontSize: 1.8 * SizeConfig.textMultiplier,
+                                ), overflow: TextOverflow.ellipsis,),
+                              ),
+                              getReviews(ratings, ""),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      );
+        ),
+    );
   }
 }
 
@@ -728,7 +732,7 @@ Widget arrowBox({String greeting, String message, String image, IconData icon, F
                     width: 6 * SizeConfig.widthMultiplier,
                     child: Center(
                       child: Icon(Icons.arrow_forward_ios_rounded,
-                        color: Colors.red,
+                        color: Color(0xFFa81845),
                         size: 4 * SizeConfig.imageSizeMultiplier,
                       ),
                     ),

@@ -1,8 +1,8 @@
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Widgets/divider.dart';
 import 'package:creativedata_app/configMaps.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:smooth_star_rating/smooth_star_rating.dart';
@@ -13,15 +13,13 @@ import 'package:smooth_star_rating/smooth_star_rating.dart';
 class RatingScreen extends StatefulWidget {
   final String driverPic;
   final String driverName;
-  RatingScreen({Key key, this.driverPic, this.driverName}) : super(key: key);
+  const RatingScreen({Key key, this.driverPic, this.driverName}) : super(key: key);
 
   @override
   _RatingScreenState createState() => _RatingScreenState();
 }
 
 class _RatingScreenState extends State<RatingScreen> {
-
-  DatabaseMethods databaseMethods = DatabaseMethods();
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +29,7 @@ class _RatingScreenState extends State<RatingScreen> {
         appBar: AppBar(
           titleSpacing: 0,
           title: Text("Rating", style: TextStyle(fontFamily: "Brand Bold"),),
-          backgroundColor: Colors.red[300],
+          backgroundColor: Color(0xFFa81845),
         ),
         body: Container(
           color: Colors.grey[100],
@@ -47,7 +45,7 @@ class _RatingScreenState extends State<RatingScreen> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(50),
                       color: Colors.white,
-                      border: Border.all(color: Colors.redAccent, style: BorderStyle.solid, width: 2),
+                      border: Border.all(color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                     ),
                     child: widget.driverPic == null
                         ? Image.asset("images/user_icon.png")
@@ -64,7 +62,7 @@ class _RatingScreenState extends State<RatingScreen> {
                 fontSize: 3.5 * SizeConfig.textMultiplier,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Brand Bold",
-                color: Colors.red[300],
+                color: Color(0xFFa81845),
               ),),
               SizedBox(height: 3 * SizeConfig.widthMultiplier,),
               Container(
@@ -96,7 +94,7 @@ class _RatingScreenState extends State<RatingScreen> {
                       SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                       SmoothStarRating(
                         rating: starCounter,
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         allowHalfRating: false,
                         starCount: 5,
                         size: 8 * SizeConfig.imageSizeMultiplier,
@@ -148,17 +146,26 @@ class _RatingScreenState extends State<RatingScreen> {
                         child: RaisedButton(
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           onPressed: () => Navigator.pop(context, starCounter),
-                          color: Colors.red[300],
+                          clipBehavior: Clip.hardEdge,
+                          padding: EdgeInsets.zero,
                           textColor: Colors.white,
-                          child: Padding(
-                            padding: EdgeInsets.all(17),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: <Widget>[
-                                Text("Submit".toUpperCase(), style: TextStyle(
-                                  fontSize: 2.2 * SizeConfig.textMultiplier,
-                                ),),
-                              ],
+                          child: Container(
+                            width: 100 * SizeConfig.widthMultiplier,
+                            height: 5 * SizeConfig.heightMultiplier,
+                            decoration: BoxDecoration(
+                              gradient: kPrimaryGradientColor
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(17),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: <Widget>[
+                                  Text("Submit".toUpperCase(), style: TextStyle(
+                                    fontSize: 2.2 * SizeConfig.textMultiplier,
+                                    color: Colors.white,
+                                  ),),
+                                ],
+                              ),
                             ),
                           ),
                         ),

@@ -16,12 +16,16 @@ import 'package:creativedata_app/AllScreens/mainScreen.dart';
 import 'package:creativedata_app/AllScreens/nearestHospitalsScreen.dart';
 import 'package:creativedata_app/AllScreens/newsFeedScreen.dart';
 import 'package:creativedata_app/Covid-19/preventiveMeasures.dart';
+import 'package:creativedata_app/Doctor/activityLogsScreen.dart';
 import 'package:creativedata_app/Doctor/alertsScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Doctor/doctorRegistration.dart';
 import 'package:creativedata_app/Doctor/eventsScreen.dart';
 import 'package:creativedata_app/Doctor/medicalStore.dart';
+import 'package:creativedata_app/Enum/userState.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/venue.dart';
+import 'package:creativedata_app/Notifications/pushNotificationServices.dart';
 import 'package:creativedata_app/Provider/placesProvider.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/User/aboutScreen.dart';
@@ -78,6 +82,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Stream hospitalStream;
   List<QuerySnapshot> hospQueryList = [];
   List hospitalList = [];
+  int notificationCounter = 0;
+  Stream notificationStream;
+  QuerySnapshot notificationSnap;
+  QuerySnapshot chatSnap;
+  QuerySnapshot callSnap;
+
   @override
   void initState() {
     getInfo();
@@ -85,6 +95,86 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   getInfo() async {
+    PushNotificationServices pushNotificationServices = PushNotificationServices();
+    pushNotificationServices.initialize(context);
+    pushNotificationServices.getToken(false);
+
+    await databaseMethods.getChatRoomsSnap(Constants.myName).then((val) {
+      setState(() {
+        chatSnap = val;
+      });
+    });
+    await databaseMethods.getCallRecordsSnap(Constants.myName).then((val) {
+      setState(() {
+        callSnap = val;
+      });
+    });
+
+    await databaseMethods.getNotifications().then((val) {
+      setState(() {
+        notificationStream = val;
+      });
+    });
+    notificationSnap = await notificationStream.first;
+    for (int i = 0; i <= notificationSnap.size - 1; i++) {
+      String type = notificationSnap.docs[i].get("type");
+      if (type == "medicine reminder") {
+        String username = notificationSnap.docs[i].get("user_name");
+        if (username == widget.name) {
+          int counter = int.parse(notificationSnap.docs[i].get("counter"));
+          String docId = notificationSnap.docs[i].id;
+          setState(() {
+            notificationCounter = notificationCounter + counter;
+          });
+          await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+        }
+      } else if (type == "post") {
+        String from = notificationSnap.docs[i].get("from");
+        if (from != widget.name) {
+          int counter = int.parse(notificationSnap.docs[i].get("counter"));
+          String docId = notificationSnap.docs[i].id;
+          setState(() {
+            notificationCounter = notificationCounter + counter;
+          });
+          await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+        }
+      } else if (type == "appointment reminder") {
+        String patientName = notificationSnap.docs[i].get("name");
+        if (patientName == widget.name) {
+          int counter = int.parse(notificationSnap.docs[i].get("counter"));
+          String docId = notificationSnap.docs[i].id;
+          setState(() {
+            notificationCounter = notificationCounter + counter;
+          });
+          await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+        }
+      } else if (type == "event") {
+        int counter = int.parse(notificationSnap.docs[i].get("counter"));
+        String docId = notificationSnap.docs[i].id;
+        setState(() {
+          notificationCounter = notificationCounter + counter;
+        });
+        await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+      } else if (type == "alert") {
+        int counter = int.parse(notificationSnap.docs[i].get("counter"));
+        String docId = notificationSnap.docs[i].id;
+        setState(() {
+          notificationCounter = notificationCounter + counter;
+        });
+        await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+      } else if (type == "message") {
+        String receiverName = notificationSnap.docs[i].get("receiver_name");
+        if (receiverName == widget.name) {
+          int counter = int.parse(notificationSnap.docs[i].get("counter"));
+          String docId = notificationSnap.docs[i].id;
+          setState(() {
+            notificationCounter = notificationCounter + counter;
+          });
+          await databaseMethods.notificationsCollection.doc(docId).update({"counter": "0"});
+        }
+      }
+    }
+
     adSnap = await databaseMethods.getVideoAd();
     await databaseMethods.getHospitals().then((val) {
       setState(() {
@@ -155,7 +245,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             centerTitle: true,
             title: Text("Siro", style: TextStyle(
               fontFamily: "Brand Bold",
-              color: Colors.red[300],
+              color: Color(0xFFa81845),
             ),),
             actions: <Widget>[
               Stack(
@@ -164,14 +254,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     icon: Icon(
                       Icons.notifications_outlined,
                       size: 8 * SizeConfig.imageSizeMultiplier,
-                      color: Colors.red[300],
+                      color: Color(0xFFa81845),
                     ),
-                    onPressed: () async {
-                      Stream notificationStream;
-                      await databaseMethods.getNotifications().then((val) {
-                        setState(() {
-                          notificationStream = val;
-                        });
+                    onPressed: () {
+                      setState(() {
+                        notificationCounter = 0;
                       });
                       Navigator.push(
                         context,
@@ -190,19 +277,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     top: 4,
                     left: 4,
                     child: Visibility(
-                      visible: true,
+                      visible: notificationCounter > 0 ? true : false,
                       child: Container(
-                        height: 2 * SizeConfig.heightMultiplier,
-                        width: 4 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.red[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(50),
                         ),
-                        child: Center(
-                          child: Text("5", style: TextStyle(
-                              fontFamily: "Brand-Regular",
-                              color: Colors.white
-                          ),),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 3,
+                          ),
+                          child: Center(
+                            child: Text("$notificationCounter", style: TextStyle(
+                                fontFamily: "Brand-Regular",
+                                color: Colors.white
+                            ),),
+                          ),
                         ),
                       ),
                     ),
@@ -212,13 +303,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ],
           ),
           drawer: Container(
-            color: Colors.white,
             width: 65 * SizeConfig.widthMultiplier,
             child: Drawer(
+              elevation: 0,
               child: ListView(
                 children: [
                   DrawerHeader(
-                      decoration: BoxDecoration(color: Colors.red[300]),
+                      decoration: BoxDecoration(
+                        gradient: kPrimaryGradientColor,
+                      ),
                       child: Row(
                         children: [
                           CachedImage(
@@ -232,7 +325,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             height: 10 * SizeConfig.heightMultiplier,
                             width: 36 * SizeConfig.widthMultiplier,
                             child: Column(
-                              //mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 Spacer(),
                                 Row(
@@ -278,18 +370,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   GestureDetector(
                     onTap: () => Navigator.push(context, MaterialPageRoute(
                       builder: (context) => MainScreen(
+                        venue: venue,
                         fromNearest: false,
                         name: widget.name,
                         phone: widget.phone,
                       ),
                     ),),
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
@@ -297,14 +389,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             "images/ambulance.png",
                             height: 6 * SizeConfig.heightMultiplier,
                             width: 6 * SizeConfig.widthMultiplier,
-                            color: Colors.red[300],
+                            color: Colors.white,
                           ),
                         ),
                       ),
                       title: Text("Emergency", style: TextStyle(
                           fontSize: 15.0,
                           fontFamily: "Brand Bold",
-                          color: Colors.red[300]
+                          color: Color(0xFFa81845),
                       ),),
                     ),
                   ),
@@ -314,19 +406,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       builder: (context) => HelpScreen(),
                     ),),
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                           child: Center(
-                            child: Icon(CupertinoIcons.question_circle_fill,
+                            child: Icon(
+                              CupertinoIcons.question_circle_fill,
+                              color: Colors.white,
                             ),
                           ),),
-                      title: Text("Help", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                      title: Text("Help", style: TextStyle(
+                        fontSize: 15.0,
+                        fontFamily: "Brand-Regular",
+                      ),),
                     ),
                   ),
                   GestureDetector(
@@ -340,19 +436,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),),
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                           child: Center(
-                            child: Icon(CupertinoIcons.person_alt,
+                            child: Icon(CupertinoIcons.person_alt, color: Colors.white,
                             ),
                           ),),
-                      title: Text("Profile", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                      title: Text("Profile", style: TextStyle(
+                        fontSize: 15.0,
+                        fontFamily: "Brand-Regular",
+                      ),),
                     ),
                   ),
                   GestureDetector(
@@ -364,42 +462,80 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),),
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: Center(
-                          child: Icon(Icons.info,
+                          child: Icon(
+                            Icons.info,
+                            color: Colors.white,
                           ),
                         ),),
                       title: Text("About", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
                     ),
                   ),
                   GestureDetector(
+                    onTap: () async {
+                      Stream activityStream;
+                      await databaseMethods.getUserActivities(firebaseAuth.currentUser.uid)
+                          .then((val) {
+                        setState(() {
+                          activityStream = val;
+                        });
+                      });
+                      Navigator.push(
+                        context, MaterialPageRoute(
+                        builder: (context) => ActivityLogsScreen(
+                          activityStream: activityStream,
+                          isDoctor: false,
+                        ),
+                      ),
+                      );
+                    },
+                    child: ListTile(
+                      leading: Container(
+                        height: 5 * SizeConfig.heightMultiplier,
+                        width: 10 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          gradient: kPrimaryGradientColor,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.fact_check_outlined, color: Colors.white,
+                          ),
+                        ),),
+                      title: Text("Activity Log", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                    ),
+                  ),
+                  GestureDetector(
                     onTap: () {
                       FirebaseAuth.instance.signOut();
+                      databaseMethods.setUserState(uid: currentUser.uid, userState: UserState.Offline, isDoctor: false);
                       Navigator.pushReplacement(context, MaterialPageRoute(
                           builder: (context) => LoginScreen()
                       ));
                     },
                     child: ListTile(
-                      hoverColor: Colors.red[300],
                       leading: Container(
                         height: 5 * SizeConfig.heightMultiplier,
                         width: 10 * SizeConfig.widthMultiplier,
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(30),
                         ),
                           child: Center(
-                            child: Icon(Icons.logout,
+                            child: Icon(Icons.logout, color: Colors.white,
                             ),
                           ),),
-                      title: Text("Log Out", style: TextStyle(fontSize: 15.0, fontFamily: "Brand-Regular"),),
+                      title: Text("Log Out", style: TextStyle(
+                        fontSize: 15.0,
+                        fontFamily: "Brand Bold",
+                        color: Color(0xFFa81845),
+                      ),),
                     ),
                   ),
                 ],
@@ -412,99 +548,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             color: Colors.grey[100],
             child: Stack(
               children: <Widget>[
-                 Padding(
-                   padding: EdgeInsets.only(
-                     top: 1 * SizeConfig.heightMultiplier,
-                   ),
-                   child: Container(
-                      height: 8 * SizeConfig.heightMultiplier,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        boxShadow: [
-                          BoxShadow(
-                            offset: Offset(2, 3),
-                            spreadRadius: 0.5,
-                            blurRadius: 2,
-                            color: Colors.black.withOpacity(0.1),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: 20,
-                          right: 10,
-                        ),
-                        child: Column(
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                GestureDetector(
-                                  onTap: () => profilePicView(
-                                    isDoctor: false,
-                                    isUser: true,
-                                    imageUrl: widget.userPic,
-                                    context: context,
-                                    isSender: true,
-                                  ),
-                                  child: CachedImage(
-                                    imageUrl: widget.userPic,
-                                    isRound: true,
-                                    radius: 60,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                SizedBox(width: 5 * SizeConfig.widthMultiplier,),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Expanded(
-                                      flex: 0,
-                                      child: Container(
-                                        width: 60 * SizeConfig.widthMultiplier,
-                                        child: Wrap(
-                                            children: [Text(widget.name, style: TextStyle(
-                                                color: Colors.red[300],
-                                                fontFamily: "Brand Bold",
-                                                fontSize: 3 * SizeConfig.textMultiplier,
-                                                fontWeight: FontWeight.bold,
-                                              ),),
-                                            ],
-                                          ),
-                                      ),
-                                    ),
-                                    SizedBox(height: 0.5 * SizeConfig.heightMultiplier,),
-                                    Text(
-                                      TimeOfDay.now().hour >= 12 && TimeOfDay.now().hour < 16
-                                          ? "Good Afternoon!"
-                                          : TimeOfDay.now().hour >= 16
-                                              ? "Good Evening!"
-                                              : "Good Morning!",
-                                      style: TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 2.2 * SizeConfig.textMultiplier,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                 ),
                 Padding(
                   padding: EdgeInsets.only(
-                    top: 9.4 * SizeConfig.heightMultiplier,
+                    top: 8 * SizeConfig.heightMultiplier,
                   ),
                   child: Container(
-                    height: 80 * SizeConfig.heightMultiplier,
+                    height: MediaQuery.of(context).size.height,
                     width: MediaQuery.of(context).size.width,
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(25),
-                      ),
                     ),
                     child: SingleChildScrollView(
                       child: Padding(
@@ -528,25 +580,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               ],
                             ),
                             Container(
-                              width: 95 * SizeConfig.widthMultiplier,
+                              width: double.infinity,
                               height: 14 * SizeConfig.heightMultiplier,
-                              color: Colors.grey[100],
                               child: Padding(
                                 padding: EdgeInsets.all(8.0),
                                 child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: <Widget>[
                                     _prevTips(desc: "Keep Distance \n ",
                                       icon: FontAwesomeIcons.peopleArrows,
                                     ),
-                                    SizedBox(width: 4 * SizeConfig.widthMultiplier,),
                                     _prevTips(desc: "Avoid Shaking Hands",
                                       icon: FontAwesomeIcons.handshakeSlash,
                                     ),
-                                    SizedBox(width: 4 * SizeConfig.widthMultiplier,),
                                     _prevTips(desc: "Keep Hands Clean",
                                       icon: FontAwesomeIcons.handsWash,
                                     ),
-                                    SizedBox(width: 4 * SizeConfig.widthMultiplier,),
                                     _prevTips(desc: "Wear Mask\n ",
                                       icon: FontAwesomeIcons.headSideMask,
                                     ),
@@ -751,9 +800,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               ],
                             ),
                             Container(
-                              height: 50 * SizeConfig.heightMultiplier,
-                              width: 95 * SizeConfig.widthMultiplier,
-                              color: Colors.grey[100],
+                              height: 52 * SizeConfig.heightMultiplier,
+                              width: double.infinity,
                               child: Padding(
                                 padding: EdgeInsets.all(4),
                                 child: Stack(
@@ -778,7 +826,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      left: 35 * SizeConfig.widthMultiplier,
+                                      right: 0,
+                                      bottom: 0,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: Icons.add_shopping_cart_rounded,
@@ -801,7 +850,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      top: 17.5 * SizeConfig.heightMultiplier,
+                                      top: 18 * SizeConfig.heightMultiplier,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: CupertinoIcons.exclamationmark_triangle_fill,
@@ -824,7 +873,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      top: 40 * SizeConfig.heightMultiplier,
+                                      bottom: 0,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: CupertinoIcons.alarm_fill,
@@ -837,8 +886,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      left: 35 * SizeConfig.widthMultiplier,
-                                      top: 40 * SizeConfig.heightMultiplier,
+                                      left: 36 * SizeConfig.widthMultiplier,
+                                      bottom: 0,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: CupertinoIcons.calendar_badge_plus,
@@ -879,7 +928,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      top: 17.5 * SizeConfig.heightMultiplier,
+                                      top: 18 * SizeConfig.heightMultiplier,
                                       right: 0,
                                       child: customAccessB(
                                         color: Colors.white,
@@ -909,8 +958,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                     ),
                                     Positioned(
-                                      right: 0,
-                                      top: 40 * SizeConfig.heightMultiplier,
+                                      left: 36 * SizeConfig.widthMultiplier,
                                       child: customAccessB(
                                         color: Colors.white,
                                         icon: FontAwesomeIcons.virus,
@@ -933,13 +981,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       left: 31 * SizeConfig.widthMultiplier,
                                       child: customAccessB(
                                         size: "medium",
-                                        color: Colors.red[300],
+                                        color: Color(0xFFa81845),
+                                        gradient: kPrimaryGradientColor,
                                         image: "images/ambulance.png",
                                         title1: "Emergency",
                                         onTap: () => Navigator.push(
                                           context, MaterialPageRoute(
                                             builder: (context) => MainScreen(
                                               fromNearest: false,
+                                              venue: venue,
                                               name: widget.name,
                                               phone: widget.phone,
                                             ),
@@ -957,6 +1007,88 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                   ),
                 ),
+                Container(
+                    height: 10 * SizeConfig.heightMultiplier,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          offset: Offset(2, 3),
+                          spreadRadius: 0.5,
+                          blurRadius: 2,
+                          color: Colors.black.withOpacity(0.1),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: 20,
+                        right: 10,
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              GestureDetector(
+                                onTap: () => profilePicView(
+                                  callSnap: callSnap,
+                                  chatSnap: chatSnap,
+                                  isDoctor: false,
+                                  isUser: true,
+                                  imageUrl: widget.userPic,
+                                  context: context,
+                                  isSender: true,
+                                ),
+                                child: CachedImage(
+                                  imageUrl: widget.userPic,
+                                  isRound: true,
+                                  radius: 60,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              SizedBox(width: 5 * SizeConfig.widthMultiplier,),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Expanded(
+                                    flex: 0,
+                                    child: Container(
+                                      width: 60 * SizeConfig.widthMultiplier,
+                                      child: Wrap(
+                                        children: [Text(widget.name, style: TextStyle(
+                                          color: Color(0xFFa81845),
+                                          fontFamily: "Brand Bold",
+                                          fontSize: 3 * SizeConfig.textMultiplier,
+                                          fontWeight: FontWeight.bold,
+                                        ),),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 0.5 * SizeConfig.heightMultiplier,),
+                                  Text(
+                                    TimeOfDay.now().hour >= 12 && TimeOfDay.now().hour < 16
+                                        ? "Good Afternoon!"
+                                        : TimeOfDay.now().hour >= 16
+                                        ? "Good Evening!"
+                                        : "Good Morning!",
+                                    style: TextStyle(
+                                      color: Color(0xFFa81845).withOpacity(0.6),
+                                      fontSize: 2.2 * SizeConfig.textMultiplier,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -991,7 +1123,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
         ),
         Container(
-          width: 18 * SizeConfig.widthMultiplier,
+          width: 21 * SizeConfig.widthMultiplier,
           child: Wrap(
             children: <Widget>[
               Center(
@@ -1019,7 +1151,7 @@ class InfoView extends StatefulWidget {
   final String hospital;
   final String reviews;
   final String uid;
-  InfoView({Key key, this.imageUrl, this.doctorsName, this.speciality, this.hospital, this.reviews, this.uid}) : super(key: key);
+  const InfoView({Key key, this.imageUrl, this.doctorsName, this.speciality, this.hospital, this.reviews, this.uid}) : super(key: key);
 
   @override
   _InfoViewState createState() => _InfoViewState();
@@ -1066,7 +1198,6 @@ class _InfoViewState extends State<InfoView> {
       padding: EdgeInsets.only(bottom: 1 * SizeConfig.heightMultiplier),
       child: Container(
         height: 19 * SizeConfig.heightMultiplier,
-        width: 95 * SizeConfig.widthMultiplier,
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
@@ -1079,9 +1210,7 @@ class _InfoViewState extends State<InfoView> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(5),
         ),
-        child: Row(
-          children: <Widget>[
-            Padding(
+        child: Padding(
               padding: EdgeInsets.only(
                 top: 1 * SizeConfig.heightMultiplier,
                 left: 1 * SizeConfig.widthMultiplier,
@@ -1120,7 +1249,6 @@ class _InfoViewState extends State<InfoView> {
                             width: 24 * SizeConfig.widthMultiplier,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(50),
-                              color: Colors.white,
                             ),
                             child: Stack(
                               children: <Widget>[
@@ -1167,7 +1295,6 @@ class _InfoViewState extends State<InfoView> {
                                 ),
                                 SizedBox(height: 0.5 * SizeConfig.heightMultiplier,),
                                 Container(
-                                  height: 7 * SizeConfig.heightMultiplier,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                     children: <Widget>[
@@ -1195,7 +1322,7 @@ class _InfoViewState extends State<InfoView> {
                               children: <Widget>[
                                 getReviews(widget.reviews, ""),
                                 Container(
-                                  width: 45 * SizeConfig.widthMultiplier,
+                                  width: 50 * SizeConfig.widthMultiplier,
                                   child: Padding(
                                     padding: EdgeInsets.only(right: 4),
                                     child: Row(
@@ -1205,7 +1332,7 @@ class _InfoViewState extends State<InfoView> {
                                           padding: EdgeInsets.all(0),
                                           color: Colors.white,
                                           elevation: 8,
-                                          splashColor: Colors.red[200],
+                                          splashColor: Color(0xFFa81845).withOpacity(0.6),
                                           highlightColor: Colors.grey.withOpacity(0.1),
                                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50),),
                                           onPressed: () {
@@ -1214,6 +1341,7 @@ class _InfoViewState extends State<InfoView> {
                                             Navigator.push(
                                                 context, MaterialPageRoute(
                                                 builder: (context) => BookAppointmentScreen(
+                                                  days: days,
                                                   time: time,
                                                   doctorsName: widget.doctorsName,
                                                   hospital: widget.hospital,
@@ -1221,7 +1349,6 @@ class _InfoViewState extends State<InfoView> {
                                                 )));
                                           },
                                           child: Container(
-                                            height: 4 * SizeConfig.heightMultiplier,
                                             child: Padding(
                                               padding: EdgeInsets.symmetric(
                                                 horizontal: 10,
@@ -1229,8 +1356,8 @@ class _InfoViewState extends State<InfoView> {
                                               ),
                                               child: Text("Book Appointment", style: TextStyle(
                                                 fontFamily: "Brand Bold",
-                                                color: Colors.red[300],
-                                                fontSize: 2 * SizeConfig.textMultiplier,
+                                                color: Color(0xFFa81845),
+                                                fontSize: 1.8 * SizeConfig.textMultiplier,
                                               ),)
                                             ),
                                           ),
@@ -1241,14 +1368,20 @@ class _InfoViewState extends State<InfoView> {
                                               context: context,
                                               builder: (context) => ProgressDialog(message: "Please wait...",),
                                             );
+                                            Activity activity = Activity.callActivity(
+                                              createdAt: FieldValue.serverTimestamp(),
+                                              type: "call",
+                                              callType: "video",
+                                              receiver: widget.doctorsName,
+                                            );
                                             await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                                            goToVideoChat(databaseMethods, widget.doctorsName, context, false) : {};
+                                            goToVideoChat(databaseMethods, widget.doctorsName, context, false, activity) : {};
                                           },
                                           child: Container(
                                             height: 5 * SizeConfig.heightMultiplier,
                                             width: 10 * SizeConfig.widthMultiplier,
                                             decoration: BoxDecoration(
-                                                color: Colors.red[300],
+                                                gradient: kPrimaryGradientColor,
                                                 boxShadow: [
                                                   BoxShadow(
                                                     offset: Offset(2, 3),
@@ -1279,8 +1412,6 @@ class _InfoViewState extends State<InfoView> {
                 ),
               ),
             ),
-          ],
-        ),
       ),
     );
   }
@@ -1288,43 +1419,50 @@ class _InfoViewState extends State<InfoView> {
 
 Widget iconLabel({String hospital, IconData icon}) {
   return Container(
-    width: 22 * SizeConfig.widthMultiplier,
+    width: 30 * SizeConfig.widthMultiplier,
     child: Padding(
-      padding: EdgeInsets.all(8.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Icon(
-            icon,
-            color: Colors.grey,
-            size: 6 * SizeConfig.imageSizeMultiplier,
+      padding: EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                icon,
+                color: Colors.grey,
+                size: 6 * SizeConfig.imageSizeMultiplier,
+              ),
+              Text(
+                hospital,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontFamily: "Brand-Regular",
+                  fontSize: 1.8 * SizeConfig.textMultiplier,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ],
           ),
-          Text(
-            hospital,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-            style: TextStyle(
-              color: Colors.black,
-              fontFamily: "Brand-Regular",
-              fontSize: 1.5 * SizeConfig.textMultiplier,
-              decoration: TextDecoration.none,
-            ),
-          ),
-        ],
       ),
     ),
   );
 }
 
-Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSender, String chatRoomId, bool isUser, bool isDoctor}) {
+Future<dynamic> profilePicView({imageUrl, context, bool isSender, chatRoomId, bool isUser, bool isDoctor,
+  QuerySnapshot postSnap, QuerySnapshot chatSnap, QuerySnapshot callSnap}) {
   return showDialog(
     context: context,
     builder: (context) => Padding(
-      padding: EdgeInsets.only(top: 100, left: 50, right: 50, bottom: 350),
+      padding: EdgeInsets.only(
+        top: 13 * SizeConfig.heightMultiplier,
+        left: 13 * SizeConfig.widthMultiplier,
+        right: 13 * SizeConfig.widthMultiplier,
+        bottom: 45 * SizeConfig.heightMultiplier,
+      ),
       child: Builder(
         builder: (context) => Container(
-          height: 10 * SizeConfig.heightMultiplier,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -1361,45 +1499,70 @@ Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSe
                 children: <Widget>[
                   Container(
                         decoration: BoxDecoration(
-                          color: Colors.red[100],
+                          gradient: kPrimaryGradientColor,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child:FocusedMenuHolder(
                           blurSize: 0,
                           duration: Duration(milliseconds: 500),
                           menuWidth: MediaQuery.of(context).size.width * 0.3,
-                          menuItemExtent: 40,
+                          menuItemExtent: 10 * SizeConfig.widthMultiplier,
                           onPressed: () {
                             displayToastMessage("Tap & Hold to make selection", context);
                           },
                           menuItems: <FocusedMenuItem>[
                             FocusedMenuItem(title: Text("Gallery", style: TextStyle(
-                                color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                               onPressed: () async =>
                               await Permissions.cameraAndMicrophonePermissionsGranted() ?
                               pickImage(
                                   source: ImageSource.gallery,
                                   context: context,
-                                  databaseMethods: databaseMethods).then((val) async{
+                                  databaseMethods: databaseMethods).then((val) async {
                                 String profilePic = val;
                                   if (isDoctor == true) {
                                     if (profilePic == null || profilePic == "") {} else {
+                                      Activity activity = Activity.editActivity(
+                                        createdAt: FieldValue.serverTimestamp(),
+                                        type: "edit",
+                                        editType: "profile picture",
+                                      );
+                                      var activityMap = activity.toEditActivity(activity);
                                       await databaseMethods.updateDoctorDocField({"profile_photo": profilePic}, currentUser.uid);
+                                      await updatePostChatCallPics(
+                                        postSnap: postSnap,
+                                        chatSnap: chatSnap,
+                                        callSnap: callSnap,
+                                        updatePic: profilePic,
+                                      );
+                                      await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                       Navigator.pop(context);
                                       displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
                                     }
                                   } else {
                                     if (profilePic == null || profilePic == "") {} else {
+                                      Activity activity = Activity.editActivity(
+                                        createdAt: FieldValue.serverTimestamp(),
+                                        type: "edit",
+                                        editType: "profile picture",
+                                      );
+                                      var activityMap = activity.toEditActivity(activity);
                                       await databaseMethods.updateUserDocField({"profile_photo": profilePic}, currentUser.uid);
+                                      await updatePostChatCallPics(
+                                        chatSnap: chatSnap,
+                                        callSnap: callSnap,
+                                        updatePic: profilePic,
+                                      );
+                                      await databaseMethods.createUserActivity(activityMap, currentUser.uid);
                                       Navigator.pop(context);
                                       displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
                                     }
                                   }
                               }) : {},
-                              trailingIcon: Icon(Icons.photo_library_outlined, color: Colors.red[300],),
+                              trailingIcon: Icon(Icons.photo_library_outlined, color: Color(0xFFa81845),),
                             ),
                             FocusedMenuItem(title: Text("Capture", style: TextStyle(
-                                color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                               onPressed: () async =>
                               await Permissions.cameraAndMicrophonePermissionsGranted() ?
                               pickImage(
@@ -1409,29 +1572,54 @@ Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSe
                                     String profilePic = val;
                                       if (isDoctor == true) {
                                         if (profilePic == null || profilePic == "") {} else {
+                                          Activity activity = Activity.editActivity(
+                                            createdAt: FieldValue.serverTimestamp(),
+                                            type: "edit",
+                                            editType: "profile picture",
+                                          );
+                                          var activityMap = activity.toEditActivity(activity);
                                           await databaseMethods.updateDoctorDocField({"profile_photo": profilePic}, currentUser.uid);
+                                          await updatePostChatCallPics(
+                                            postSnap: postSnap,
+                                            chatSnap: chatSnap,
+                                            callSnap: callSnap,
+                                            updatePic: profilePic,
+                                          );
+                                          await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
                                           Navigator.pop(context);
                                           displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
                                         }
                                       } else {
                                         if (profilePic == null || profilePic == "") {} else {
+                                          Activity activity = Activity.editActivity(
+                                            createdAt: FieldValue.serverTimestamp(),
+                                            type: "edit",
+                                            editType: "profile picture",
+                                          );
+                                          var activityMap = activity.toEditActivity(activity);
                                           await databaseMethods.updateUserDocField({"profile_photo": profilePic}, currentUser.uid);
+                                          await updatePostChatCallPics(
+                                            chatSnap: chatSnap,
+                                            callSnap: callSnap,
+                                            updatePic: profilePic,
+                                          );
+                                          await databaseMethods.createUserActivity(activityMap, currentUser.uid);
                                           Navigator.pop(context);
                                           displaySnackBar(message: "Changes will be seen next time you open the app", label: "OK", context: context);
                                         }
                                       }
                               }) : {},
-                              trailingIcon: Icon(Icons.camera, color: Colors.red[300],),
+                              trailingIcon: Icon(Icons.camera, color: Color(0xFFa81845),),
                             ),
                           ],
                           child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8,),
                             child: Row(
                               children: <Widget>[
-                                Icon(CupertinoIcons.pencil, color: Colors.red[300],),
+                                Icon(CupertinoIcons.pencil, color: Colors.white,),
                                 Text("Edit Profile Picture", style: TextStyle(
                                   fontFamily: "Brand Bold",
-                                  color: Colors.red[300],
+                                  color: Colors.white,
                                 ),),
                               ],
                             ),
@@ -1441,7 +1629,7 @@ Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSe
                   Image(
                     image: AssetImage("images/logo.png"),
                     width: 12 * SizeConfig.widthMultiplier,
-                    height: 5 * SizeConfig.heightMultiplier,
+                    height: 4 * SizeConfig.heightMultiplier,
                   ),
                 ],
               ),
@@ -1452,7 +1640,7 @@ Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSe
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   GestureDetector(
-                    child: Icon(Icons.message_rounded, color: Colors.red[300],),
+                    child: Icon(Icons.message_rounded, color: Color(0xFFa81845),),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(
@@ -1466,25 +1654,37 @@ Future<dynamic> profilePicView({String imageUrl, BuildContext context, bool isSe
                     },
                   ),
                   GestureDetector(
-                    child: Icon(Icons.call_rounded, color: Colors.red[300],),
+                    child: Icon(Icons.call_rounded, color: Color(0xFFa81845),),
                     onTap: () async {
                       showDialog(
                         context: context,
                         builder: (context) => ProgressDialog(message: "Please wait...",),
                       );
+                      Activity activity = Activity.callActivity(
+                        createdAt: FieldValue.serverTimestamp(),
+                        type: "call",
+                        callType: "voice",
+                        receiver: chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""),
+                      );
                       await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                      goToVoiceCall(databaseMethods, chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""), context, isDoctor) : {};
+                      goToVoiceCall(databaseMethods, chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""), context, isDoctor, activity) : {};
                     },
                   ),
                   GestureDetector(
-                    child: Icon(Icons.videocam_rounded, color: Colors.red[300],),
+                    child: Icon(Icons.videocam_rounded, color: Color(0xFFa81845),),
                     onTap: () async {
                       showDialog(
                         context: context,
                         builder: (context) => ProgressDialog(message: "Please wait...",),
                       );
+                      Activity activity = Activity.callActivity(
+                        createdAt: FieldValue.serverTimestamp(),
+                        type: "call",
+                        callType: "video",
+                        receiver: chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""),
+                      );
                       await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                      goToVideoChat(databaseMethods, chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""), context, isDoctor) : {};
+                      goToVideoChat(databaseMethods, chatRoomId.replaceAll("_", "").replaceAll(Constants.myName, ""), context, isDoctor, activity) : {};
                     },
                   ),
                   Image(
@@ -1599,17 +1799,13 @@ Widget customAccessB({
   String title1,
   String title2,
   Function onTap,
-  Color color}) {
+  Color color,
+  Gradient gradient,
+}) {
 
   return GestureDetector(
     onTap: onTap,
     child: Container(
-      height: size == "medium"
-          ? 22 * SizeConfig.heightMultiplier
-          : 14 * SizeConfig.heightMultiplier,
-      width: size == "medium"
-          ? 30 * SizeConfig.widthMultiplier
-          : 20 * SizeConfig.widthMultiplier,
       child: Padding(
         padding: EdgeInsets.all(8.0),
         child: Column(
@@ -1623,6 +1819,7 @@ Widget customAccessB({
                   : 16 * SizeConfig.widthMultiplier,
               decoration: BoxDecoration(
                 color: color,
+                gradient: gradient,
                 boxShadow: [
                   BoxShadow(
                     offset: Offset(2, 2),
@@ -1631,11 +1828,7 @@ Widget customAccessB({
                     color: Colors.black.withOpacity(0.3),
                   ),
                 ],
-                borderRadius: BorderRadius.circular(
-                    size == "medium"
-                        ? 60
-                        : 45
-                ),
+                borderRadius: BorderRadius.circular(100),
               ),
               child: icon != null
                   ? Icon(

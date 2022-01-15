@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/specialityScreen.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -12,11 +13,23 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SpecialitiesScreen extends StatefulWidget {
   static const String screenId = "specialitiesScreen";
-  SpecialitiesScreen({Key key}) : super(key: key);
+  const SpecialitiesScreen({Key key}) : super(key: key);
 
   @override
   _SpecialitiesScreenState createState() => _SpecialitiesScreenState();
 }
+
+List<String> specialitiesList = ["General Doctor", "Cardiology", "Dentist",
+  "Pediatrics", "Ophthalmology", "Pneumology", "Neurology", "Obstetrics",
+  "Gynecology", "Surgery", "Rheumatology", "Nephrology", "Gastroenterology",
+  "Dermatology", "Psychiatry", "Oncology", "Plastic Surgery", "Orthopedic Surgery",
+  "Allergist/Immunologist", "Radiology", "Endocrinology", "Otolaryngology",
+  "Osteopaths", "Urology", "Internist", "Podiatry", "Physiology", "Medical Geneticist",
+  "Vascular Surgery", "Colon Surgery", "Rectal Surgery", "Sleep Medicine Specialist",
+  "Sport Medicine Specialist", "Infectious Disease Specialist", "Geriatric Medicine Specialist",
+  "Cardiovascular Surgery", "Thoracic Surgery", "Occupational Medicine Specialist",
+  "Physical, Medical and Rehabilitation",
+];
 
 class _SpecialitiesScreenState extends State<SpecialitiesScreen> {
 
@@ -39,18 +52,6 @@ class _SpecialitiesScreenState extends State<SpecialitiesScreen> {
     }
   }
 
-  List<String> specialitiesList = ["General Doctor", "Cardiology", "Dentist",
-    "Pediatrics", "Ophthalmology", "Pneumology", "Neurology", "Obstetrics",
-    "Gynecology", "Surgery", "Rheumatology", "Nephrology", "Gastroenterology",
-    "Dermatology", "Psychiatry", "Oncology", "Plastic Surgery", "Orthopedic Surgery",
-    "Allergist/Immunologist", "Radiology", "Endocrinology", "Otolaryngology",
-    "Osteopaths", "Urology", "Internist", "Podiatry", "Physiology", "Medical Geneticist",
-    "Vascular Surgery", "Colon Surgery", "Rectal Surgery", "Sleep Medicine Specialist",
-    "Sport Medicine Specialist", "Infectious Disease Specialist", "Geriatric Medicine Specialist",
-    "Cardiovascular Surgery", "Thoracic Surgery", "Occupational Medicine Specialist",
-    "Physical, Medical and Rehabilitation",
-  ];
-
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
@@ -66,7 +67,7 @@ class _SpecialitiesScreenState extends State<SpecialitiesScreen> {
                   visible: titleVisible,
                   child: Text("Specialities", style: TextStyle(
                     fontFamily: "Brand Bold",
-                    color: Colors.red[300],
+                    color: Color(0xFFa81845),
                   ),),
                 ),
                 Visibility(
@@ -110,8 +111,8 @@ class _SpecialitiesScreenState extends State<SpecialitiesScreen> {
                   visible: titleVisible,
                   child: IconButton(
                     onPressed: () => showHideSearchBar(),
-                    splashColor: Colors.red[200],
-                    icon: Icon(CupertinoIcons.search, color: Colors.red[300],
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
+                    icon: Icon(CupertinoIcons.search, color: Color(0xFFa81845),
                     ),),
                 ),
                 Visibility(
@@ -122,8 +123,8 @@ class _SpecialitiesScreenState extends State<SpecialitiesScreen> {
                       specialityOnSearch.clear();
                       showHideSearchBar();
                     },
-                    color: Colors.red[300],
-                    splashColor: Colors.red[200],
+                    color: Color(0xFFa81845),
+                    splashColor: Color(0xFFa81845).withOpacity(0.6),
                     icon: Icon(CupertinoIcons.clear,
                     ),),
                 ),
@@ -173,10 +174,16 @@ class _SpecialitiesScreenState extends State<SpecialitiesScreen> {
                   },
                   child: Row(
                     children: <Widget>[
-                      CircleAvatar(
-                        backgroundColor: Colors.red[100],
-                        foregroundColor: Colors.red[300],
-                        child: Icon(FontAwesomeIcons.userMd),
+                      Container(
+                        height: 5 * SizeConfig.heightMultiplier,
+                        width: 10 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          gradient: kPrimaryGradientColor,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: Icon(FontAwesomeIcons.userMd, color: Colors.white,),
+                        ),
                       ),
                       SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                       Text(specialityOnSearch[index], style: TextStyle(
@@ -240,11 +247,11 @@ class _SpecialitiesScreenState extends State<SpecialitiesScreen> {
                                     width: 16 * SizeConfig.widthMultiplier,
                                     height: 8 * SizeConfig.heightMultiplier,
                                     decoration: BoxDecoration(
-                                      color: Colors.red[100],
+                                      gradient: kPrimaryGradientColor,
                                       borderRadius: BorderRadius.circular(15),
                                     ),
                                     child: Center(
-                                      child: Icon(FontAwesomeIcons.userMd, color: Colors.red[300],),
+                                      child: Icon(FontAwesomeIcons.userMd, color: Colors.white,),
                                     ),
                                   ),
                                   SizedBox(width: 2 * SizeConfig.widthMultiplier,),

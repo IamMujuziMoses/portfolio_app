@@ -3,6 +3,7 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/Doctor/addPatientScreen.dart';
 import 'package:creativedata_app/Doctor/patientProfile.dart';
 import 'package:creativedata_app/Doctor/privatePatientProfile.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PatientsScreen extends StatelessWidget {
   final Stream patientsStream;
-  PatientsScreen({Key key, this.patientsStream}) : super(key: key);
+  const PatientsScreen({Key key, this.patientsStream}) : super(key: key);
 
   Widget patientList() {
     return StreamBuilder(
@@ -114,12 +115,19 @@ class PatientsScreen extends StatelessWidget {
           backgroundColor: Colors.grey[100],
           title: Text("My Patients", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.red[300],
-          child: Icon(CupertinoIcons.person_add_solid, color: Colors.white,),
+          clipBehavior: Clip.hardEdge,
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: kPrimaryGradientColor
+            ),
+            child: Icon(CupertinoIcons.person_add_solid, color: Colors.white,),
+          ),
           onPressed: () => Navigator.push(
             context, MaterialPageRoute(
             builder: (context) => AddPatientScreen(),
@@ -147,7 +155,7 @@ class PrivatePatientTile extends StatelessWidget {
   final String pic;
   final String phone;
   final List med;
-  PrivatePatientTile({Key key, this.name, this.pic, this.phone, this.med}) : super(key: key);
+  const PrivatePatientTile({Key key, this.name, this.pic, this.phone, this.med}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +178,7 @@ class PrivatePatientTile extends StatelessWidget {
         padding: EdgeInsets.all(0),
         color: Colors.white,
         highlightColor: Colors.grey.withOpacity(0.1),
-        splashColor: Colors.red[300],
+        splashColor: Color(0xFFa81845),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: Container(
           height: 15 * SizeConfig.heightMultiplier,
@@ -191,7 +199,7 @@ class PrivatePatientTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(50),
                         color: Colors.white,
-                        border: Border.all(color: Colors.red[300], style: BorderStyle.solid, width: 2),
+                        border: Border.all(color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                       ),
                       child: pic == null
                           ? Image.asset("images/user_icon.png")
@@ -219,7 +227,7 @@ class PrivatePatientTile extends StatelessWidget {
                         child: Text(name, overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: "Brand Bold",
-                            fontSize: 3 * SizeConfig.textMultiplier,
+                            fontSize: 2.7 * SizeConfig.textMultiplier,
                           ),),
                       ),
                       Container(
@@ -228,7 +236,7 @@ class PrivatePatientTile extends StatelessWidget {
                           style: TextStyle(
                             color: Colors.grey,
                             fontFamily: "Brand-Regular",
-                            fontSize: 2 * SizeConfig.textMultiplier,
+                            fontSize: 1.8 * SizeConfig.textMultiplier,
                           ),),
                       ),
                     ],
@@ -236,7 +244,7 @@ class PrivatePatientTile extends StatelessWidget {
                       Center(
                         child: Text("Access Restricted", style: TextStyle(
                           fontFamily: "Brand Bold",
-                          fontSize: 2.5 * SizeConfig.textMultiplier,
+                          fontSize: 2.2 * SizeConfig.textMultiplier,
                           color: Colors.grey,
                         ),),
                       ),
@@ -281,7 +289,7 @@ class PatientTile extends StatelessWidget {
   final String sex;
   final List medicine;
   final List allergyMed;
-  PatientTile({Key key, this.healthDep, this.height, this.weight, this.bmi, this.pressure, this.pulse,
+  const PatientTile({Key key, this.healthDep, this.height, this.weight, this.bmi, this.pressure, this.pulse,
     this.fileNo, this.name, this.dob, this.recruited, this.pt, this.diagnosis, this.residence, this.street,
     this.city, this.phone, this.email, this.kin, this.smoking, this.famDiabetes, this.famPressure,
     this.famCancer, this.alcoholic, this.allergies, this.sex, this.medicine, this.allergyMed, this.pic,
@@ -332,7 +340,7 @@ class PatientTile extends StatelessWidget {
         padding: EdgeInsets.all(0),
         color: Colors.white,
         highlightColor: Colors.grey.withOpacity(0.1),
-        splashColor: Colors.red[300],
+        splashColor: Color(0xFFa81845),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: Container(
           height: 15 * SizeConfig.heightMultiplier,
@@ -352,7 +360,7 @@ class PatientTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(50),
                         color: Colors.white,
-                        border: Border.all(color: Colors.red[300], style: BorderStyle.solid, width: 2),
+                        border: Border.all(color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                       ),
                       child: pic == null
                           ? Image.asset("images/user_icon.png")
@@ -380,7 +388,7 @@ class PatientTile extends StatelessWidget {
                             child: Text(name, overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                               fontFamily: "Brand Bold",
-                              fontSize: 3 * SizeConfig.textMultiplier,
+                              fontSize: 2.7 * SizeConfig.textMultiplier,
                             ),),
                           ),
                           Container(
@@ -389,7 +397,7 @@ class PatientTile extends StatelessWidget {
                               style: TextStyle(
                                 color: Colors.grey,
                                 fontFamily: "Brand-Regular",
-                                fontSize: 2 * SizeConfig.textMultiplier,
+                                fontSize: 1.8 * SizeConfig.textMultiplier,
                             ),),
                           ),
                         ],
@@ -407,13 +415,13 @@ class PatientTile extends StatelessWidget {
                                   height: 3 * SizeConfig.heightMultiplier,
                                   width: 6 * SizeConfig.widthMultiplier,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[200],
+                                    gradient: kPrimaryGradientColor,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Center(
                                     child: Icon(FontAwesomeIcons.fileMedicalAlt,
                                       size: 3 * SizeConfig.imageSizeMultiplier,
-                                      color: Colors.red[300],
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
@@ -422,8 +430,8 @@ class PatientTile extends StatelessWidget {
                                   child: Text(diagnosis, overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                     fontFamily: "Brand-Regular",
-                                    color: Colors.red[300],
-                                    fontSize: 2.3 * SizeConfig.textMultiplier,
+                                    color: Color(0xFFa81845),
+                                    fontSize: 2 * SizeConfig.textMultiplier,
                                   ),),
                                 ),
                               ],
@@ -438,13 +446,13 @@ class PatientTile extends StatelessWidget {
                                   height: 3 * SizeConfig.heightMultiplier,
                                   width: 6 * SizeConfig.widthMultiplier,
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[200],
+                                    gradient: kPrimaryGradientColor,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Center(
                                     child: Icon(FontAwesomeIcons.pills,
                                       size: 3 * SizeConfig.imageSizeMultiplier,
-                                      color: Colors.red[300],
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
@@ -455,8 +463,8 @@ class PatientTile extends StatelessWidget {
                                     separatorBuilder: (context, index) => Center(
                                       child: Text(", ", style: TextStyle(
                                         fontFamily: "Brand-Regular",
-                                        color: Colors.red[300],
-                                        fontSize: 2.3 * SizeConfig.textMultiplier,
+                                        color: Color(0xFFa81845),
+                                        fontSize: 2 * SizeConfig.textMultiplier,
                                       ),),
                                     ),
                                     shrinkWrap: true,
@@ -468,8 +476,8 @@ class PatientTile extends StatelessWidget {
                                         child: Center(
                                           child: Text(medicine[index], style: TextStyle(
                                             fontFamily: "Brand-Regular",
-                                            color: Colors.red[300],
-                                            fontSize: 2.3 * SizeConfig.textMultiplier,
+                                            color: Color(0xFFa81845),
+                                            fontSize: 2 * SizeConfig.textMultiplier,
                                           ),),
                                         ),
                                       );

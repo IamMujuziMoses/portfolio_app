@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 /*
@@ -87,7 +88,8 @@ class _TimerWidgetState extends State<TimerWidget> {
         width: 15 * SizeConfig.widthMultiplier,
         height: widget.height != null ? widget.height : 4 * SizeConfig.heightMultiplier,
         decoration: BoxDecoration(
-          color: widget.color != null ? widget.color : Colors.red[100],
+          gradient: widget.color != null ? null : kPrimaryGradientColor,
+          color: widget.color != null ? widget.color : null,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
@@ -106,7 +108,7 @@ class _TimerWidgetState extends State<TimerWidget> {
       '$minutes:$seconds',
       style: TextStyle(
         fontFamily: "Brand Bold",
-        color: Colors.red[300],
+        color: Colors.white,
         fontSize: 2 * SizeConfig.textMultiplier,
       ),
     );

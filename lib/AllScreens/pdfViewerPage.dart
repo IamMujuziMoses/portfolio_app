@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p;
 
 class PDFViewerPage extends StatefulWidget {
   final File file;
-  PDFViewerPage({Key key, this.file}) : super(key: key);
+  const PDFViewerPage({Key key, this.file}) : super(key: key);
 
   @override
   _PDFViewerPageState createState() => _PDFViewerPageState();
@@ -59,13 +59,13 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
             elevation: 0,
             title: Text(name, style: TextStyle(
               fontFamily: "Brand Bold",
-              color: Colors.red[300],
+              color: Color(0xFFa81845),
             ),),
             actions: pages >= 2 ? <Widget>[
               Center(
                 child: Text(pagesCounter, style: TextStyle(
                   fontFamily: "Brand-Regular",
-                    color: Colors.red[300],
+                    color: Color(0xFFa81845),
                 ),),
               ),
               IconButton(
@@ -74,7 +74,7 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
                   controller.setPage(page);
                 },
                 icon: Icon(CupertinoIcons.chevron_back,
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
                 ),
               ),
               IconButton(
@@ -83,7 +83,7 @@ class _PDFViewerPageState extends State<PDFViewerPage> {
                   controller.setPage(page);
                 },
                 icon: Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
                 ),
               ),
             ] : null,

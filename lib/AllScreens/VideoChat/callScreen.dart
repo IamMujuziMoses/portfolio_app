@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatSearch.dart';
-import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/Models/call.dart';
 import 'package:creativedata_app/Provider/userProvider.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Utilities/callUtils.dart';
+import 'package:creativedata_app/Widgets/timerWidget.dart';
 import 'package:creativedata_app/agoraConfigs.dart';
-import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
@@ -23,14 +23,16 @@ class CallScreen extends StatefulWidget {
   static const String screenId = "callScreen";
   final Call call;
   final bool isDoctor;
-  CallScreen({Key key, @required this.call, this.isDoctor}) : super(key: key);
+  final bool isReceiving;
+  const CallScreen({Key key, @required this.call, this.isDoctor, this.isReceiving}) : super(key: key);
 
   @override
   _CallScreenState createState() => _CallScreenState();
 }
 
 class _CallScreenState extends State<CallScreen> {
-  DatabaseMethods databaseMethods = new DatabaseMethods();
+
+  TimerController timerController = TimerController();
   UserProvider userProvider;
   StreamSubscription callStreamSubscription;
   final _users = <int>[];
@@ -48,7 +50,7 @@ class _CallScreenState extends State<CallScreen> {
       receiverPic: widget.call.receiverPic,
       isVoiceCall: false,
       users: [widget.call.callerName, widget.call.receiverName],
-      createdBy: Constants.myName,
+      createdBy: widget.call.callerName,
       time: FieldValue.serverTimestamp(),
     );
   }
@@ -65,13 +67,15 @@ class _CallScreenState extends State<CallScreen> {
     }
 
     await _initAgoraRtcEngine();
-    assetsAudioPlayer.open(Audio("sounds/dail_tone.mp3"));
-    assetsAudioPlayer.play();
+    if (widget.isReceiving == true) {} else {
+      assetsAudioPlayer.open(Audio("sounds/dail_tone.mp3"));
+      assetsAudioPlayer.play();
+    }
     _addAgoraEventHandlers();
     await AgoraRtcEngine.enableWebSdkInteroperability(true);
     await AgoraRtcEngine.setParameters(
       '''{\"che.video.lowBitRateStreamParameter\":{\"width\":320,\"height\":180,\"frameRate\":15,\"bitRate\":140}}''');
-    await AgoraRtcEngine.joinChannel(null, widget.call.channelId, null, 0);
+    await AgoraRtcEngine.joinChannel(widget.call.token, widget.call.channelId, null, 0);
   }
 
   void _addAgoraEventHandlers() {
@@ -93,6 +97,13 @@ class _CallScreenState extends State<CallScreen> {
       });
     };
 
+    AgoraRtcEngine.onTokenPrivilegeWillExpire = (token) async {
+      await CallUtils.getToken(widget.call.channelId).then((val) {
+        token = val;
+      });
+      await AgoraRtcEngine.renewToken(token);
+    };
+
     AgoraRtcEngine.onUserJoined = (int uid, int elapsed) {
       assetsAudioPlayer.stop();
       assetsAudioPlayer = new AssetsAudioPlayer();
@@ -100,6 +111,9 @@ class _CallScreenState extends State<CallScreen> {
         final info = 'userJoined: $uid';
         _infoStrings.add(info);
         _users.add(uid);
+        if (_users.length > 0) {
+          timerController.startTimer();
+        }
       });
     };
 
@@ -211,10 +225,10 @@ class _CallScreenState extends State<CallScreen> {
             ));
       case 2:
         return Container(
-            child: Column(
+            child: Stack(
               children: <Widget>[
-                _expandedVideoRow([views[0]]),
-                _expandedVideoRow([views[1]])
+                _receiverVideoView([views[1]]),
+                _callerVideoView([views[0]]),
               ],
             ));
       case 3:
@@ -238,6 +252,40 @@ class _CallScreenState extends State<CallScreen> {
     return Container();
   }
 
+  Widget _receiverVideoView(List<Widget> views) {
+    final wrappedViews = views.map<Widget>(_videoView).toList();
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: MediaQuery.of(context).size.height,
+      child: Row(
+        children: wrappedViews,
+      ),
+    );
+  }
+
+  Widget _callerVideoView(List<Widget> views) {
+    final wrappedViews = views.map<Widget>(_videoView).toList();
+    return Container(
+      height: MediaQuery.of(context).size.height - 70 * SizeConfig.heightMultiplier,
+      width: MediaQuery.of(context).size.width - 60 * SizeConfig.widthMultiplier,
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(2, 3),
+            spreadRadius: 0.5,
+            blurRadius: 2,
+            color: Colors.black.withOpacity(0.3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: wrappedViews,
+      ),
+    );
+  }
+
   Widget _expandedVideoRow(List<Widget> views) {
     final wrappedViews = views.map<Widget>(_videoView).toList();
     return Expanded(
@@ -251,107 +299,74 @@ class _CallScreenState extends State<CallScreen> {
     return Expanded(child: Container(child: view));
   }
 
-  Widget _panel() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      alignment: Alignment.bottomCenter,
-      child: FractionallySizedBox(
-        heightFactor: 0.5,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 48),
-          child: ListView.builder(
-            reverse: true,
-            itemCount: _infoStrings.length,
-            itemBuilder: (BuildContext context, int index) {
-              if (_infoStrings.isEmpty) {
-                return null;
-              }
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 3,
-                  horizontal: 10,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 2,
-                          horizontal: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.yellowAccent,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          _infoStrings[index],
-                          style: TextStyle(color: Colors.blueGrey),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _toolbar() {
     //if (widget.role == ClientRole.Audience) return Container();
     return Container(
       alignment: Alignment.bottomCenter,
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
         children: <Widget>[
-          RawMaterialButton(
-            onPressed: _onToggleMute,
-            child: Icon(
-              muted ? Icons.mic_off : Icons.mic,
-              color: muted ? Colors.white : Colors.blueAccent,
-              size: 20.0,
+          Visibility(
+            visible: _users.length > 0 ? true : false,
+            child: AvatarGlow(
+              glowColor: Color(0xFFa81845),
+              showTwoGlows: true,
+              animate: true,
+              endRadius: 100,
+              repeatPauseDuration: Duration(milliseconds: 100),
+              child: TimerWidget(controller: timerController,),
             ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: muted ? Colors.blueAccent : Colors.white,
-            padding: const EdgeInsets.all(12.0),
           ),
-          RawMaterialButton(
-            onPressed: () async {
-              assetsAudioPlayer.stop();
-              assetsAudioPlayer = new AssetsAudioPlayer();
-              await databaseMethods.endCall(
-                call: widget.call,
-                records: records,
-                chatRoomId: chatRoomId,
-              );
-            },
-            child: Icon(
-              Icons.call_end,
-              color: Colors.white,
-              size: 35.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.redAccent,
-            padding: const EdgeInsets.all(15.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              RawMaterialButton(
+                onPressed: _onToggleMute,
+                child: Icon(
+                  muted ? Icons.mic_off : Icons.mic,
+                  color: muted ? Colors.white : Colors.blueAccent,
+                  size: 20.0,
+                ),
+                shape: CircleBorder(),
+                elevation: 2.0,
+                fillColor: muted ? Colors.blueAccent : Colors.white,
+                padding: const EdgeInsets.all(12.0),
+              ),
+              RawMaterialButton(
+                onPressed: () async {
+                  timerController.stopTimer();
+                  assetsAudioPlayer.stop();
+                  assetsAudioPlayer = new AssetsAudioPlayer();
+                  await databaseMethods.endCall(
+                    call: widget.call,
+                    records: records,
+                    chatRoomId: chatRoomId,
+                  );
+                },
+                child: Icon(
+                  Icons.call_end,
+                  color: Colors.white,
+                  size: 35.0,
+                ),
+                shape: CircleBorder(),
+                elevation: 2.0,
+                fillColor: Color(0xFFa81845),
+                padding: const EdgeInsets.all(15.0),
+              ),
+              RawMaterialButton(
+                onPressed: _onSwitchCamera,
+                child: Icon(
+                  Icons.switch_camera,
+                  color: Colors.blueAccent,
+                  size: 20.0,
+                ),
+                shape: CircleBorder(),
+                elevation: 2.0,
+                fillColor: Colors.white,
+                padding: const EdgeInsets.all(12.0),
+              )
+            ],
           ),
-          RawMaterialButton(
-            onPressed: _onSwitchCamera,
-            child: Icon(
-              Icons.switch_camera,
-              color: Colors.blueAccent,
-              size: 20.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.white,
-            padding: const EdgeInsets.all(12.0),
-          )
         ],
       ),
     );
@@ -417,8 +432,11 @@ class _CallScreenState extends State<CallScreen> {
           child: Stack(
             children: <Widget>[
               _viewRows(),
-              _panel(),
-              _toolbar(),
+              Positioned(
+                right: 15 * SizeConfig.widthMultiplier,
+                bottom:  0,
+                child: _toolbar(),
+              ),
             ],
           ),
         ),

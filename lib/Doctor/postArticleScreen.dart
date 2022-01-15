@@ -8,12 +8,15 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/videoView.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Models/post.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:keyboard_visibility/keyboard_visibility.dart';
@@ -28,7 +31,7 @@ import 'package:video_player/video_player.dart';
 class PostArticleScreen extends StatefulWidget {
   final String userName;
   final String userPic;
-  PostArticleScreen({Key key, this.userName, this.userPic}) : super(key: key);
+  const PostArticleScreen({Key key, this.userName, this.userPic}) : super(key: key);
 
   @override
   _PostArticleScreenState createState() => _PostArticleScreenState();
@@ -178,7 +181,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
             backgroundColor: Colors.grey[100],
             title: Text("Post Article", style: TextStyle(
                 fontFamily: "Brand Bold",
-                color: Colors.red[300]
+                color: Color(0xFFa81845)
             ),),
             actions: <Widget>[
               Padding(
@@ -193,7 +196,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
                     child: Container(
                       width: postWidth,
                       decoration: BoxDecoration(
-                        color: Colors.red[300],
+                        gradient: kPrimaryGradientColor,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Padding(
@@ -201,7 +204,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
                         child: Center(
                           child: Text("POST", style: TextStyle(
                             fontSize: 2.3 * SizeConfig.textMultiplier,
-                            color: Colors.grey[100],
+                            color: Colors.white,
                             fontFamily: "Brand-Regular",
                             fontWeight: FontWeight.bold,
                           ),),
@@ -421,7 +424,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
                             borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.red[300],
+                                color: Color(0xFFa81845),
                                 blurRadius: 16.0,
                                 spreadRadius: 0.5,
                                 offset: Offset(0.7, 0.7),
@@ -440,7 +443,7 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
                                   child: Text(
                                     "Share",
                                     style: TextStyle(
-                                      color: Colors.red[300],
+                                      color: Color(0xFFa81845),
                                       fontFamily: "Brand Bold",
                                       fontSize: 3 * SizeConfig.textMultiplier,
                                       fontWeight: FontWeight.bold,
@@ -626,10 +629,20 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
           builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
       );
 
+      Activity activity;
+
+      String msg = "";
+      if (imageVisible == true || videoVisible == true) {
+        msg = messageTEC.text.trim();
+      } else {
+        msg = postTEC.text.trim();
+      }
+
       CustomNotification notification = CustomNotification.newPost(
         createdAt: FieldValue.serverTimestamp(),
         type: "post",
-        postText: messageTEC.text.trim(),
+        counter: "1",
+        postText: msg,
         from: widget.userName,
         postHeading: headingTEC.text.trim(),
         heading: null,
@@ -650,8 +663,17 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
           postText: messageTEC.text.trim(),
           time: FieldValue.serverTimestamp(),
           likeCounter: 0,
+          shareCounter: 0,
           uid: uid,
         );
+        activity = Activity.postActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "post",
+          postHeading: headingTEC.text.trim(),
+          postType: "image",
+        );
+        var activityMap = activity.toPostActivity(activity);
+        await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
         var imagePostMap = post.toImageMap(post);
         await databaseMethods.createPost(imagePostMap);
         await databaseMethods.createNotification(notificationMap);
@@ -670,8 +692,17 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
           type: "VIDEO",
           time: FieldValue.serverTimestamp(),
           likeCounter: 0,
+          shareCounter: 0,
           uid: uid,
         );
+        activity = Activity.postActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "post",
+          postHeading: headingTEC.text.trim(),
+          postType: "video",
+        );
+        var activityMap = activity.toPostActivity(activity);
+        await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
         var videoPostMap = post.toVideoMap(post);
         await databaseMethods.createPost(videoPostMap);
         await databaseMethods.createNotification(notificationMap);
@@ -686,13 +717,21 @@ class _PostArticleScreenState extends State<PostArticleScreen> with TickerProvid
           type: "TEXT",
           time: FieldValue.serverTimestamp(),
           likeCounter: 0,
+          shareCounter: 0,
           uid: uid,
         );
+        activity = Activity.postActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "post",
+          postHeading: headingTEC.text.trim(),
+          postType: "text",
+        );
+        var activityMap = activity.toPostActivity(activity);
+        await databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
         var textPostMap = post.toTextMap(post);
         await databaseMethods.createPost(textPostMap);
         await databaseMethods.createNotification(notificationMap);
         Navigator.pop(context);
-
       } else {
         displayToastMessage("Nothing to post", context);
         Navigator.pop(context);

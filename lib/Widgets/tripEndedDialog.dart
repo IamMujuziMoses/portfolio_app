@@ -1,3 +1,4 @@
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +20,8 @@ class TripEndedDialog extends StatelessWidget {
       backgroundColor: Colors.grey[100],
       child: Container(
         margin: EdgeInsets.all(5),
-        width: double.infinity,
+        height: 30 * SizeConfig.heightMultiplier,
+        width: 80 * SizeConfig.widthMultiplier,
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(15),
@@ -27,14 +29,14 @@ class TripEndedDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+            SizedBox(height: 1 * SizeConfig.heightMultiplier,),
             Text("You Have Arrived", style: TextStyle(
               fontSize: 3 * SizeConfig.textMultiplier,
-              color: Colors.red[300],
+              color: Color(0xFFa81845),
               fontWeight: FontWeight.bold,
             ),),
             SizedBox(height: 1 * SizeConfig.heightMultiplier,),
-            Divider(height: 0.5 * SizeConfig.heightMultiplier, color: Colors.black54, thickness: 2,),
+            Divider(height: 0.5 * SizeConfig.heightMultiplier, color: Color(0xFFa81845), thickness: 2,),
             SizedBox(height: 2 * SizeConfig.heightMultiplier,),
             Container(
               decoration: BoxDecoration(
@@ -58,7 +60,7 @@ class TripEndedDialog extends StatelessWidget {
                     child: Wrap(
                       children: [
                         Text("You have arrived at the Hospital, have a nice day, and get well soon", style: TextStyle(
-                        fontSize: 2.5 * SizeConfig.textMultiplier,
+                        fontSize: 2 * SizeConfig.textMultiplier,
                         fontWeight: FontWeight.w400,
                         fontFamily: "Brand Bold",
                       ),),
@@ -68,31 +70,48 @@ class TripEndedDialog extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+            Spacer(),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
               child: RaisedButton(
+                clipBehavior: Clip.hardEdge,
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 onPressed: () => Navigator.pop(context, "close"),
-                color: Colors.red[300],
                 textColor: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.all(17),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: <Widget>[
-                      Text("Finish Trip".toUpperCase(), style: TextStyle(
-                        fontSize: 2.2 * SizeConfig.textMultiplier,
-                      ),),
-                      Icon(FontAwesomeIcons.hospitalUser,
-                        color: Colors.white,
-                        size: 6 * SizeConfig.imageSizeMultiplier,
-                      ),
-                    ],
+                child: Container(
+                  width: 100 * SizeConfig.widthMultiplier,
+                  height: 6 * SizeConfig.heightMultiplier,
+                  decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black54,
+                          blurRadius: 6.0,
+                          spreadRadius: 0.5,
+                          offset: Offset(0.7, 0.7),
+                        ),
+                      ],
+                      gradient: kPrimaryGradientColor
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 2 * SizeConfig.widthMultiplier),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text("Finish Trip".toUpperCase(), style: TextStyle(
+                          fontSize: 2 * SizeConfig.textMultiplier,
+                        ),),
+                        Icon(FontAwesomeIcons.hospitalUser,
+                          color: Colors.white,
+                          size: 6 * SizeConfig.imageSizeMultiplier,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-            SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+            SizedBox(height: 1 * SizeConfig.heightMultiplier,),
           ],
         ),
       ),

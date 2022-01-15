@@ -58,7 +58,7 @@ class EventsScreen extends StatelessWidget {
           backgroundColor: Colors.grey[100],
           title: Text("Events", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         body: Container(
@@ -182,7 +182,7 @@ class EventsScreen extends StatelessWidget {
                           child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: "Brand Bold",
-                              color: Colors.red[300],
+                              color: Color(0xFFa81845),
                               fontSize: 4 * SizeConfig.textMultiplier,
                           ),),
                         ),

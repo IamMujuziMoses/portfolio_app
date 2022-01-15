@@ -5,6 +5,8 @@ import 'package:creativedata_app/Covid-19/causesAndSpread.dart';
 import 'package:creativedata_app/Covid-19/preventiveMeasures.dart';
 import 'package:creativedata_app/Covid-19/signsAndSymptoms.dart';
 import 'package:creativedata_app/Covid-19/treatmentAndManagement.dart';
+import 'package:creativedata_app/Covid-19/vaccinationCenters.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -12,20 +14,57 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 * Created by Mujuzi Moses
 */
 
-class Covid19Center extends StatelessWidget {
+class Covid19Center extends StatefulWidget {
   final QuerySnapshot adSnap;
-  Covid19Center({Key key, @required this.adSnap}) : super(key: key);
+  const Covid19Center({Key key, @required this.adSnap}) : super(key: key);
+
+  @override
+  _Covid19CenterState createState() => _Covid19CenterState();
+}
+
+class _Covid19CenterState extends State<Covid19Center> {
+  Stream vacStream;
+  QuerySnapshot vacSnap;
+  List vacList = [];
+  List<DocumentSnapshot> vacQueryList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    getInfo();
+  }
+
+  getInfo() async {
+    await databaseMethods.getVaccinationCenters().then((val) {
+      setState(() {
+        vacStream = val;
+      });
+    });
+    vacSnap = await vacStream.first;
+    for (int i = 0; i <= vacSnap.size -1; i++) {
+      vacList.add(vacSnap.docs[i].id);
+    }
+    for (int i = 0; i <= vacList.length - 1; i++) {
+      DocumentSnapshot vacCenterSnap;
+      await databaseMethods.getVaccinationCentersByRegionSnap(vacList[i]).then((val) {
+        setState(() {
+          vacCenterSnap = val;
+        });
+      });
+      vacQueryList.add(vacCenterSnap);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    String imageUrl = adSnap.docs.isEmpty ? "" : adSnap.docs[0].get("url");
+    String imageUrl = widget.adSnap.docs.isEmpty ? "" : widget.adSnap.docs[0].get("url");
     SizeConfig().init(context);
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
         elevation: 0,
         backgroundColor: Colors.grey[100],
-        title: Text("COVID-19 Center", style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]),),
+        title: Text("COVID-19 Center", style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)),),
       ),
       body: Container(
         width: MediaQuery.of(context).size.width,
@@ -37,7 +76,6 @@ class Covid19Center extends StatelessWidget {
               children: <Widget>[
                 SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                 Container(
-                  height: 20 * SizeConfig.heightMultiplier,
                   width: 94 * SizeConfig.widthMultiplier,
                   decoration: BoxDecoration(
                     boxShadow: [
@@ -60,9 +98,9 @@ class Covid19Center extends StatelessWidget {
                         Text("We are here to help".toUpperCase(), style: TextStyle(
                           fontFamily: "Brand Bold",
                           color: Colors.black54,
-                          fontSize: 3 * SizeConfig.textMultiplier,
+                          fontSize: 2.8 * SizeConfig.textMultiplier,
                         ),),
-                        Spacer(),
+                        SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                         Container(
                           child: Text("People all-over the globe are suffering from the effects of the"
                               " Coronavirus/ Covid-19 in their lives. For that very reason, we are here to help"
@@ -70,7 +108,7 @@ class Covid19Center extends StatelessWidget {
                             textAlign: TextAlign.justify,
                             style: TextStyle(
                             fontFamily: "Brand-Regular",
-                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                            fontSize: 2 * SizeConfig.textMultiplier,
                           ),),
                         ),
                       ],
@@ -166,7 +204,15 @@ class Covid19Center extends StatelessWidget {
                               width: 24 * SizeConfig.widthMultiplier,
                               textWidth: 30 * SizeConfig.widthMultiplier,
                               iconSize: 8 * SizeConfig.imageSizeMultiplier,
-                              onTap: () {},
+                              onTap: () async {
+                                Navigator.push(
+                                  context, MaterialPageRoute(
+                                  builder: (context) => VaccinationCenters(
+                                    vacCentersSnap: vacQueryList,
+                                  ),
+                                ),
+                                );
+                              },
                             ),
                             customTiles(
                               desc: "Check your Status",
@@ -297,7 +343,7 @@ class Covid19Center extends StatelessWidget {
                         Text("Remember".toUpperCase(), style: TextStyle(
                           fontFamily: "Brand Bold",
                           color: Colors.black54,
-                          fontSize: 3 * SizeConfig.textMultiplier,
+                          fontSize: 2.8 * SizeConfig.textMultiplier,
                         ),),
                         SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                         Container(
@@ -306,7 +352,7 @@ class Covid19Center extends StatelessWidget {
                             textAlign: TextAlign.justify,
                             style: TextStyle(
                             fontFamily: "Brand-Regular",
-                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                            fontSize: 2 * SizeConfig.textMultiplier,
                           ),),
                         ),
                       ],
@@ -347,7 +393,7 @@ Widget customTiles({String desc, Color color, IconData icon, Function onTap, tex
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
           child: InkWell(
-            splashColor: Colors.red[100],
+            splashColor: Color(0xFFa81845).withOpacity(0.6),
             highlightColor: Colors.grey.withOpacity(0.1),
             radius: 800,
             borderRadius: BorderRadius.circular(15),

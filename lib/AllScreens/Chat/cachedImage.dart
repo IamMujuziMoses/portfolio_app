@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:creativedata_app/sizeConfig.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 /*
 * Created by Mujuzi Moses
@@ -14,7 +15,7 @@ class CachedImage extends StatelessWidget {
   final double width;
   final BoxFit fit;
 
-  CachedImage({Key key,
+  const CachedImage({Key key,
     this.imageUrl,
     this.isRound = false,
     this.radius,
@@ -35,9 +36,11 @@ class CachedImage extends StatelessWidget {
           child: imageUrl != null ? CachedNetworkImage(
             imageUrl: imageUrl,
             fit: fit,
+            placeholderFadeInDuration: Duration(milliseconds: 300),
             placeholder: (context, url) =>
                 Center(
-                  child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),)),
+                  child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFa81845)),),
+                ),
             errorWidget: (context, url, error) =>
                 isAd != null && isAd == true
                     ? Center(child: Text("AD", style: TextStyle(fontSize: 10 * SizeConfig.textMultiplier, color: Colors.black12),),)

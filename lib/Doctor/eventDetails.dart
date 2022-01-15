@@ -4,9 +4,11 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/addReminderScreen.dart';
+import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/AllScreens/drugDetails.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/reminder.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
@@ -27,7 +29,7 @@ class EventDetails extends StatelessWidget {
   final DateTime eventDateTime;
   final String status;
   final bool isDoctor;
-  EventDetails({Key key, this.imageUrl, this.eventTitle, this.eventDesc, this.status, this.eventDate,
+  const EventDetails({Key key, this.imageUrl, this.eventTitle, this.eventDesc, this.status, this.eventDate,
     this.eventDateTime, this.isDoctor,
   }) : super(key: key);
 
@@ -82,7 +84,7 @@ class EventDetails extends StatelessWidget {
                 child: RaisedButton(
                   splashColor: Colors.white,
                   highlightColor: Colors.grey.withOpacity(0.1),
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
                   textColor: Colors.white,
                   child: Container(
                     width: 60 * SizeConfig.widthMultiplier,
@@ -97,60 +99,73 @@ class EventDetails extends StatelessWidget {
                     borderRadius: new BorderRadius.circular(10.0),
                   ),
                   onPressed: () async {
-                    showDialog(
-                      context: context,
-                      builder: (context) => ProgressDialog(message: "Please wait...",),
-                    );
+                   if (eventDateTime.isBefore(DateTime.now())) {
+                     displayToastMessage("Event already ended, can't add reminder", context);
+                   } else {
+                     showDialog(
+                       context: context,
+                       builder: (context) => ProgressDialog(message: "Please wait...",),
+                     );
+                     Activity activity = Activity.evtReminderActivity(
+                       type: "reminder",
+                       createdAt: FieldValue.serverTimestamp(),
+                       eventDate: Timestamp.fromDate(eventDateTime),
+                       eventTitle: eventTitle,
+                       reminderType: "event",
+                     );
+                     var activityMap = activity.toEvtReminderActivity(activity);
+                     Duration duration = eventDateTime.add(Duration(minutes: 30)).difference(DateTime.now());
+                     int id = Random().nextInt(500);
+                     Reminder reminder = Reminder.eventReminder(
+                       type: "event",
+                       createdAt: FieldValue.serverTimestamp(),
+                       name: eventTitle,
+                       date: Timestamp.fromDate(eventDateTime),
+                       id: id,
+                       status: "waiting",
+                       description: eventDesc,
+                     );
+                     Map<String, dynamic> reminderMap = reminder.toEventReminder(reminder);
 
-                    Duration duration = eventDateTime.add(Duration(minutes: 30)).difference(DateTime.now());
-                    int id = Random().nextInt(500);
-                    Reminder reminder = Reminder.eventReminder(
-                      type: "event",
-                      createdAt: FieldValue.serverTimestamp(),
-                      name: eventTitle,
-                      date: Timestamp.fromDate(eventDateTime),
-                      id: id,
-                      status: "waiting",
-                      description: eventDesc,
-                    );
-                    Map<String, dynamic> reminderMap = reminder.toEventReminder(reminder);
+                     int exId = Random().nextInt(50);
+                     int exId1 = Random().nextInt(50);
+                     int exId2 = Random().nextInt(50);
 
-                    int exId = Random().nextInt(50);
-                    int exId1 = Random().nextInt(50);
-                    int exId2 = Random().nextInt(50);
+                     Duration exDuration = eventDateTime.difference(DateTime.now());
+                     Duration exDuration1 = eventDateTime.subtract(Duration(minutes: 10)).difference(DateTime.now());
+                     Duration exDuration2 = eventDateTime.subtract(Duration(hours: 1)).difference(DateTime.now());
 
-                    Duration exDuration = eventDateTime.difference(DateTime.now());
-                    Duration exDuration1 = eventDateTime.subtract(Duration(minutes: 10)).difference(DateTime.now());
-                    Duration exDuration2 = eventDateTime.subtract(Duration(hours: 1)).difference(DateTime.now());
+                     scheduleEvent(dateTimeNow: eventDateTime.subtract(Duration(minutes: 10)), dateTime: eventDateTime, duration: "10 min",
+                         id: exId, eventName: eventTitle);
+                     Timer(exDuration, () async {await notificationsPlugin.cancel(exId);});
 
-                    scheduleEvent(dateTimeNow: eventDateTime.subtract(Duration(minutes: 10)), dateTime: eventDateTime, duration: "10 min",
-                      id: exId, eventName: eventTitle);
-                    Timer(exDuration, () async {await notificationsPlugin.cancel(exId);});
+                     scheduleEvent(dateTimeNow: eventDateTime.subtract(Duration(hours: 1)), dateTime: eventDateTime, duration: "1 hour",
+                         id: exId1, eventName: eventTitle);
+                     Timer(exDuration1, () async {await notificationsPlugin.cancel(exId1);});
 
-                    scheduleEvent(dateTimeNow: eventDateTime.subtract(Duration(hours: 1)), dateTime: eventDateTime, duration: "1 hour",
-                      id: exId1, eventName: eventTitle);
-                    Timer(exDuration1, () async {await notificationsPlugin.cancel(exId1);});
+                     scheduleEvent(dateTimeNow: eventDateTime.subtract(Duration(hours: 6)), dateTime: eventDateTime, duration: "6 hours",
+                         id: exId2, eventName: eventTitle);
+                     Timer(exDuration2, () async {await notificationsPlugin.cancel(exId2);});
 
-                    scheduleEvent(dateTimeNow: eventDateTime.subtract(Duration(hours: 6)), dateTime: eventDateTime, duration: "6 hours",
-                      id: exId2, eventName: eventTitle);
-                    Timer(exDuration2, () async {await notificationsPlugin.cancel(exId2);});
-
-                    scheduleEvent(dateTime: eventDateTime, id: id, eventName: eventTitle,);
-                    Timer(duration, () {
-                      if (isDoctor == true) {
-                        cancelDocAlarm(name: eventTitle, id: id);
-                      } else {
-                        cancelAlarm(name: eventTitle, id: id);
-                      }
-                    });
-                    if (isDoctor == true) {
-                      databaseMethods.createDoctorReminder(reminderMap, currentUser.uid);
-                      displayToastMessage("Operation Successful! Created Reminder", context);
-                    } else {
-                      databaseMethods.createUserReminder(reminderMap, currentUser.uid);
-                      displayToastMessage("Operation Successful! Created Reminder", context);
-                    }
-                    Navigator.pop(context);
+                     scheduleEvent(dateTime: eventDateTime, id: id, eventName: eventTitle,);
+                     Timer(duration, () {
+                       if (isDoctor == true) {
+                         cancelDocAlarm(name: eventTitle, id: id);
+                       } else {
+                         cancelAlarm(name: eventTitle, id: id);
+                       }
+                     });
+                     if (isDoctor == true) {
+                       databaseMethods.createDoctorReminder(reminderMap, currentUser.uid);
+                       databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
+                       displayToastMessage("Operation Successful! Created Reminder", context);
+                     } else {
+                       databaseMethods.createUserReminder(reminderMap, currentUser.uid);
+                       databaseMethods.createUserActivity(activityMap, currentUser.uid);
+                       displayToastMessage("Operation Successful! Created Reminder", context);
+                     }
+                     Navigator.pop(context);
+                   }
                   },
                 ),
               ),

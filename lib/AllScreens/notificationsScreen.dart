@@ -7,6 +7,7 @@ import 'package:creativedata_app/Doctor/alertsScreen.dart';
 import 'package:creativedata_app/Doctor/appointmentsScreen.dart';
 import 'package:creativedata_app/Doctor/eventDetails.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -21,7 +22,7 @@ class NotificationsScreen extends StatefulWidget {
   final String name;
   final String userPic;
   final bool isDoctor;
-  NotificationsScreen({Key key, this.notificationsStream, this.name, this.userPic, this.isDoctor}) : super(key: key);
+  const NotificationsScreen({Key key, this.notificationsStream, this.name, this.userPic, this.isDoctor}) : super(key: key);
 
   @override
   _NotificationsScreenState createState() => _NotificationsScreenState();
@@ -180,7 +181,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           titleSpacing: 0,
           title: Text("Notifications", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         body: Container(
@@ -231,11 +232,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 height: 8 * SizeConfig.heightMultiplier,
                 width: 16 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[100],
+                  gradient: kPrimaryGradientColor,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Center(
-                  child: Icon(FontAwesomeIcons.newspaper, color: Colors.red[300],),
+                  child: Icon(FontAwesomeIcons.newspaper, color: Colors.white,),
                 ),
               ),
               SizedBox(width: 1 * SizeConfig.widthMultiplier,),
@@ -290,7 +291,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     height: 4 * SizeConfig.heightMultiplier,
                     width: 6 * SizeConfig.widthMultiplier,
                     child: IconButton(
-                      splashColor: Colors.red[200],
+                      splashColor: Color(0xFFa81845),
                       highlightColor: Colors.grey.withOpacity(0.1),
                       onPressed: () {
                         showDialog(
@@ -358,7 +359,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 height: 8 * SizeConfig.heightMultiplier,
                 width: 16 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[100],
+                  gradient: kPrimaryGradientColor,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Center(
@@ -366,17 +367,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     width: 6.4 * SizeConfig.widthMultiplier,
                     child: Stack(
                       children: <Widget>[
-                        Icon(CupertinoIcons.alarm_fill, color: Colors.red[300],),
+                        Icon(CupertinoIcons.alarm_fill, color: Colors.white,),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: Container(
                             decoration:
-                                BoxDecoration(borderRadius: BorderRadius.circular(50), color: Colors.red[100],),
+                                BoxDecoration(borderRadius: BorderRadius.circular(50), color: Color(0xFFa81845),),
                             child: Padding(
                               padding: EdgeInsets.only(left: 2),
                               child: Icon(FontAwesomeIcons.pills,
-                                color: Colors.red[300],
+                                color: Colors.white,
                                 size: 3 * SizeConfig.imageSizeMultiplier,
                               ),
                             ),
@@ -436,7 +437,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     height: 4 * SizeConfig.heightMultiplier,
                     width: 6 * SizeConfig.widthMultiplier,
                     child: IconButton(
-                      splashColor: Colors.red[200],
+                      splashColor: Color(0xFFa81845),
                       highlightColor: Colors.grey.withOpacity(0.1),
                       onPressed: () {
                         showDialog(
@@ -503,11 +504,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 height: 8 * SizeConfig.heightMultiplier,
                 width: 16 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[100],
+                  gradient: kPrimaryGradientColor,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Center(
-                  child: Icon(FontAwesomeIcons.solidEnvelope, color: Colors.red[300],),
+                  child: Icon(FontAwesomeIcons.solidEnvelope, color: Colors.white,),
                 ),
               ),
               SizedBox(width: 1 * SizeConfig.widthMultiplier,),
@@ -555,7 +556,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     clipBehavior: Clip.hardEdge,
                     height: 4 * SizeConfig.heightMultiplier,
                     width: 6 * SizeConfig.widthMultiplier,
-                    child: IconButton(splashColor: Colors.red[200],
+                    child: IconButton(splashColor: Color(0xFFa81845),
                       highlightColor: Colors.grey.withOpacity(0.1),
                       onPressed: () {
                         showDialog(
@@ -633,11 +634,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 height: 8 * SizeConfig.heightMultiplier,
                 width: 16 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[100],
+                  gradient: kPrimaryGradientColor,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Center(
-                  child: Icon(FontAwesomeIcons.exclamationTriangle, color: Colors.red[300],),
+                  child: Icon(FontAwesomeIcons.exclamationTriangle, color: Colors.white,),
                 ),
               ),
               SizedBox(width: 1 * SizeConfig.widthMultiplier,),
@@ -688,7 +689,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     clipBehavior: Clip.hardEdge,
                     height: 4 * SizeConfig.heightMultiplier,
                     width: 6 * SizeConfig.widthMultiplier,
-                    child: IconButton(splashColor: Colors.red[200],
+                    child: IconButton(splashColor: Color(0xFFa81845),
                       highlightColor: Colors.grey.withOpacity(0.1),
                       onPressed: () {
                         showDialog(
@@ -776,7 +777,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 height: 8 * SizeConfig.heightMultiplier,
                 width: 16 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[100],
+                  gradient: kPrimaryGradientColor,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Center(
@@ -784,18 +785,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     width: 6.4 * SizeConfig.widthMultiplier,
                     child: Stack(
                       children: <Widget>[
-                        Icon(CupertinoIcons.alarm_fill, color: Colors.red[300],),
+                        Icon(CupertinoIcons.alarm_fill, color: Colors.white,),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: Container(
                             decoration:
-                                BoxDecoration(borderRadius: BorderRadius.circular(50), color: Colors.red[100]),
+                                BoxDecoration(borderRadius: BorderRadius.circular(50), color: Color(0xFFa81845)),
                             child: Padding(
                               padding: EdgeInsets.only(left: 2),
                               child: Icon(
                                 FontAwesomeIcons.calendarAlt,
-                                color: Colors.red[300],
+                                color: Colors.white,
                                 size: 3 * SizeConfig.imageSizeMultiplier,
                               ),
                             ),
@@ -855,7 +856,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     height: 4 * SizeConfig.heightMultiplier,
                     width: 6 * SizeConfig.widthMultiplier,
                     child: IconButton(
-                      splashColor: Colors.red[200],
+                      splashColor: Color(0xFFa81845).withOpacity(0.1),
                       highlightColor: Colors.grey.withOpacity(0.1),
                       onPressed: () {
                         showDialog(
@@ -933,13 +934,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 height: 8 * SizeConfig.heightMultiplier,
                 width: 16 * SizeConfig.widthMultiplier,
                 decoration: BoxDecoration(
-                  color: Colors.red[100],
+                  gradient: kPrimaryGradientColor,
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: Center(
                   child: Icon(
                     CupertinoIcons.calendar_badge_plus,
-                    color: Colors.red[300],
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -996,7 +997,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     height: 4 * SizeConfig.heightMultiplier,
                     width: 6 * SizeConfig.widthMultiplier,
                     child: IconButton(
-                      splashColor: Colors.red[200],
+                      splashColor: Color(0xFFa81845).withOpacity(0.1),
                       highlightColor: Colors.grey.withOpacity(0.1),
                       onPressed: () {
                         showDialog(

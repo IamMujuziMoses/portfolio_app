@@ -20,7 +20,7 @@ class TreatmentAndManagement extends StatelessWidget {
         backgroundColor: Colors.grey[100],
         title: Text("Treatment & Management", style: TextStyle(
           fontFamily: "Brand Bold",
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),),
       ),
       body: Container(

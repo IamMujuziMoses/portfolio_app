@@ -1,10 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/AllScreens/doctorProfileScreen.dart';
+import 'package:creativedata_app/AllScreens/hospReviewsScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
 import 'package:creativedata_app/Hospitals/hospDoctors.dart';
 import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,6 +21,7 @@ import 'package:url_launcher/url_launcher.dart';
 class HospitalProfileScreen extends StatefulWidget {
   static const String screenId = "hospitalProfileScreen";
 
+  final String docId;
   final String uid;
   final List services;
   final String imageUrl;
@@ -26,15 +32,28 @@ class HospitalProfileScreen extends StatefulWidget {
   final String address;
   final String email;
   final String about;
-  HospitalProfileScreen({Key key,
+  const HospitalProfileScreen({Key key,
     this.uid, this.imageUrl, this.ratings, this.people, this.phone,
-    this.name, this.email, this.about, this.address, this.services}) : super(key: key);
+    this.name, this.email, this.about, this.address, this.services, this.docId}) : super(key: key);
 
   @override
   _HospitalProfileScreenState createState() => _HospitalProfileScreenState();
 }
 
 class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
+
+  String myProfilePic;
+  QuerySnapshot snap;
+
+  void getUserInfo() async {
+    myProfilePic = await databaseMethods.getProfilePhoto();
+  }
+
+  @override
+  void initState() {
+    getUserInfo();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,8 +89,6 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
             Padding(
               padding: EdgeInsets.only(
                 top: 2 * SizeConfig.heightMultiplier,
-                left: 2 * SizeConfig.widthMultiplier,
-                right: 2 * SizeConfig.widthMultiplier,
               ),
               child: Container(
                     height: 10 * SizeConfig.heightMultiplier,
@@ -134,10 +151,38 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                             ],
                           ),
                         ),
-                        Container(
-                          width: 42 * SizeConfig.widthMultiplier,
-                          height: double.infinity,
-                          child: getReviews(widget.ratings, ""),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: () async{
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => ProgressDialog(message: "Please wait..."),
+                                );
+                                Stream reviewStream;
+                                await databaseMethods.getHospitalsReviews(widget.docId).then((val) {
+                                  setState(() {
+                                    reviewStream = val;
+                                  });
+                                });
+                                snap = await reviewStream.first;
+                                int size = snap.size;
+                                Navigator.pop(context);
+                                Navigator.push(
+                                  context, MaterialPageRoute(builder: (context) => HospReviewsScreen(
+                                  reviewStream: reviewStream,
+                                  hospName: widget.name,
+                                  size: size,
+                                  hospDocId: widget.docId,
+                                  myPhoto: myProfilePic,
+                                  hospRating: widget.ratings,
+                                ),
+                                ),);
+                              },
+                              child: getReviews(widget.ratings, ""),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -155,7 +200,6 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
             ),
             Padding(
               padding: EdgeInsets.only(
-                left: 2 * SizeConfig.widthMultiplier,
                 top: 1 * SizeConfig.heightMultiplier,
               ),
               child: Container(
@@ -169,7 +213,7 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                   child: Container(
                     child: Text(widget.about, style: TextStyle(
                       fontFamily: "Brand-Regular",
-                      fontSize: 2.5 * SizeConfig.textMultiplier,
+                      fontSize: 2 * SizeConfig.textMultiplier,
                     ),),
                   ),
                 ),
@@ -187,7 +231,6 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
             ),
             Padding(
               padding: EdgeInsets.only(
-                left: 2 * SizeConfig.widthMultiplier,
                 top: 1 * SizeConfig.heightMultiplier,
               ),
               child: Container(
@@ -196,12 +239,9 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: 2, right: 2, bottom: 20,
-                  ),
-                  child: widget.services != null && widget.services.length > 0 ?
+                child: widget.services != null && widget.services.length > 0 ?
                   ListView.separated(
+                    padding: EdgeInsets.symmetric(vertical: 8),
                     itemBuilder: (context, index) {
                       return ServicesTile(
                         service: widget.services[index],
@@ -219,7 +259,6 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                       child: Text("No Services at the moment"),
                     ),
                   ),
-              ),
             ),
             ),
             Padding(
@@ -228,7 +267,7 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
               ),
               child: Center(
                 child: actionButton(
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
                   icon: Icons.call_rounded,
                   action: "Voice Call",
                   onTap: () => launch(('tel:${widget.phone}')),
@@ -246,7 +285,7 @@ class ServicesTile extends StatefulWidget {
   final String service;
   final String name;
   final String uid;
-  ServicesTile({Key key, this.service, this.name, this.uid}) : super(key: key);
+  const ServicesTile({Key key, this.service, this.name, this.uid}) : super(key: key);
 
   @override
   _ServicesTileState createState() => _ServicesTileState();
@@ -304,7 +343,7 @@ class _ServicesTileState extends State<ServicesTile> {
   @override
   Widget build(BuildContext context) {
     return FlatButton(
-      splashColor: Colors.red[300],
+      splashColor: Color(0xFFa81845).withOpacity(0.6),
       highlightColor: Colors.grey.withOpacity(0.1),
       onPressed: () async {
         displaySnackBar( label: "OK", message: "Getting doctors...", context: context, duration: Duration(seconds: 2));
@@ -319,7 +358,6 @@ class _ServicesTileState extends State<ServicesTile> {
           ),),);
       },
       child: Container(
-        height: 6 * SizeConfig.heightMultiplier,
         width: double.infinity,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -328,35 +366,27 @@ class _ServicesTileState extends State<ServicesTile> {
               height: 4 * SizeConfig.heightMultiplier,
               width:  8 * SizeConfig.widthMultiplier,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                gradient: kPrimaryGradientColor,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Center(
                 child: Icon(
                   icon,
-                  color: Colors.red[300],
-                  size: 5 * SizeConfig.imageSizeMultiplier,
+                  color: Colors.white,
+                  size: 4 * SizeConfig.imageSizeMultiplier,
                 ),
               ),
             ),
             SizedBox(width: 1.4 * SizeConfig.widthMultiplier,),
             Container(
               width: 60 * SizeConfig.widthMultiplier,
-              height: 4 * SizeConfig.heightMultiplier,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: 8,
-                  bottom: 8,
-                ),
-                child: Text(
+              child: Text(
                   widget.service,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16.0,
                     fontFamily: "Brand Bold",
-                  ),
-                ),
-              ),
+                  ),),
             ),
           ],
         ),
@@ -380,12 +410,12 @@ Widget hospCustom({Widget body, String hospName, imageUrl, BuildContext context}
          title: Container(
            decoration: BoxDecoration(
                color: Colors.grey[100],
-               borderRadius: BorderRadius.circular(15)
+               borderRadius: BorderRadius.circular(15),
            ),
            child: Padding(
              padding: EdgeInsets.all(8.0),
              child: Text(hospName, style: TextStyle(
-               color: Colors.red[300],
+               color: Color(0xFFa81845),
                fontFamily: "Brand Bold",
                fontSize: 2.5 * SizeConfig.textMultiplier,
              ),),

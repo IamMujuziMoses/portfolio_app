@@ -19,7 +19,7 @@ class CausesAndSpread extends StatelessWidget {
         backgroundColor: Colors.grey[100],
         title: Text("Causes & Spread", style: TextStyle(
           fontFamily: "Brand Bold",
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),),
       ),
       body: Container(
@@ -89,7 +89,7 @@ class CausesAndSpread extends StatelessWidget {
                 SizedBox(height: 10 * SizeConfig.heightMultiplier,),
                 Text("How it's Spread", style: TextStyle(
                   fontFamily: "Brand Bold",
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
                   fontSize: 3 * SizeConfig.textMultiplier,
                 ),),
                 SizedBox(height: 1 * SizeConfig.heightMultiplier,),
@@ -167,7 +167,7 @@ class CausesAndSpread extends StatelessWidget {
                         Text("WHO", textAlign: TextAlign.center,
                           style: TextStyle(
                             decoration: TextDecoration.underline,
-                            color: Colors.red[300],
+                            color: Color(0xFFa81845),
                             fontFamily: "Brand Bold",
                             fontSize: 2 * SizeConfig.textMultiplier,
                           ),),

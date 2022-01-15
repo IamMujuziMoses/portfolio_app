@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
+import 'package:creativedata_app/AllScreens/Specialities/specialitiesScreen.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/AllScreens/registerScreen.dart';
-import 'package:creativedata_app/Doctor/doctorProfile.dart';
 import 'package:creativedata_app/Services/auth.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Services/helperFunctions.dart';
@@ -11,11 +11,14 @@ import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/customBottomNavBar.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:focused_menu/focused_menu.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 /*
 * Created by Mujuzi Moses
@@ -28,7 +31,7 @@ class DoctorRegistration extends StatefulWidget {
   final String email;
   final String phone;
   final String password;
-  final dynamic val;
+  final val;
 
   const DoctorRegistration({Key key, this.name, this.email, this.phone, this.password, this.val}) : super(key: key);
 
@@ -39,12 +42,18 @@ class DoctorRegistration extends StatefulWidget {
 class _DoctorRegistrationState extends State<DoctorRegistration> {
 
   AuthMethods authMethods = new AuthMethods();
-  DatabaseMethods databaseMethods = new DatabaseMethods();
   TextEditingController specialityTEC = TextEditingController();
   TextEditingController hospitalTEC = TextEditingController();
   TextEditingController ageTEC = TextEditingController();
+  TextEditingController inPersonTEC = TextEditingController();
+  TextEditingController videoCallTEC = TextEditingController();
+  TextEditingController voiceCallTEC = TextEditingController();
   TextEditingController aboutTEC = TextEditingController();
+  List daysList = [];
+  Map<String, dynamic> feesMap = Map();
   String profilePhoto;
+  List specialityOnSearch = [];
+  bool specialityVisible = false;
 
   DropDownList _yearsList = new DropDownList(
     listItems: ["1-2 years", "3 -5 years", "5-10 years", "10+ years"],
@@ -69,7 +78,7 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
         elevation: 0,
         title: Text("Doctor's Registration", style: TextStyle(
           fontFamily: "Brand Bold",
-          color: Colors.red[300],
+          color: Color(0xFFa81845),
         ),),
       ),
       body: SingleChildScrollView(
@@ -99,7 +108,7 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(50),
                             color: Colors.white,
-                            border: Border.all(color: Colors.red[300], style: BorderStyle.solid, width: 2),
+                            border: Border.all(color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                           ),
                           child: profilePhoto == null
                               ? Image.asset("images/user_icon.png")
@@ -139,7 +148,7 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                               },
                               menuItems: <FocusedMenuItem>[
                                 FocusedMenuItem(title: Text("Gallery", style: TextStyle(
-                                    color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                    color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                                   onPressed: () async =>
                                   await Permissions.cameraAndMicrophonePermissionsGranted() ?
                                   pickImage(
@@ -150,10 +159,10 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                                       profilePhoto = val;
                                     });
                                   }) : {},
-                                  trailingIcon: Icon(Icons.photo_library_outlined, color: Colors.red[300],),
+                                  trailingIcon: Icon(Icons.photo_library_outlined, color: Color(0xFFa81845),),
                                 ),
                                 FocusedMenuItem(title: Text("Capture", style: TextStyle(
-                                    color: Colors.red[300], fontWeight: FontWeight.w500),),
+                                    color: Color(0xFFa81845), fontWeight: FontWeight.w500),),
                                   onPressed: () async =>
                                   await Permissions.cameraAndMicrophonePermissionsGranted() ?
                                   pickImage(
@@ -164,10 +173,10 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                                       profilePhoto = val;
                                     });
                                   }) : {},
-                                  trailingIcon: Icon(Icons.camera, color: Colors.red[300],),
+                                  trailingIcon: Icon(Icons.camera, color: Color(0xFFa81845),),
                                 ),
                               ],
-                              child: Icon(Icons.camera_alt_outlined, color: Colors.red[300],),
+                              child: Icon(Icons.camera_alt_outlined, color: Color(0xFFa81845),),
                             ),
                           ),
                         ],
@@ -182,8 +191,27 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                   children: <Widget>[
                     SizedBox(height: 10.0,),
                     TextField(
+                      onChanged: (value) {
+                        if (value.isNotEmpty) {
+                          setState(() {
+                            specialityVisible = true;
+                            specialityOnSearch = specialitiesList.where((element) => element.toLowerCase()
+                                .contains(value.toLowerCase())).toList();
+                          });
+                          if (specialityOnSearch.isEmpty) {
+                            setState(() {
+                              specialityOnSearch.add("No Speciality Found!");
+                            });
+                          }
+                        } else {
+                          setState(() {
+                            specialityVisible = false;
+                          });
+                        }
+                      },
                       controller: specialityTEC,
                       keyboardType: TextInputType.text,
+                      maxLines: 1,
                       decoration: InputDecoration(
                         labelText: "Speciality",
                         labelStyle: TextStyle(
@@ -196,7 +224,102 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                       ),
                       style: TextStyle(fontSize: 2 * SizeConfig.textMultiplier),
                     ),
-                    SizedBox(height: 1.0,),
+                    SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                    Visibility(
+                      visible: specialityVisible,
+                      child: Container(
+                        width: 100 * SizeConfig.widthMultiplier,
+                        height: 15 * SizeConfig.heightMultiplier,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black54,
+                              blurRadius: 6.0,
+                              spreadRadius: 0.5,
+                              offset: Offset(0.7, 0.7),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 2 * SizeConfig.widthMultiplier,
+                            vertical: 0.5 * SizeConfig.heightMultiplier,
+                          ),
+                          child: CupertinoScrollbar(
+                            child: ListView.builder(
+                              itemCount: specialityOnSearch.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: 0.5 * SizeConfig.heightMultiplier,
+                                  ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      if (specialityOnSearch[index] == "No Speciality Found!") {
+                                        setState(() {
+                                          specialityVisible = false;
+                                        });
+                                        specialityOnSearch.clear();
+                                        showDialog(
+                                          context: context,
+                                          barrierDismissible: false,
+                                          builder: (context) => AlertDialog(
+                                            title: Text("Request To Add Speciality (${specialityTEC.text})?"),
+                                            actions: <Widget>[
+                                              FlatButton(
+                                                child: Text("No"),
+                                                onPressed: () => Navigator.of(context).pop(),
+                                              ),
+                                              FlatButton(
+                                                child: Text("Yes"),
+                                                onPressed: () {
+                                                  displayToastMessage("Operation Successful! Request Sent", context);
+                                                  Navigator.of(context).pop();
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      } else {
+                                        setState(() {
+                                          specialityTEC.text = specialityOnSearch[index];
+                                          specialityVisible = false;
+                                        });
+                                        specialityOnSearch.clear();
+                                      }
+                                    },
+                                    child: Row(
+                                      children: <Widget>[
+                                        Container(
+                                          height: 3 * SizeConfig.heightMultiplier,
+                                          width: 6 * SizeConfig.widthMultiplier,
+                                          decoration: BoxDecoration(
+                                            gradient: kPrimaryGradientColor,
+                                            borderRadius: BorderRadius.circular(30),
+                                          ),
+                                          child: Center(
+                                            child: Icon(FontAwesomeIcons.userMd,
+                                              color: Colors.white,
+                                              size: 3 * SizeConfig.imageSizeMultiplier,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 1 * SizeConfig.widthMultiplier,),
+                                        Text(specialityOnSearch[index], style: TextStyle(
+                                          fontFamily: "Brand Bold",
+                                        ),),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     TextField(
                       controller: hospitalTEC,
                       keyboardType: TextInputType.text,
@@ -231,6 +354,32 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                     SizedBox(height: 10,),
                     _yearsList,
                     SizedBox(height: 10,),
+                    Container(
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text("Working days:", style: TextStyle(
+                            fontFamily: "Brand Bold",
+                            fontSize: 2 * SizeConfig.textMultiplier,
+                            color: Colors.grey,
+                          ),),
+                          SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: <Widget>[
+                              _daysTile(day: "Mon"),
+                              _daysTile(day: "Tue"),
+                              _daysTile(day: "Wed"),
+                              _daysTile(day: "Thur"),
+                              _daysTile(day: "Fri"),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 10,),
                     _hoursList,
                     SizedBox(height: 10,),
                     _patientsList,
@@ -253,17 +402,60 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                       ),
                       style: TextStyle(fontSize: 2 * SizeConfig.textMultiplier),
                     ),
+                    SizedBox(height: 10,),
+                    Container(
+                      width: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text("Consultation fees:", style: TextStyle(
+                            fontFamily: "Brand Bold",
+                            fontSize: 2 * SizeConfig.textMultiplier,
+                            color: Colors.grey,
+                          ),),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 20,),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                _editFeeTile(
+                                  textEditingController: inPersonTEC,
+                                  hintText: "In-person fee",
+                                ),
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                _editFeeTile(
+                                  textEditingController: videoCallTEC,
+                                  hintText: "Video call fee",
+                                ),
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                                _editFeeTile(
+                                  textEditingController: voiceCallTEC,
+                                  hintText: "Voice call fee",
+                                ),
+                                SizedBox(height: 1 * SizeConfig.heightMultiplier,),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     SizedBox(height: 2.5 * SizeConfig.heightMultiplier,),
                     RaisedButton(
-                      color: Colors.red[300],
+                      clipBehavior: Clip.hardEdge,
+                      padding: EdgeInsets.zero,
                       textColor: Colors.white,
                       child: Container(
                         height: 6.5 * SizeConfig.heightMultiplier,
                         width: 30 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          gradient: kPrimaryGradientColor,
+                        ),
                         child: Center(
                           child: Text("Submit", style: TextStyle(
                             fontSize: 2.5 * SizeConfig.textMultiplier,
                             fontFamily: "Brand Bold",
+                            color: Colors.white,
                           ),),
                         ),
                       ),
@@ -286,6 +478,10 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                           displayToastMessage("Provide Your Years of Experience", context);
                         } else if (hours == "") {
                           displayToastMessage("Provide Your Consultation Hours", context);
+                        } else if (daysList.isEmpty) {
+                          displayToastMessage("Provide Your Working days", context);
+                        } else if (inPersonTEC.text.isEmpty || voiceCallTEC.text.isEmpty || videoCallTEC.text.isEmpty) {
+                          displayToastMessage("Provide Your Consultation Fees", context);
                         } else if (patients == "") {
                           displayToastMessage("Provide the Number of Patients Worked-on", context);
                         } else {
@@ -295,6 +491,12 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                               builder: (BuildContext context) {
                                 return ProgressDialog(message: "Signing you up, Please wait",);
                               });
+                          feesMap = {
+                            "in_person": inPersonTEC.text,
+                            "video_call": videoCallTEC.text,
+                            "voice_call": voiceCallTEC.text,
+                          };
+
                           Map<String, dynamic> userDataMap = {
                             "uid" : widget.val,
                             "name": widget.name,
@@ -305,11 +507,14 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
                             "age": ageTEC.text.trim(),
                             "years": years,
                             "hours": hours,
+                            "fee": feesMap,
+                            "days": daysList,
                             "patients": patients,
                             "username" : Utils.getUsername(widget.email),
                             "profile_photo": profilePhoto,
                             "state": null,
-                            "status": null,
+                            "status": "unapproved",
+                            "token": null,
                             "about": aboutTEC.text,
                             "regId": "Doctor",
                             "reviews": "10",
@@ -328,6 +533,73 @@ class _DoctorRegistrationState extends State<DoctorRegistration> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _editFeeTile({TextEditingController textEditingController, String hintText}) {
+    return TextField(
+      controller: textEditingController,
+      keyboardType: TextInputType.number,
+      maxLines: 1,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: Colors.grey,
+          fontFamily: "Brand-Regular",
+          fontSize: 2 * SizeConfig.textMultiplier,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+      ),
+      style: TextStyle(
+        fontSize: 2 * SizeConfig.textMultiplier,
+        fontFamily: "Brand-Regular",
+      ),
+    );
+  }
+
+  Widget _daysTile({String day}) {
+    bool selected = false;
+    return StatefulBuilder(
+      builder: (context, setState) => GestureDetector(
+        onTap: () {
+          if (selected == false) {
+            setState(() {
+              selected = true;
+              daysList.add(day);
+            });
+          } else {
+            setState(() {
+              selected = false;
+              daysList.remove(day);
+            });
+          }
+        },
+        child: Container(
+            width: 15 * SizeConfig.widthMultiplier,
+            height: 5 * SizeConfig.heightMultiplier,
+            decoration: BoxDecoration(
+              color: selected == true ? Color(0xFFa81845) : Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  offset: Offset(0, 2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  color: Colors.black.withOpacity(0.1),
+                ),
+              ],
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Center(
+              child: Text(day, style: TextStyle(
+                fontFamily: "Brand Bold",
+                fontSize: 2.5 * SizeConfig.textMultiplier,
+                color: selected == true ? Colors.white : Colors.grey,
+              ),),
+            )
         ),
       ),
     );

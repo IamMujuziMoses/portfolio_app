@@ -1,5 +1,4 @@
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,7 +9,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthMethods {
 
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  DatabaseMethods databaseMethods = new DatabaseMethods();
 
   Future signInWithEmailAndPassword(BuildContext context, String email, String password) async{
 

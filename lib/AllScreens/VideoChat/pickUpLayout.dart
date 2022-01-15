@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpScreen.dart';
 import 'package:creativedata_app/Models/call.dart';
 import 'package:creativedata_app/Provider/userProvider.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
@@ -14,8 +13,6 @@ import 'package:provider/provider.dart';
 
 class PickUpLayout extends StatelessWidget {
   final Widget scaffold;
-  final DatabaseMethods databaseMethods = new DatabaseMethods();
-
   PickUpLayout({Key key, @required this.scaffold}) : super(key: key);
 
   @override

@@ -23,10 +23,10 @@ class PhotoViewPage extends StatelessWidget {
         titleSpacing: 0,
         elevation: 0,
         title: isSender
-            ? Text("You", style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]))
+            ? Text("You", style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)))
             : Text(chatRoomId != null
             ? sender
-            : "Dr. "  + doctorsName, style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]),),
+            : "Dr. "  + doctorsName, style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)),),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -45,7 +45,7 @@ class PhotoViewPage extends StatelessWidget {
                value: event == null
                    ? 0
                    : event.cumulativeBytesLoaded / event.expectedTotalBytes,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.red[300]),
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFa81845)),
             ),
           ),
         ) : Container(

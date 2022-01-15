@@ -3,6 +3,7 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -17,7 +18,7 @@ class PrivatePatientProfile extends StatefulWidget {
   final String phone;
   final String pic;
   final List medicine;
-  PrivatePatientProfile({Key key, this.name, this.phone, this.pic, this.medicine}) : super(key: key);
+  const PrivatePatientProfile({Key key, this.name, this.phone, this.pic, this.medicine}) : super(key: key);
 
   @override
   _PrivatePatientProfileState createState() => _PrivatePatientProfileState();
@@ -63,12 +64,19 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
           backgroundColor: Colors.grey[100],
           title: Text("Patient's Profile", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.red[300],
-          child: Icon(CupertinoIcons.trash_fill, color: Colors.white,),
+          clipBehavior: Clip.hardEdge,
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: kPrimaryGradientColor
+            ),
+            child: Icon(CupertinoIcons.trash_fill, color: Colors.white,),
+          ),
           onPressed: () async {
             showDialog(
               context: context,
@@ -79,7 +87,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                     title: Center(
                       child: Text("Delete Patient", style: TextStyle(
                         fontFamily: "Brand Bold",
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         fontSize: 3 * SizeConfig.textMultiplier,
                       ),),
                     ),
@@ -99,7 +107,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                       FlatButton(
                         child: Text("Delete", style: TextStyle(
                           fontFamily: "Brand Bold",
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                           fontSize: 2 * SizeConfig.textMultiplier,
                         ),),
                         onPressed: () async {
@@ -150,7 +158,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(50),
                             color: Colors.white,
-                            border: Border.all(color: Colors.red[300], style: BorderStyle.solid, width: 2),
+                            border: Border.all(color: Color(0xFFa81845), style: BorderStyle.solid, width: 2),
                           ),
                           child: widget.pic == null
                               ? Image.asset("images/user_icon.png")
@@ -190,15 +198,18 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                         width: 8 * SizeConfig.widthMultiplier,
                         child: RaisedButton(
                           onPressed: () => launch(('tel:${widget.phone}')),
-                          color: Colors.red[300],
-                          padding: EdgeInsets.all(0),
-                          splashColor: Colors.white,
-                          highlightColor: Colors.grey.withOpacity(0.1),
+                          padding: EdgeInsets.zero,
+                          clipBehavior: Clip.hardEdge,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                          child: Center(
-                            child: Icon(Icons.phone_rounded,
-                              color: Colors.white,
-                              size: 6 * SizeConfig.imageSizeMultiplier,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: kPrimaryGradientColor,
+                            ),
+                            child: Center(
+                              child: Icon(Icons.phone_rounded,
+                                color: Colors.white,
+                                size: 6 * SizeConfig.imageSizeMultiplier,
+                              ),
                             ),
                           ),
                         ),
@@ -215,7 +226,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                           style: TextStyle(
                             fontFamily: "Brand Bold",
                             color: Colors.black54,
-                            fontSize: 3 * SizeConfig.textMultiplier,
+                            fontSize: 2.8 * SizeConfig.textMultiplier,
                           ),
                         ),
                       ),
@@ -231,7 +242,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                                 pHeaderVisible = false;
                               });
                             },
-                            padding: EdgeInsets.all(0),
+                            padding: EdgeInsets.zero,
                             color: Colors.white,
                             splashColor: Colors.red[200],
                             highlightColor: Colors.grey.withOpacity(0.1),
@@ -239,8 +250,8 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                             child: Center(
                               child: Text("Add", style: TextStyle(
                                 fontFamily: "Brand Bold",
-                                color: Colors.red[300],
-                                fontSize: 2.5 * SizeConfig.textMultiplier,
+                                color: Color(0xFFa81845),
+                                fontSize: 2 * SizeConfig.textMultiplier,
                               ),
                               ),
                             ),
@@ -273,17 +284,22 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                               addPVisible = false;
                             });
                           },
-                          padding: EdgeInsets.all(0),
+                          padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          color: Colors.red[300],
-                          highlightColor: Colors.grey.withOpacity(0.1),
-                          splashColor: Colors.white,
-                          child: Center(
-                            child: Text("Add Prescription", style: TextStyle(
-                              fontFamily: "Brand Bold",
-                              fontSize: 2.5 * SizeConfig.textMultiplier,
-                              color: Colors.white,
-                            ),),
+                          clipBehavior: Clip.hardEdge,
+                          child: Container(
+                            width: 100 * SizeConfig.widthMultiplier,
+                            height: 5 * SizeConfig.heightMultiplier,
+                            decoration: BoxDecoration(
+                              gradient: kPrimaryGradientColor,
+                            ),
+                            child: Center(
+                              child: Text("Add Prescription", style: TextStyle(
+                                fontFamily: "Brand Bold",
+                                fontSize: 2.5 * SizeConfig.textMultiplier,
+                                color: Colors.white,
+                              ),),
+                            ),
                           ),
                         ),
                       ),
@@ -335,7 +351,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                     list[index],
                     style: TextStyle(
                       fontFamily: "Brand Bold",
-                      fontSize: 2.5 * SizeConfig.textMultiplier,
+                      fontSize: 2.2 * SizeConfig.textMultiplier,
                     ),
                   ),
                   IconButton(
@@ -355,7 +371,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                     padding: EdgeInsets.all(2),
                     icon: Icon(
                       CupertinoIcons.clear_thick,
-                      color: Colors.red[300],
+                      color: Color(0xFFa81845),
                       size: 4 * SizeConfig.imageSizeMultiplier,
                     ),
                   ),
@@ -396,7 +412,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                 ),
               ),
               style: TextStyle(
-                fontSize: 2 * SizeConfig.textMultiplier,
+                fontSize: 1.8 * SizeConfig.textMultiplier,
                 fontFamily: "Brand-Regular",
               ),
             ),
@@ -420,14 +436,14 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
               },
               padding: EdgeInsets.all(0),
               color: Colors.white,
-              splashColor: Colors.red[200],
+              splashColor: Color(0xFFa81845).withOpacity(0.6),
               highlightColor: Colors.grey.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               child: Center(
                 child: Text("Add", style: TextStyle(
                   fontFamily: "Brand Bold",
-                  color: Colors.red[300],
-                  fontSize: 2.5 * SizeConfig.textMultiplier,
+                  color: Color(0xFFa81845),
+                  fontSize: 2 * SizeConfig.textMultiplier,
                 ),
                 ),
               ),
@@ -451,7 +467,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                 }
               },
               padding: EdgeInsets.all(0),
-              color: Colors.red[300],
+              color: Color(0xFFa81845),
               splashColor: Colors.white,
               highlightColor: Colors.grey.withOpacity(0.1),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -459,7 +475,7 @@ class _PrivatePatientProfileState extends State<PrivatePatientProfile> {
                 child: Text("Cancel", style: TextStyle(
                   fontFamily: "Brand Bold",
                   color: Colors.white,
-                  fontSize: 2.5 * SizeConfig.textMultiplier,
+                  fontSize: 2 * SizeConfig.textMultiplier,
                 ),
                 ),
               ),

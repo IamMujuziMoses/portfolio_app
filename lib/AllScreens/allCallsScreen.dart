@@ -3,11 +3,13 @@ import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/userProfileScreen.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
+import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/Widgets/onlineIndicator.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
 import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -26,8 +28,6 @@ class AllCallsScreen extends StatefulWidget {
 }
 
 class _AllCallsScreenState extends State<AllCallsScreen> {
-
-  DatabaseMethods databaseMethods = new DatabaseMethods();
   String myProfilePic;
 
   Widget callRecordsList() {
@@ -93,7 +93,7 @@ class _AllCallsScreenState extends State<AllCallsScreen> {
             elevation: 0,
             title: Text("Calls", style: TextStyle(
               fontFamily: "Brand Bold",
-              color: Colors.red[300]
+              color: Color(0xFFa81845),
             ),),
           ),
           body: callRecordsList(),
@@ -103,7 +103,7 @@ class _AllCallsScreenState extends State<AllCallsScreen> {
   }
 }
 
-class CallRecordsTile extends StatelessWidget {
+class CallRecordsTile extends StatefulWidget {
   final String userName;
   final String chatRoomId;
   final String profilePhoto;
@@ -112,7 +112,7 @@ class CallRecordsTile extends StatelessWidget {
   final bool isVoiceCall;
   final bool isCreator;
   final Timestamp time;
-  CallRecordsTile({Key key,
+  const CallRecordsTile({Key key,
     this.userName,
     this.chatRoomId,
     this.profilePhoto,
@@ -122,32 +122,44 @@ class CallRecordsTile extends StatelessWidget {
     this.time, this.receiverUID}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    List<String> months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    int mo = time.toDate().month.toInt();
-    String month = months[mo-1];
-    String amPm;
-    String hour;
-    String day = time.toDate().day.toString();
-    int h = time.toDate().hour.toInt();
-    if (h > 12) {
-      amPm = "pm";
-      int h2 = h - 12;
-      hour = "$h2";
-    } else {
-      amPm = "am";
-      hour = "$h";
-    }
-    String min;
-    int mi = time.toDate().minute.toInt();
-    if (mi < 10) {
-      min = "0$mi";
-    } else {
-      min = "$mi";
-    }
+  _CallRecordsTileState createState() => _CallRecordsTileState();
+}
 
-    String time2 = day + " " + month + ", " + hour + ":" + min + " " + amPm;
-    DatabaseMethods databaseMethods = new DatabaseMethods();
+class _CallRecordsTileState extends State<CallRecordsTile> {
+  QuerySnapshot chatSnap;
+  QuerySnapshot callSnap;
+  QuerySnapshot postSnap;
+
+  @override
+  void initState() {
+    getInfo();
+    super.initState();
+  }
+
+  getInfo() async {
+    try {
+      await databaseMethods.getPostByDoctorNameSnap(Constants.myName).then((val) {
+        setState(() {
+          postSnap = val;
+        });
+      });
+    } catch (e) {
+      print("User is not a Doctor ::: ${e.toString()}");
+    }
+    await databaseMethods.getChatRoomsSnap(Constants.myName).then((val) {
+      setState(() {
+        chatSnap = val;
+      });
+    });
+    await databaseMethods.getCallRecordsSnap(Constants.myName).then((val) {
+      setState(() {
+        callSnap = val;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       height: 9 * SizeConfig.heightMultiplier,
       color: Colors.grey[100],
@@ -171,17 +183,20 @@ class CallRecordsTile extends StatelessWidget {
             children: <Widget>[
               GestureDetector(
                 onTap: () => profilePicView(
-                  isDoctor: isDoctor,
+                  postSnap: postSnap,
+                  chatSnap: chatSnap,
+                  callSnap: callSnap,
+                  isDoctor: widget.isDoctor,
                   isUser: false,
-                  imageUrl: profilePhoto,
+                  imageUrl: widget.profilePhoto,
                   context: context,
                   isSender: false,
-                  chatRoomId: chatRoomId,
+                  chatRoomId: widget.chatRoomId,
                 ),
                 child: Stack(
                   children: <Widget>[
                   CachedImage(
-                  imageUrl: profilePhoto,
+                  imageUrl: widget.profilePhoto,
                   isRound: true,
                   radius: 50,
                   fit: BoxFit.cover,
@@ -190,8 +205,8 @@ class CallRecordsTile extends StatelessWidget {
                   right: 0,
                   bottom: 0,
                   child: OnlineIndicator(
-                    uid: receiverUID,
-                    isDoctor: !isDoctor,
+                    uid: widget.receiverUID,
+                    isDoctor: !widget.isDoctor,
                   ),
                 ),],
               ),),
@@ -204,7 +219,7 @@ class CallRecordsTile extends StatelessWidget {
                     Row(
                       children: <Widget>[
                         Text(
-                          isDoctor == true ? userName : "Dr. " + userName,
+                          widget.isDoctor == true ? widget.userName : "Dr. " + widget.userName,
                           style: TextStyle(
                             fontWeight: FontWeight.w400,
                             fontFamily: "Brand Bold",
@@ -218,12 +233,12 @@ class CallRecordsTile extends StatelessWidget {
                     Spacer(),
                     Row(
                       children: <Widget>[
-                        Icon(isCreator == true ? CupertinoIcons.arrow_up_right : CupertinoIcons.arrow_down_left,
+                        Icon(widget.isCreator == true ? CupertinoIcons.arrow_up_right : CupertinoIcons.arrow_down_left,
                           color: Colors.green[800],
                           size: 5 * SizeConfig.imageSizeMultiplier,
                         ),
                         SizedBox(width: 1 * SizeConfig.widthMultiplier,),
-                        Text("$time2", style: TextStyle(
+                        Text("${Utils.formatDate(widget.time.toDate())}, ${Utils.formatTime(widget.time.toDate())}", style: TextStyle(
                           fontWeight: FontWeight.w400,
                           fontFamily: "Brand-Regular",
                           fontSize: 2.3 * SizeConfig.textMultiplier,
@@ -236,26 +251,32 @@ class CallRecordsTile extends StatelessWidget {
                 ),
               ),
               Spacer(),
-              isVoiceCall == true ?
+              widget.isVoiceCall == true ?
               GestureDetector(
                 onTap: () async {
                   showDialog(
                     context: context,
                     builder: (context) => ProgressDialog(message: "Please wait...",),
                   );
+                  Activity activity = Activity.callActivity(
+                    createdAt: FieldValue.serverTimestamp(),
+                    type: "call",
+                    callType: "voice",
+                    receiver: widget.userName,
+                  );
                   await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                  goToVoiceCall(databaseMethods, userName, context, isDoctor) : {};
+                  goToVoiceCall(databaseMethods, widget.userName, context, widget.isDoctor, activity) : {};
                 },
                 child: Container(
                   height: 4 * SizeConfig.heightMultiplier,
                   width: 8 * SizeConfig.widthMultiplier,
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    gradient: kPrimaryGradientColor,
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(
                     Icons.phone_rounded,
-                    color: Colors.red[300],
+                    color: Colors.white,
                     size: 5 * SizeConfig.imageSizeMultiplier,
                   ),
                 ),
@@ -266,19 +287,25 @@ class CallRecordsTile extends StatelessWidget {
                     context: context,
                     builder: (context) => ProgressDialog(message: "Please wait...",),
                   );
+                  Activity activity = Activity.callActivity(
+                    createdAt: FieldValue.serverTimestamp(),
+                    type: "call",
+                    callType: "video",
+                    receiver: widget.userName,
+                  );
                   await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                  goToVideoChat(databaseMethods, userName, context, isDoctor) : {};
+                  goToVideoChat(databaseMethods, widget.userName, context, widget.isDoctor, activity) : {};
                 },
                 child: Container(
                   height: 4 * SizeConfig.heightMultiplier,
                   width: 8 * SizeConfig.widthMultiplier,
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    gradient: kPrimaryGradientColor,
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(
                     CupertinoIcons.video_camera_solid,
-                    color: Colors.red[300],
+                    color: Colors.white,
                     size: 5 * SizeConfig.imageSizeMultiplier,
                   ),
                 ),

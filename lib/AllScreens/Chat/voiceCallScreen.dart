@@ -2,15 +2,16 @@ import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatSearch.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/callScreen.dart';
 import 'package:creativedata_app/Models/call.dart';
 import 'package:creativedata_app/Provider/userProvider.dart';
-import 'package:creativedata_app/Services/database.dart';
+import 'package:creativedata_app/Utilities/callUtils.dart';
+import 'package:creativedata_app/Widgets/timerWidget.dart';
 import 'package:creativedata_app/agoraConfigs.dart';
-import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
@@ -24,7 +25,8 @@ import 'package:provider/provider.dart';
 class VoiceCallScreen extends StatefulWidget {
   final Call call;
   final bool isDoctor;
-  const VoiceCallScreen({Key key, this.call, this.isDoctor}) : super(key: key);
+  final bool isReceiving;
+  const VoiceCallScreen({Key key, this.call, this.isDoctor, @required this.isReceiving}) : super(key: key);
 
   @override
   _VoiceCallScreenState createState() => _VoiceCallScreenState();
@@ -32,7 +34,7 @@ class VoiceCallScreen extends StatefulWidget {
 
 class _VoiceCallScreenState extends State<VoiceCallScreen> {
 
-  DatabaseMethods databaseMethods = new DatabaseMethods();
+  TimerController timerController = TimerController();
   UserProvider userProvider;
   StreamSubscription callStreamSubscription;
   final _users = <int>[];
@@ -50,7 +52,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       receiverPic: widget.call.receiverPic,
       isVoiceCall: true,
       users: [widget.call.callerName, widget.call.receiverName],
-      createdBy: Constants.myName,
+      createdBy: widget.call.callerName,
       time: FieldValue.serverTimestamp(),
     );
   }
@@ -67,13 +69,15 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     }
 
     await _initAgoraRtcEngine();
-    assetsAudioPlayer.open(Audio("sounds/dail_tone.mp3"));
-    assetsAudioPlayer.play();
+    if (widget.isReceiving == true) {} else {
+      assetsAudioPlayer.open(Audio("sounds/dail_tone.mp3"));
+      assetsAudioPlayer.play();
+    }
     _addAgoraEventHandlers();
     await AgoraRtcEngine.enableWebSdkInteroperability(true);
     // await AgoraRtcEngine.setParameters(
     //     '''{\"che.video.lowBitRateStreamParameter\":{\"width\":320,\"height\":180,\"frameRate\":15,\"bitRate\":140}}''');
-    await AgoraRtcEngine.joinChannel(null, widget.call.channelId, null, 0);
+    await AgoraRtcEngine.joinChannel(widget.call.token, widget.call.channelId, null, 0);
   }
 
   void _addAgoraEventHandlers() {
@@ -83,6 +87,17 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     //     _infoStrings.add(info);
     //   });
     // };
+
+    AgoraRtcEngine.onTokenPrivilegeWillExpire = (token) async {
+      print("Renewed Token ::: soon");
+      await CallUtils.getToken(widget.call.channelId).then((val) {
+        setState(() {
+          token = val;
+        });
+      });
+      await AgoraRtcEngine.renewToken(token);
+      print("Renewed Token ::: $token");
+    };
 
     AgoraRtcEngine.onJoinChannelSuccess = (
         String channel,
@@ -102,6 +117,9 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
         final info = 'userJoined: $uid';
         _infoStrings.add(info);
         _users.add(uid);
+        if (_users.length > 0) {
+          timerController.startTimer();
+        }
       });
     };
 
@@ -182,55 +200,6 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
     });
   }
 
-  Widget _panel() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      alignment: Alignment.bottomCenter,
-      child: FractionallySizedBox(
-        heightFactor: 0.5,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 48),
-          child: ListView.builder(
-            reverse: true,
-            itemCount: _infoStrings.length,
-            itemBuilder: (BuildContext context, int index) {
-              if (_infoStrings.isEmpty) {
-                return null;
-              }
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 3,
-                  horizontal: 10,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 2,
-                          horizontal: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.yellowAccent,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          _infoStrings[index],
-                          style: TextStyle(color: Colors.blueGrey),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _toolbar() {
     //if (widget.role == ClientRole.Audience) return Container();
     return Container(
@@ -253,6 +222,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
           ),
           RawMaterialButton(
             onPressed: () async {
+              timerController.stopTimer();
               assetsAudioPlayer.stop();
               assetsAudioPlayer = new AssetsAudioPlayer();
               await databaseMethods.endCall(
@@ -267,11 +237,11 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
             ),
             shape: CircleBorder(),
             elevation: 2.0,
-            fillColor: Colors.redAccent,
+            fillColor: Color(0xFFa81845),
             padding: const EdgeInsets.all(15.0),
           ),
           RawMaterialButton(
-            onPressed: () => CallScreen(call: widget.call),
+            onPressed: () => CallScreen(isReceiving: false, call: widget.call, isDoctor:widget.isDoctor,),
             child: Icon(
               CupertinoIcons.video_camera_solid,
               color: Colors.blueAccent,
@@ -320,6 +290,7 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
       }
     });
   }
+
 
   @override
   void dispose() {
@@ -370,13 +341,24 @@ class _VoiceCallScreenState extends State<VoiceCallScreen> {
                          ? "Dr. " + widget.call.receiverName
                          : "Dr. " + widget.call.callerName, style: TextStyle(
                        fontSize: 3 * SizeConfig.textMultiplier,
-                       color: Colors.redAccent,
+                       color: Color(0xFFa81845),
                      ),),
+                     SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+                     Visibility(
+                       visible: _users.length > 0 ? true : false,
+                       child: AvatarGlow(
+                         glowColor: Color(0xFFa81845),
+                         showTwoGlows: true,
+                         animate: true,
+                         endRadius: 100,
+                         repeatPauseDuration: Duration(milliseconds: 100),
+                         child: TimerWidget(controller: timerController,),
+                       ),
+                     ),
                      Spacer(),
                    ],
                  ),
                ),
-              _panel(),
               _toolbar(),
             ],
           ),

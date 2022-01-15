@@ -2,6 +2,7 @@ import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/cartScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/material.dart';
 /*
@@ -15,7 +16,7 @@ class DrugDetails extends StatefulWidget {
   final String description;
   final String dosage;
   final int items;
-  DrugDetails({Key key, this.imageUrl, this.drugName, this.description, this.price, this.dosage, this.items}) : super(key: key);
+  const DrugDetails({Key key, this.imageUrl, this.drugName, this.description, this.price, this.dosage, this.items}) : super(key: key);
 
   @override
   _DrugDetailsState createState() => _DrugDetailsState();
@@ -75,7 +76,7 @@ class _DrugDetailsState extends State<DrugDetails> {
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
-                      color: Colors.red[400],
+                      gradient: kPrimaryGradientColor
                     ),
                     child: Padding(
                       padding: EdgeInsets.all(8.0),
@@ -121,14 +122,14 @@ class _DrugDetailsState extends State<DrugDetails> {
                           ),
                           child: Container(
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.red[300], width: 2),
+                            border: Border.all(color: Color(0xFFa81845), width: 2),
                             borderRadius: BorderRadius.circular(15),
                           ),
                           child: Padding(
                             padding: EdgeInsets.all(10),
                             child: Center(
                               child: Icon(Icons.shopping_cart,
-                                color: Colors.red[300],
+                                color: Color(0xFFa81845),
                               ),
                             ),
                           ),
@@ -143,7 +144,7 @@ class _DrugDetailsState extends State<DrugDetails> {
                             height: 3 * SizeConfig.heightMultiplier,
                             width: 6 * SizeConfig.widthMultiplier,
                             decoration: BoxDecoration(
-                              color: Colors.red[300],
+                              gradient: kPrimaryGradientColor,
                               border: Border.all(color: Colors.grey[100], width: 2),
                               borderRadius: BorderRadius.circular(50),
                             ),
@@ -163,7 +164,7 @@ class _DrugDetailsState extends State<DrugDetails> {
                   RaisedButton(
                     splashColor: Colors.white,
                     highlightColor: Colors.grey.withOpacity(0.1),
-                    color: Colors.red[300],
+                    color: Color(0xFFa81845),
                     textColor: Colors.white,
                     child: Container(
                        width: 60 * SizeConfig.widthMultiplier,
@@ -209,7 +210,7 @@ Widget customMed({@required Widget body, imageUrl, drugName}) {
             child: Padding(
               padding: EdgeInsets.all(8.0),
               child: Text(drugName, style: TextStyle(
-                color: Colors.red[300],
+                color: Color(0xFFa81845),
                 fontFamily: "Brand Bold",
               ),),
             ),

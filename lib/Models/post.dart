@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 /*
 * Created by Mujuzi Moses
 */
@@ -11,6 +12,7 @@ class Post{
   String type;
   String heading;
   int likeCounter;
+  int shareCounter;
   String uid;
   String postImageUrl;
   String postText;
@@ -19,13 +21,13 @@ class Post{
   FieldValue time;
 
   Post.textPost({this.senderName, this.senderPic, this.type, this.uid,
-    this.postText, this.time, this.likeCounter, this.heading,
+    this.postText, this.time, this.likeCounter, this.heading, this.shareCounter,
   });
   Post.imagePost({this.senderName, this.senderPic, this.type, this.heading, this.postImageUrl,
-    this.time, this.likeCounter, this.postText, this.uid,
+    this.time, this.likeCounter, this.postText, this.uid, this.shareCounter,
   });
   Post.videoPost({this.senderName, this.senderPic, this.type, this.heading, this.thumbnail,
-    this.postVideoUrl, this.time, this.likeCounter, this.postText, this.uid,
+    this.postVideoUrl, this.time, this.likeCounter, this.postText, this.uid, this.shareCounter,
   });
   Post.sharedPost({this.senderName, this.senderPic, this.type,
     this.heading, this.time, this.likeCounter, this.postText, this.uid,
@@ -37,6 +39,7 @@ class Post{
     postMap["sender_pic"] = post.senderPic;
     postMap["type"] = post.type;
     postMap["like_counter"] = post.likeCounter;
+    postMap["share_counter"] = post.shareCounter;
     postMap["post_text"] = post.postText;
     postMap["heading"] = post.heading;
     postMap["time"] = post.time;
@@ -68,6 +71,7 @@ class Post{
     postMap["heading"] = post.heading;
     postMap["thumbnail"] = post.thumbnail;
     postMap["like_counter"] = post.likeCounter;
+    postMap["share_counter"] = post.shareCounter;
     postMap["post_video_url"] = post.postVideoUrl;
     postMap["time"] = post.time;
     postMap["uid"] = post.uid;
@@ -83,24 +87,12 @@ class Post{
     postMap["post_text"] = post.postText;
     postMap["heading"] = post.heading;
     postMap["like_counter"] = post.likeCounter;
+    postMap["share_counter"] = post.shareCounter;
     postMap["post_image_url"] = post.postImageUrl;
     postMap["time"] = post.time;
     postMap["uid"] = post.uid;
 
     return postMap;
-  }
-
-  Post.fromMap(Map postMap) {
-    this.senderName = postMap["sender_name"];
-    this.senderPic = postMap["sender_pic"];
-    this.type = postMap["type"];
-    this.heading = postMap["heading"];
-    this.likeCounter = postMap["like_counter"];
-    this.postImageUrl = postMap["post_image_url"];
-    this.postText = postMap["post_text"];
-    this.postVideoUrl = postMap["post_video_url"];
-    this.time = postMap["time"];
-    this.time = postMap["uid"];
   }
 }
 
@@ -180,19 +172,31 @@ class SharedPost{
 class Like{
   String name;
   String pic;
+  bool isDoc;
 
-  Like({this.name, this.pic});
+  Like({this.name, this.pic, @required this.isDoc});
 
   Map<String, dynamic> toMap(Like like) {
     Map<String, dynamic> likeMap = Map();
     likeMap["name"] = like.name;
     likeMap["pic"] = like.pic;
+    likeMap["isDoc"] = like.isDoc;
 
     return likeMap;
   }
+}
 
-  Like.fromMap(Map likeMap) {
-    this.name = likeMap["name"];
-    this.pic = likeMap["pic"];
+class Share{
+  String name;
+  String pic;
+
+  Share({this.name, this.pic});
+
+  Map<String, dynamic> toMap(Share share) {
+    Map<String, dynamic> shareMap = Map();
+    shareMap["name"] = share.name;
+    shareMap["pic"] = share.pic;
+
+    return shareMap;
   }
 }

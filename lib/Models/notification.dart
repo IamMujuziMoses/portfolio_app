@@ -14,6 +14,7 @@ class CustomNotification{
   String docName;
   String hospital;
   String name;
+  String counter;
   Timestamp startTime;
   String from;
   String dosage;
@@ -28,17 +29,20 @@ class CustomNotification{
   String receiverName;
   String receiverUid;
 
-  CustomNotification.newPost({this.createdAt, this.type, this.postText, this.from,
+  CustomNotification.newPost({this.createdAt, this.type, this.postText, this.from, this.counter,
     this.postHeading, this.heading, this.eventTitle, this.drugName, this.appType,
   });
+
   CustomNotification.newAppointment({this.createdAt, this.type, this.appType, this.docName, this.name, this.startTime,
-    this.hospital, this.postHeading, this.heading, this.eventTitle, this.drugName,
+    this.hospital, this.postHeading, this.heading, this.eventTitle, this.drugName, this.counter,
   });
+
   CustomNotification.newMedReminder({this.createdAt, this.type, this.cycle, this.dosage, this.drugName, this.howLong,
-    this.name, this.postHeading, this.heading, this.eventTitle, this.appType,
+    this.name, this.postHeading, this.heading, this.eventTitle, this.appType, this.counter,
   });
+
   CustomNotification.newMessage({this.createdAt, this.type, this.senderName, this.senderPhoto, this.senderUid,
-    this.receiverName, this.receiverPhoto, this.receiverUid, this.messageType,
+    this.receiverName, this.receiverPhoto, this.receiverUid, this.messageType, this.counter,
   });
 
   Map toMessageNotification(CustomNotification notification) {
@@ -48,6 +52,7 @@ class CustomNotification{
     notificationMap["sender_name"] = notification.senderName;
     notificationMap["sender_photo"] = notification.senderPhoto;
     notificationMap["sender_uid"] = notification.senderUid;
+    notificationMap["counter"] = notification.counter;
     notificationMap["receiver_name"] = notification.receiverName;
     notificationMap["receiver_photo"] = notification.receiverPhoto;
     notificationMap["receiver_uid"] = notification.receiverUid;
@@ -65,6 +70,7 @@ class CustomNotification{
     notificationMap["event_title"] = notification.eventTitle;
     notificationMap["drug_name"] = notification.drugName;
     notificationMap["heading"] = notification.heading;
+    notificationMap["counter"] = notification.counter;
     notificationMap["app_type"] = notification.appType;
     notificationMap["hospital"] = notification.hospital;
     notificationMap["name"] = notification.name;
@@ -82,6 +88,7 @@ class CustomNotification{
     notificationMap["event_title"] = notification.eventTitle;
     notificationMap["drug_name"] = notification.drugName;
     notificationMap["heading"] = notification.heading;
+    notificationMap["counter"] = notification.counter;
     notificationMap["app_type"] = notification.appType;
     notificationMap["from"] = notification.from;
 
@@ -99,6 +106,7 @@ class CustomNotification{
     notificationMap["event_title"] = notification.eventTitle;
     notificationMap["heading"] = notification.heading;
     notificationMap["app_type"] = notification.appType;
+    notificationMap["counter"] = notification.counter;
     notificationMap["how_long"] = notification.howLong;
     notificationMap["user_name"] = notification.name;
 

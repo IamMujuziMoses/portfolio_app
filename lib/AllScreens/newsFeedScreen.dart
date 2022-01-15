@@ -1,21 +1,22 @@
 import 'dart:typed_data';
 
+import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/videoViewPage.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
-import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/Doctor/postArticleScreen.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/post.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
+import 'package:creativedata_app/Widgets/divider.dart';
 import 'package:creativedata_app/Widgets/onlineIndicator.dart';
 import 'package:creativedata_app/Widgets/photoViewPage.dart';
 import 'package:creativedata_app/Widgets/progressDialog.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -27,14 +28,13 @@ class NewsFeedScreen extends StatefulWidget {
   final String userName;
   final String userPic;
   final bool isDoctor;
-  NewsFeedScreen({Key key, this.userName, this.userPic, this.isDoctor}) : super(key: key);
+  const NewsFeedScreen({Key key, this.userName, this.userPic, this.isDoctor}) : super(key: key);
 
   @override
   _NewsFeedScreenState createState() => _NewsFeedScreenState();
 }
 
 class _NewsFeedScreenState extends State<NewsFeedScreen> {
-  DatabaseMethods databaseMethods = DatabaseMethods();
   Stream allPostsStream;
   Stream myPostsStream;
 
@@ -66,12 +66,19 @@ class _NewsFeedScreenState extends State<NewsFeedScreen> {
           backgroundColor: Colors.grey[100],
           title: Text("Siro News Feed", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300]
+            color: Color(0xFFa81845)
           ),),
         ),
         floatingActionButton: widget.isDoctor == true ? FloatingActionButton(
-          backgroundColor: Colors.red[300],
-          child: Icon(FontAwesomeIcons.edit, color: Colors.white,),
+          clipBehavior: Clip.hardEdge,
+          child: Container(
+            height: double.infinity,
+            width: double.infinity,
+            decoration: BoxDecoration(
+                gradient: kPrimaryGradientColor,
+            ),
+            child: Icon(FontAwesomeIcons.edit, color: Colors.white,),
+          ),
           onPressed: () => Navigator.push(
             context, MaterialPageRoute(
             builder: (context) => PostArticleScreen(
@@ -104,6 +111,7 @@ Widget postsList({@required Stream postStream, String userName, String mainUserP
               separatorBuilder: (context, index) => SizedBox(
                 height: 0.5 * SizeConfig.heightMultiplier,
               ),
+              addAutomaticKeepAlives: true,
               padding: EdgeInsets.only(bottom: 1 * SizeConfig.heightMultiplier),
               itemCount: snapshot.data.docs.length,
               controller: _listScrollController,
@@ -130,6 +138,7 @@ Widget postsList({@required Stream postStream, String userName, String mainUserP
                     dateStr: dateStr,
                     userPic: userPic,
                     likes: likes,
+                    shares: snapshot.data.docs[index].get("share_counter"),
                     docId: docId,
                     heading: snapshot.data.docs[index].get("heading"),
                     message: snapshot.data.docs[index].get("post_text"),
@@ -148,6 +157,7 @@ Widget postsList({@required Stream postStream, String userName, String mainUserP
                     dateStr: dateStr,
                     userPic: userPic,
                     likes: likes,
+                    shares: snapshot.data.docs[index].get("share_counter"),
                     isDoctor: isDoctor,
                     message: snapshot.data.docs[index].get("post_text"),
                     heading: snapshot.data.docs[index].get("heading"),
@@ -165,6 +175,7 @@ Widget postsList({@required Stream postStream, String userName, String mainUserP
                     dateStr: dateStr,
                     userPic: userPic,
                     likes: likes,
+                    shares: snapshot.data.docs[index].get("share_counter"),
                     isDoctor: isDoctor,
                     heading: snapshot.data.docs[index].get("heading"),
                     message: snapshot.data.docs[index].get("post_text"),
@@ -202,13 +213,13 @@ class PostBody extends StatefulWidget {
   final Stream allPostsStream;
   final Stream myPostsStream;
   final bool isDoctor;
-  PostBody({Key key, this.allPostsStream, this.myPostsStream, this.userName, this.userPic, this.isDoctor}) : super(key: key);
+  const PostBody({Key key, this.allPostsStream, this.myPostsStream, this.userName, this.userPic, this.isDoctor}) : super(key: key);
 
   @override
   _PostBodyState createState() => _PostBodyState();
 }
 
-class _PostBodyState extends State<PostBody> {
+class _PostBodyState extends State<PostBody> with AutomaticKeepAliveClientMixin {
 
   bool allVisible = true;
   bool myVisible = false;
@@ -222,17 +233,17 @@ class _PostBodyState extends State<PostBody> {
 
   Widget button({String category, int index,}) {
     return RaisedButton(
-        color: selectedIndex == index ? Colors.red[300] : Colors.white,
-        splashColor: selectedIndex == index ? Colors.white : Colors.red[200],
+        color: selectedIndex == index ? Color(0xFFa81845) : Colors.white,
+        splashColor: selectedIndex == index ? Colors.white : Color(0xFFa81845).withOpacity(0.6),
         highlightColor: Colors.grey.withOpacity(0.1),
-        textColor: selectedIndex == index ? Colors.white : Colors.red[300],
+        textColor: selectedIndex == index ? Colors.white : Color(0xFFa81845),
         child: Container(
           height: 4 * SizeConfig.heightMultiplier,
-          width: 15 * SizeConfig.widthMultiplier,
+          width: 16 * SizeConfig.widthMultiplier,
           child: Center(
             child: Text(category, style: TextStyle(
               fontFamily: "Brand Bold",
-              fontSize: 2 * SizeConfig.textMultiplier,
+              fontSize: 1.8 * SizeConfig.textMultiplier,
             ),),
           ),
         ),
@@ -258,6 +269,7 @@ class _PostBodyState extends State<PostBody> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Container(
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
@@ -281,8 +293,8 @@ class _PostBodyState extends State<PostBody> {
                       width: MediaQuery.of(context).size.width,
                       color: Colors.grey[100],
                       height: widget.isDoctor == true
-                          ? 83.8 * SizeConfig.heightMultiplier
-                          : 89.8 * SizeConfig.heightMultiplier,
+                          ? MediaQuery.of(context).size.height - 17 * SizeConfig.heightMultiplier
+                          : MediaQuery.of(context).size.height - 10.6 * SizeConfig.heightMultiplier,
                       child: postsList(
                         postStream: widget.allPostsStream,
                         userName: widget.userName,
@@ -304,9 +316,7 @@ class _PostBodyState extends State<PostBody> {
                     ),
                     child: Container(
                       width: MediaQuery.of(context).size.width,
-                      height: widget.isDoctor == true
-                          ? 83.8 * SizeConfig.heightMultiplier
-                          : 89.8 * SizeConfig.heightMultiplier,
+                      height: MediaQuery.of(context).size.height - 17 * SizeConfig.heightMultiplier,
                       color: Colors.grey[100],
                       child: postsList(
                         postStream: widget.myPostsStream,
@@ -351,8 +361,11 @@ class _PostBodyState extends State<PostBody> {
       ),
     );
   }
-}
 
+  @override
+  bool get wantKeepAlive => true;
+
+}
 
 class SharePostCard extends StatefulWidget {
   final String mainUserName;
@@ -367,7 +380,7 @@ class SharePostCard extends StatefulWidget {
   final String userPic;
   final int likes;
   final bool isDoctor;
-  SharePostCard({Key key, this.type, this.heading,this.name, this.userPic, this.likes,
+  const SharePostCard({Key key, this.type, this.heading,this.name, this.userPic, this.likes,
     this.time, this.docId, this.message, this.mainUserName, this.mainUserPic, this.uid, this.isDoctor,
   }) : super(key: key);
 
@@ -378,7 +391,7 @@ class SharePostCard extends StatefulWidget {
 class _SharePostCardState extends State<SharePostCard> {
 
   int _likes = 0;
-  IconData _icon = CupertinoIcons.suit_heart;
+  IconData _icon = CupertinoIcons.hand_thumbsup;
   QuerySnapshot likesSnap;
 
   String sharedType = "";
@@ -393,6 +406,7 @@ class _SharePostCardState extends State<SharePostCard> {
 
   @override
   void initState() {
+    if (!mounted) return;
     getInfo();
     super.initState();
   }
@@ -432,33 +446,38 @@ class _SharePostCardState extends State<SharePostCard> {
       likesSnap = val;
       if (likesSnap.docs.isNotEmpty) {
         setState(() {
-          _icon = CupertinoIcons.suit_heart_fill;
+          _icon = CupertinoIcons.hand_thumbsup_fill;
         });
       }
     });
   }
 
   void _incrementLikes() async {
-    if (_icon == CupertinoIcons.suit_heart) {
+    assetsAudioPlayer.open(Audio("sounds/liked_post.mp3"));
+    assetsAudioPlayer.play();
+    if (_icon == CupertinoIcons.hand_thumbsup) {
       setState(() {
         _likes++;
-        _icon = CupertinoIcons.suit_heart_fill;
+        _icon = CupertinoIcons.hand_thumbsup_fill;
       });
       Like like = Like(
         name: widget.mainUserName,
         pic: widget.mainUserPic,
+        isDoc: widget.isDoctor,
       );
       Map<String, dynamic> likeMap = like.toMap(like);
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.createLike(likeMap, widget.docId);
-    } else if (_icon == CupertinoIcons.suit_heart_fill) {
+    } else if (_icon == CupertinoIcons.hand_thumbsup_fill) {
       setState(() {
         _likes--;
-        _icon = CupertinoIcons.suit_heart;
+        _icon = CupertinoIcons.hand_thumbsup;
       });
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.deleteLike(widget.mainUserName, widget.docId);
     }
+    assetsAudioPlayer.stop();
+    assetsAudioPlayer = new AssetsAudioPlayer();
   }
 
   @override
@@ -505,8 +524,8 @@ class _SharePostCardState extends State<SharePostCard> {
                 ),
                 SizedBox(width: 2 * SizeConfig.widthMultiplier),
                 Container(
-                  height: 5 * SizeConfig.heightMultiplier,
-                  width: 60 * SizeConfig.widthMultiplier,
+                  height: 6 * SizeConfig.heightMultiplier,
+                  width: 65 * SizeConfig.widthMultiplier,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -530,7 +549,7 @@ class _SharePostCardState extends State<SharePostCard> {
                 Spacer(),
                 Container(
                     height: 4 * SizeConfig.heightMultiplier,
-                    width: 10 * SizeConfig.widthMultiplier,
+                    width: 13 * SizeConfig.widthMultiplier,
                     child: Center(
                       child: Text("Shared", style: TextStyle(
                         fontFamily: "Brand Bold",
@@ -714,12 +733,12 @@ class _SharePostCardState extends State<SharePostCard> {
                                       decoration: BoxDecoration(
                                         color: Colors.grey.withOpacity(0.5),
                                         borderRadius: BorderRadius.circular(30),
-                                        border: Border.all(color: Colors.red[300]),
+                                        border: Border.all(color: Color(0xFFa81845)),
                                       ),
                                       child: Center(
                                         child: Icon(
                                           Icons.play_arrow_rounded,
-                                          color: Colors.red[300],
+                                          color: Color(0xFFa81845),
                                           size: 8 * SizeConfig.imageSizeMultiplier,),
                                       ),
                                     ),
@@ -811,10 +830,11 @@ class _SharePostCardState extends State<SharePostCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(_likes == 0 ? "" : "$_likes like(s)", style: TextStyle(
-                      fontFamily: "Brand Bold",
-                      fontSize: 2 * SizeConfig.textMultiplier,
-                    ),),
+                    likeTB(
+                      context: context,
+                      likes: _likes,
+                      docId: widget.docId,
+                    ),
                   ],
                 ),
               ),
@@ -834,7 +854,7 @@ class _SharePostCardState extends State<SharePostCard> {
                   child: Container(
                     child: Icon(
                           _icon,
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                         ),
                   ),
                 ),
@@ -863,17 +883,19 @@ class ShareScreen extends StatefulWidget {
   final String type;
   final String message;
   final String heading;
+  final String docId;
   final String shareTime;
   final String shareUserPic;
   final String shareName;
   final String shareImageUrl;
   final String shareVideoUrl;
+  final int shares;
   final Uint8List shareThumbnail;
   final dateStr;
-  ShareScreen({Key key,
+  const ShareScreen({Key key,
     this.type, this.shareUserPic, this.shareName, this.shareImageUrl, this.shareThumbnail,
     this.message, this.heading, this.shareTime, this.dateStr, this.userName,
-    this.userPic, this.shareVideoUrl}) : super(key: key);
+    this.userPic, this.shareVideoUrl, this.docId, this.shares}) : super(key: key);
 
   @override
   _ShareScreenState createState() => _ShareScreenState();
@@ -914,7 +936,7 @@ class _ShareScreenState extends State<ShareScreen> {
             titleSpacing: 0,
             elevation: 0,
             backgroundColor: Colors.grey[200],
-            title: Text("Share Post", style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]),),
+            title: Text("Share Post", style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)),),
           ),
           body: Container(
             width: MediaQuery.of(context).size.width,
@@ -989,7 +1011,7 @@ class _ShareScreenState extends State<ShareScreen> {
                               ),
                               SizedBox(width: 2 * SizeConfig.widthMultiplier),
                               Container(
-                                height: 5 * SizeConfig.heightMultiplier,
+                                height: 6 * SizeConfig.heightMultiplier,
                                 width: 45 * SizeConfig.widthMultiplier,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1080,12 +1102,12 @@ class _ShareScreenState extends State<ShareScreen> {
                                             decoration: BoxDecoration(
                                               color: Colors.grey.withOpacity(0.5),
                                               borderRadius: BorderRadius.circular(30),
-                                              border: Border.all(color: Colors.red[300]),
+                                              border: Border.all(color: Color(0xFFa81845)),
                                             ),
                                             child: Center(
                                               child: Icon(
                                                 Icons.play_arrow_rounded,
-                                                color: Colors.red[300],
+                                                color: Color(0xFFa81845),
                                                 size: 8 * SizeConfig.imageSizeMultiplier,),
                                             ),
                                           ),
@@ -1130,7 +1152,7 @@ class _ShareScreenState extends State<ShareScreen> {
                   right: 25 * SizeConfig.widthMultiplier,
                   child: RaisedButton(
                     onPressed: () => sharePost(context, currentUser.uid),
-                    color: Colors.red[300],
+                    color: Color(0xFFa81845),
                     splashColor: Colors.white,
                     highlightColor: Colors.red.withOpacity(0.1),
                     child: Container(
@@ -1165,6 +1187,13 @@ class _ShareScreenState extends State<ShareScreen> {
           builder: (BuildContext context) => ProgressDialog(message: "Please wait...",)
       );
 
+      Share share = Share(
+        name: widget.userName,
+        pic: widget.userPic,
+      );
+
+      var shareMap = share.toMap(share);
+      Activity activity;
       Post post = Post.sharedPost(
         senderName: widget.userName,
         senderPic: widget.userPic,
@@ -1185,8 +1214,18 @@ class _ShareScreenState extends State<ShareScreen> {
           sharedHeading: widget.heading,
           sharedTime: widget.dateStr,
         );
+        activity = Activity.postActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "post",
+          postHeading: headingTEC.text.trim(),
+          postType: "shared text",
+        );
+        var activityMap = activity.toPostActivity(activity);
+        databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
         var sharedTextPostMap = sharedPost.toTextMap(sharedPost);
         databaseMethods.createSharedPost(sharedPostMap, sharedTextPostMap);
+        databaseMethods.createShare(shareMap, widget.docId);
+        databaseMethods.updatePostDocField({"share_counter": (widget.shares + 1)}, widget.docId);
         Navigator.pop(context);
         Navigator.pop(context);
 
@@ -1200,8 +1239,18 @@ class _ShareScreenState extends State<ShareScreen> {
           sharedHeading: widget.heading,
           sharedImageUrl: widget.shareImageUrl,
         );
+        activity = Activity.postActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "post",
+          postHeading: headingTEC.text.trim(),
+          postType: "shared image",
+        );
+        var activityMap = activity.toPostActivity(activity);
+        databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
         var sharedImagePostMap = sharedPost.toImageMap(sharedPost);
         databaseMethods.createSharedPost(sharedPostMap, sharedImagePostMap);
+        databaseMethods.createShare(shareMap, widget.docId);
+        databaseMethods.updatePostDocField({"share_counter": (widget.shares + 1)}, widget.docId);
         Navigator.pop(context);
         Navigator.pop(context);
 
@@ -1216,11 +1265,20 @@ class _ShareScreenState extends State<ShareScreen> {
           sharedHeading: widget.heading,
           sharedVideoUrl: widget.shareVideoUrl,
         );
+        activity = Activity.postActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "post",
+          postHeading: headingTEC.text.trim(),
+          postType: "shared video",
+        );
+        var activityMap = activity.toPostActivity(activity);
+        databaseMethods.createDoctorActivity(activityMap, currentUser.uid);
         var sharedVideoPostMap = sharedPost.toVideoMap(sharedPost);
         databaseMethods.createSharedPost(sharedPostMap, sharedVideoPostMap);
+        databaseMethods.createShare(shareMap, widget.docId);
+        databaseMethods.updatePostDocField({"share_counter": (widget.shares + 1)}, widget.docId);
         Navigator.pop(context);
         Navigator.pop(context);
-
       }
 
       showDialog(
@@ -1260,11 +1318,12 @@ class VideoPostCard extends StatefulWidget {
   final String userPic;
   final String docId;
   final int likes;
+  final int shares;
   final Uint8List thumbnail;
   final Timestamp dateStr;
   final bool isDoctor;
-  VideoPostCard({Key key, this.videoUrl, this.thumbnail, this.priority, this.type, this.heading, this.time,
-    this.name, this.userPic, this.likes, this.dateStr, this.mainUserName, this.mainUserPic, this.message, this.docId, this.isDoctor, this.uid,
+  const VideoPostCard({Key key, this.videoUrl, this.thumbnail, this.priority, this.type, this.heading, this.time,
+    this.name, this.userPic, this.likes, this.dateStr, this.mainUserName, this.mainUserPic, this.message, this.docId, this.isDoctor, this.uid, this.shares,
   }) : super(key: key);
 
   @override
@@ -1272,14 +1331,15 @@ class VideoPostCard extends StatefulWidget {
 }
 
 class _VideoPostCardState extends State<VideoPostCard> {
-  DatabaseMethods databaseMethods = DatabaseMethods();
 
   int _likes = 0;
-  IconData _icon = CupertinoIcons.suit_heart;
+  int _shares = 0;
+  IconData _icon = CupertinoIcons.hand_thumbsup;
   QuerySnapshot likesSnap;
 
   @override
   void initState() {
+    if (!mounted) return;
     getInfo();
     super.initState();
   }
@@ -1287,38 +1347,44 @@ class _VideoPostCardState extends State<VideoPostCard> {
   getInfo() async {
     setState(() {
       _likes = widget.likes;
+      _shares = widget.shares;
     });
     await databaseMethods.getLikesByName(widget.mainUserName, widget.docId).then((val) {
       likesSnap = val;
       if (likesSnap.docs.isNotEmpty) {
         setState(() {
-          _icon = CupertinoIcons.suit_heart_fill;
+          _icon = CupertinoIcons.hand_thumbsup_fill;
         });
       }
     });
   }
 
   void _incrementLikes() async {
-    if (_icon == CupertinoIcons.suit_heart) {
+    assetsAudioPlayer.open(Audio("sounds/liked_post.mp3"));
+    assetsAudioPlayer.play();
+    if (_icon == CupertinoIcons.hand_thumbsup) {
       setState(() {
         _likes++;
-        _icon = CupertinoIcons.suit_heart_fill;
+        _icon = CupertinoIcons.hand_thumbsup_fill;
       });
       Like like = Like(
         name: widget.mainUserName,
         pic: widget.mainUserPic,
+        isDoc: widget.isDoctor,
       );
       Map<String, dynamic> likeMap = like.toMap(like);
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.createLike(likeMap, widget.docId);
-    } else if (_icon == CupertinoIcons.suit_heart_fill) {
+    } else if (_icon == CupertinoIcons.hand_thumbsup_fill) {
       setState(() {
         _likes--;
-        _icon = CupertinoIcons.suit_heart;
+        _icon = CupertinoIcons.hand_thumbsup;
       });
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.deleteLike(widget.mainUserName, widget.docId);
     }
+    assetsAudioPlayer.stop();
+    assetsAudioPlayer = new AssetsAudioPlayer();
   }
 
   @override
@@ -1365,7 +1431,7 @@ class _VideoPostCardState extends State<VideoPostCard> {
                 ),
                 SizedBox(width: 2 * SizeConfig.widthMultiplier),
                 Container(
-                  height: 5 * SizeConfig.heightMultiplier,
+                  height: 6 * SizeConfig.heightMultiplier,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1425,12 +1491,12 @@ class _VideoPostCardState extends State<VideoPostCard> {
                           decoration: BoxDecoration(
                             color: Colors.grey.withOpacity(0.5),
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.red[300]),
+                            border: Border.all(color: Color(0xFFa81845)),
                           ),
                           child: Center(
                             child: Icon(
                               Icons.play_arrow_rounded,
-                              color: Colors.red[300],
+                              color: Color(0xFFa81845),
                               size: 8 * SizeConfig.imageSizeMultiplier,),
                           ),
                         ),
@@ -1467,9 +1533,9 @@ class _VideoPostCardState extends State<VideoPostCard> {
               ),
             ],
           ),
-          SizedBox(height: _likes == 0 ? 0 : 1 * SizeConfig.heightMultiplier,),
+          SizedBox(height: _likes > 0 || _shares > 0 ? 1 * SizeConfig.heightMultiplier : 0,),
           Visibility(
-            visible: _likes == 0 ? false : true,
+            visible: _likes > 0 || _shares > 0 ? true : false,
             child: Container(
               height: 3 * SizeConfig.heightMultiplier,
               width: double.infinity,
@@ -1479,10 +1545,16 @@ class _VideoPostCardState extends State<VideoPostCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(_likes == 0 ? "" : "$_likes like(s)", style: TextStyle(
-                      fontFamily: "Brand Bold",
-                      fontSize: 2 * SizeConfig.textMultiplier,
-                    ),),
+                    likeTB(
+                      context: context,
+                      likes: _likes,
+                      docId: widget.docId,
+                    ),
+                    shareTB(
+                      context: context,
+                      shares: _shares,
+                      docId: widget.docId,
+                    ),
                   ],
                 ),
               ),
@@ -1502,7 +1574,7 @@ class _VideoPostCardState extends State<VideoPostCard> {
                   child: Container(
                     child: Icon(
                           _icon,
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                         ),
                   ),
                 ),
@@ -1511,13 +1583,15 @@ class _VideoPostCardState extends State<VideoPostCard> {
                 //     await DatabaseMethods().deletePost("VIDEO");
                 //   },
                 //   child: Container(
-                //     child: Icon(CupertinoIcons.trash, color: Colors.red[300],),
+                //     child: Icon(CupertinoIcons.trash, color: Color(0xFFa81845),),
                 //   ),
                 // ),
                 widget.isDoctor == true ? GestureDetector(
                   onTap: () => Navigator.push(
                     context, MaterialPageRoute(
                     builder: (context) => ShareScreen(
+                      shares: widget.shares,
+                      docId: widget.docId,
                       userPic: widget.mainUserPic,
                       userName: widget.mainUserName,
                       type: widget.type,
@@ -1535,7 +1609,7 @@ class _VideoPostCardState extends State<VideoPostCard> {
                   child: Container(
                     child: Icon(
                           CupertinoIcons.arrowshape_turn_up_right,
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                         ),
                   ),
                 ) : Spacer(),
@@ -1561,10 +1635,11 @@ class TextPostCard extends StatefulWidget {
   final String userPic;
   final String docId;
   final int likes;
+  final int shares;
   final Timestamp dateStr;
   final bool isDoctor;
-  TextPostCard({Key key, this.message, this.type, this.time, this.name, this.userPic,
-    this.likes, this.dateStr, this.mainUserName, this.mainUserPic, this.heading, this.docId, this.isDoctor, this.uid,
+  const TextPostCard({Key key, this.message, this.type, this.time, this.name, this.userPic,
+    this.likes, this.dateStr, this.mainUserName, this.mainUserPic, this.heading, this.docId, this.isDoctor, this.uid, this.shares,
   }) : super(key: key);
 
   @override
@@ -1574,11 +1649,13 @@ class TextPostCard extends StatefulWidget {
 class _TextPostCardState extends State<TextPostCard> {
 
   int _likes = 0;
-  IconData _icon = CupertinoIcons.suit_heart;
+  int _shares = 0;
+  IconData _icon = CupertinoIcons.hand_thumbsup;
   QuerySnapshot likesSnap;
 
   @override
   void initState() {
+    if (!mounted) return;
     getInfo();
     super.initState();
   }
@@ -1586,38 +1663,45 @@ class _TextPostCardState extends State<TextPostCard> {
   getInfo() async {
     setState(() {
       _likes = widget.likes;
+      _shares = widget.shares;
     });
     await databaseMethods.getLikesByName(widget.mainUserName, widget.docId).then((val) {
       likesSnap = val;
       if (likesSnap.docs.isNotEmpty) {
         setState(() {
-          _icon = CupertinoIcons.suit_heart_fill;
+          _icon = CupertinoIcons.hand_thumbsup_fill;
         });
       }
     });
+
   }
 
   void _incrementLikes() async {
-    if (_icon == CupertinoIcons.suit_heart) {
+    assetsAudioPlayer.open(Audio("sounds/liked_post.mp3"));
+    assetsAudioPlayer.play();
+    if (_icon == CupertinoIcons.hand_thumbsup) {
       setState(() {
         _likes++;
-        _icon = CupertinoIcons.suit_heart_fill;
+        _icon = CupertinoIcons.hand_thumbsup_fill;
       });
       Like like = Like(
         name: widget.mainUserName,
         pic: widget.mainUserPic,
+        isDoc: widget.isDoctor,
       );
       Map<String, dynamic> likeMap = like.toMap(like);
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.createLike(likeMap, widget.docId);
-    } else if (_icon == CupertinoIcons.suit_heart_fill) {
+    } else if (_icon == CupertinoIcons.hand_thumbsup_fill) {
       setState(() {
         _likes--;
-        _icon = CupertinoIcons.suit_heart;
+        _icon = CupertinoIcons.hand_thumbsup;
       });
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.deleteLike(widget.mainUserName, widget.docId);
     }
+    assetsAudioPlayer.stop();
+    assetsAudioPlayer = new AssetsAudioPlayer();
   }
 
   @override
@@ -1664,8 +1748,7 @@ class _TextPostCardState extends State<TextPostCard> {
                 ),
                 SizedBox(width: 2 * SizeConfig.widthMultiplier),
                 Container(
-                  height: 5 * SizeConfig.heightMultiplier,
-                  width: 60 * SizeConfig.widthMultiplier,
+                  height: 6 * SizeConfig.heightMultiplier,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1716,9 +1799,9 @@ class _TextPostCardState extends State<TextPostCard> {
               ),
             ],
           ),
-          SizedBox(height: _likes == 0 ? 0 : 1 * SizeConfig.heightMultiplier,),
+          SizedBox(height: _likes > 0 || _shares > 0 ? 1 * SizeConfig.heightMultiplier : 0,),
           Visibility(
-            visible: _likes == 0 ? false : true,
+            visible: _likes > 0 || _shares > 0 ? true : false,
             child: Container(
               height: 3 * SizeConfig.heightMultiplier,
               width: double.infinity,
@@ -1731,10 +1814,16 @@ class _TextPostCardState extends State<TextPostCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
-                    Text(_likes == 0 ? "" : "$_likes like(s)", style: TextStyle(
-                      fontFamily: "Brand Bold",
-                      fontSize: 2 * SizeConfig.textMultiplier,
-                    ),),
+                    likeTB(
+                      context: context,
+                      likes: _likes,
+                      docId: widget.docId,
+                    ),
+                    shareTB(
+                      context: context,
+                      shares: _shares,
+                      docId: widget.docId,
+                    ),
                   ],
                 ),
               ),
@@ -1754,7 +1843,7 @@ class _TextPostCardState extends State<TextPostCard> {
                   child: Container(
                     child: Icon(
                           _icon,
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                         ),
                   ),
                 ),
@@ -1762,6 +1851,8 @@ class _TextPostCardState extends State<TextPostCard> {
                   onTap: () => Navigator.push(
                     context, MaterialPageRoute(
                     builder: (context) => ShareScreen(
+                      shares: widget.shares,
+                      docId: widget.docId,
                       userPic: widget.mainUserPic,
                       userName: widget.mainUserName,
                       type: widget.type,
@@ -1777,7 +1868,7 @@ class _TextPostCardState extends State<TextPostCard> {
                   child: Container(
                     child: Icon(
                           CupertinoIcons.arrowshape_turn_up_right,
-                          color: Colors.red[300],
+                          color: Color(0xFFa81845),
                         ),
                   ),
                 ) : Spacer(),
@@ -1803,11 +1894,12 @@ class ImagePostCard extends StatefulWidget {
   final String uid;
   final String userPic;
   final int likes;
+  final int shares;
   final String docId;
   final Timestamp dateStr;
   final bool isDoctor;
-  ImagePostCard({Key key, this.imageUrl, this.type, this.heading, this.time, this.name,
-    this.userPic, this.likes, this.dateStr, this.mainUserName, this.mainUserPic, this.message, this.docId, this.isDoctor, this.uid,
+  const ImagePostCard({Key key, this.imageUrl, this.type, this.heading, this.time, this.name, this.uid, this.shares,
+    this.userPic, this.likes, this.dateStr, this.mainUserName, this.mainUserPic, this.message, this.docId, this.isDoctor,
   }) : super(key: key);
 
   @override
@@ -1815,14 +1907,15 @@ class ImagePostCard extends StatefulWidget {
 }
 
 class _ImagePostCardState extends State<ImagePostCard> {
-  DatabaseMethods databaseMethods = DatabaseMethods();
 
   int _likes = 0;
-  IconData _icon = CupertinoIcons.suit_heart;
+  int _shares = 0;
+  IconData _icon = CupertinoIcons.hand_thumbsup;
   QuerySnapshot likesSnap;
 
   @override
   void initState() {
+    if (!mounted) return;
     getInfo();
     super.initState();
   }
@@ -1830,38 +1923,44 @@ class _ImagePostCardState extends State<ImagePostCard> {
   getInfo() async {
     setState(() {
       _likes = widget.likes;
+      _shares = widget.shares;
     });
     await databaseMethods.getLikesByName(widget.mainUserName, widget.docId).then((val) {
       likesSnap = val;
       if (likesSnap.docs.isNotEmpty) {
         setState(() {
-          _icon = CupertinoIcons.suit_heart_fill;
+          _icon = CupertinoIcons.hand_thumbsup_fill;
         });
       }
     });
   }
 
   void _incrementLikes() async {
-    if (_icon == CupertinoIcons.suit_heart) {
+    assetsAudioPlayer.open(Audio("sounds/liked_post.mp3"));
+    assetsAudioPlayer.play();
+    if (_icon == CupertinoIcons.hand_thumbsup) {
       setState(() {
         _likes++;
-        _icon = CupertinoIcons.suit_heart_fill;
+        _icon = CupertinoIcons.hand_thumbsup_fill;
       });
       Like like = Like(
         name: widget.mainUserName,
         pic: widget.mainUserPic,
+        isDoc: widget.isDoctor,
       );
       Map<String, dynamic> likeMap = like.toMap(like);
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.createLike(likeMap, widget.docId);
-    } else if (_icon == CupertinoIcons.suit_heart_fill) {
+    } else if (_icon == CupertinoIcons.hand_thumbsup_fill) {
       setState(() {
         _likes--;
-        _icon = CupertinoIcons.suit_heart;
+        _icon = CupertinoIcons.hand_thumbsup;
       });
       await databaseMethods.updatePostDocField({"like_counter": _likes}, widget.docId);
       await databaseMethods.deleteLike(widget.mainUserName, widget.docId);
     }
+    assetsAudioPlayer.stop();
+    assetsAudioPlayer = new AssetsAudioPlayer();
   }
 
   @override
@@ -1908,7 +2007,7 @@ class _ImagePostCardState extends State<ImagePostCard> {
                   ),
                   SizedBox(width: 2 * SizeConfig.widthMultiplier),
                   Container(
-                    height: 5 * SizeConfig.heightMultiplier,
+                    height: 6 * SizeConfig.heightMultiplier,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1986,9 +2085,9 @@ class _ImagePostCardState extends State<ImagePostCard> {
                 ),
               ],
             ),
-            SizedBox(height: _likes == 0 ? 0 : 1 * SizeConfig.heightMultiplier,),
+            SizedBox(height: _likes > 0 || _shares > 0 ? 1 * SizeConfig.heightMultiplier : 0,),
             Visibility(
-              visible: _likes == 0 ? false : true,
+              visible: _likes > 0 || _shares > 0 ? true : false,
               child: Container(
                 height: 3 * SizeConfig.heightMultiplier,
                 width: double.infinity,
@@ -2001,10 +2100,16 @@ class _ImagePostCardState extends State<ImagePostCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: <Widget>[
-                      Text(_likes == 0 ? "" : "$_likes like(s)", style: TextStyle(
-                        fontFamily: "Brand Bold",
-                        fontSize: 2 * SizeConfig.textMultiplier,
-                      ),),
+                      likeTB(
+                        context: context,
+                        likes: _likes,
+                        docId: widget.docId,
+                      ),
+                      shareTB(
+                        context: context,
+                        shares: _shares,
+                        docId: widget.docId,
+                      ),
                     ],
                   ),
                 ),
@@ -2023,7 +2128,7 @@ class _ImagePostCardState extends State<ImagePostCard> {
                     onTap: _incrementLikes,
                     child: Container(
                       child: Icon(_icon,
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                       ),
                     ),
                   ),
@@ -2031,6 +2136,8 @@ class _ImagePostCardState extends State<ImagePostCard> {
                     onTap: () => Navigator.push(
                       context, MaterialPageRoute(
                       builder: (context) => ShareScreen(
+                        shares: widget.shares,
+                        docId: widget.docId,
                         userPic: widget.mainUserPic,
                         userName: widget.mainUserName,
                         type: widget.type,
@@ -2047,7 +2154,7 @@ class _ImagePostCardState extends State<ImagePostCard> {
                     child: Container(
                       child: Icon(
                             CupertinoIcons.arrowshape_turn_up_right,
-                            color: Colors.red[300],
+                            color: Color(0xFFa81845),
                           ),
                     ),
                   ) : Spacer(),
@@ -2065,7 +2172,7 @@ class _ImagePostCardState extends State<ImagePostCard> {
 class DescriptionText extends StatefulWidget {
   final String description;
   final int maxChar;
-  DescriptionText({Key key, this.description, this.maxChar}) : super(key: key);
+  const DescriptionText({Key key, this.description, this.maxChar}) : super(key: key);
 
   @override
   _DescriptionTextState createState() => _DescriptionTextState();
@@ -2118,7 +2225,7 @@ class _DescriptionTextState extends State<DescriptionText> {
                   children: <Widget>[
                     Text(
                       flag ? "show more" : "show less",
-                      style: TextStyle(color: Colors.red[300], fontFamily: "Brand-Regular"),
+                      style: TextStyle(color: Color(0xFFa81845), fontFamily: "Brand-Regular"),
                     ),
                   ],
                 ),
@@ -2132,3 +2239,211 @@ class _DescriptionTextState extends State<DescriptionText> {
           );
   }
 }
+
+likerTile({name, pic, bool isDoc}) {
+  return Padding(
+    padding: EdgeInsets.symmetric(vertical: 0.3 * SizeConfig.heightMultiplier),
+    child: Container(
+      height: 6 * SizeConfig.heightMultiplier,
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            CachedImage(
+              imageUrl: pic,
+              isRound: true,
+              radius: 40,
+              fit: BoxFit.cover,
+            ),
+            SizedBox(width: 2 * SizeConfig.widthMultiplier,),
+            Text(isDoc == true ? "Dr. $name" : name, style: TextStyle(
+              fontFamily: "Brand Bold",
+              fontSize: 1.8 * SizeConfig.textMultiplier,
+            ),),
+            Spacer(),
+            Icon(CupertinoIcons.hand_thumbsup_fill,
+              color: Colors.grey,
+              size: 4 * SizeConfig.imageSizeMultiplier,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+shareTile({name, pic}) {
+  return Padding(
+    padding: EdgeInsets.symmetric(vertical: 0.3 * SizeConfig.heightMultiplier),
+    child: Container(
+      height: 6 * SizeConfig.heightMultiplier,
+      width: double.infinity,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            CachedImage(
+              imageUrl: pic,
+              isRound: true,
+              radius: 40,
+              fit: BoxFit.cover,
+            ),
+            SizedBox(width: 2 * SizeConfig.widthMultiplier,),
+            Text("Dr. $name", style: TextStyle(
+              fontFamily: "Brand Bold",
+              fontSize: 1.8 * SizeConfig.textMultiplier,
+            ),),
+            Spacer(),
+            Icon(CupertinoIcons.arrowshape_turn_up_right_fill,
+              color: Colors.grey,
+              size: 4 * SizeConfig.imageSizeMultiplier,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+likeTB({context, likes, docId}) {
+  QuerySnapshot likerSnap;
+  return TextButton(
+    onPressed: () async {
+      showDialog(
+        context: context,
+        builder: (context) => ProgressDialog(message: "Please wait...",),
+      );
+      await databaseMethods.getLikes(docId).then((val) {
+          likerSnap = val;
+      });
+      Navigator.pop(context);
+      showDialog(
+        context: context,
+        builder: (context) => Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 30,
+            vertical: 150,
+          ),
+          child: Builder(
+            builder: (context) => Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Text("People who have liked", style: TextStyle(
+                      fontFamily: "Brand Bold",
+                      fontSize: 2.3 * SizeConfig.textMultiplier,
+                    ),),
+                    SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+                    DividerWidget(),
+                    SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+                    Container(
+                      height: 48 * SizeConfig.heightMultiplier,
+                      child: ListView.builder(
+                        itemCount: likerSnap.size,
+                        itemBuilder: (context, index) => likerTile(
+                          name: likerSnap.docs[index].get("name"),
+                          pic: likerSnap.docs[index].get("pic"),
+                          isDoc: likerSnap.docs[index].get("isDoc"),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+    style: ButtonStyle(
+      padding: MaterialStateProperty.all(EdgeInsets.zero),
+      foregroundColor: MaterialStateProperty.all(Colors.black),
+    ),
+    child: Text(
+      likes == 0 ? "" : "$likes like(s)",
+      style: TextStyle(
+        fontFamily: "Brand Bold",
+        fontSize: 2 * SizeConfig.textMultiplier,
+      ),
+    ),
+  );
+}
+
+shareTB({context, shares, docId}) {
+  QuerySnapshot shareSnap;
+  return TextButton(
+    onPressed: () async {
+      showDialog(
+        context: context,
+        builder: (context) => ProgressDialog(message: "Please wait...",),
+      );
+      await databaseMethods.getShares(docId).then((val) {
+        shareSnap = val;
+      });
+      Navigator.pop(context);
+      showDialog(
+        context: context,
+        builder: (context) => Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: 30,
+            vertical: 150,
+          ),
+          child: Builder(
+            builder: (context) => Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Text("People who have shared", style: TextStyle(
+                      fontFamily: "Brand Bold",
+                      fontSize: 2.3 * SizeConfig.textMultiplier,
+                    ),),
+                    SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+                    DividerWidget(),
+                    SizedBox(height: 2 * SizeConfig.heightMultiplier,),
+                    Container(
+                      height: 48 * SizeConfig.heightMultiplier,
+                      child: ListView.builder(
+                        itemCount: shareSnap.size,
+                        itemBuilder: (context, index) => shareTile(
+                          name: shareSnap.docs[index].get("name"),
+                          pic: shareSnap.docs[index].get("pic"),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
+    style: ButtonStyle(
+      padding: MaterialStateProperty.all(EdgeInsets.zero),
+      foregroundColor: MaterialStateProperty.all(Colors.black),
+    ),
+    child: Text(
+      shares == 0 ? "" : "$shares shared",
+      style: TextStyle(
+        fontFamily: "Brand Bold",
+        fontSize: 2 * SizeConfig.textMultiplier,
+      ),
+    ),
+  );
+}
+

@@ -7,16 +7,15 @@ import 'package:creativedata_app/AllScreens/addReminderScreen.dart';
 import 'package:creativedata_app/AllScreens/specialityScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/loginScreen.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/event.dart';
 import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Models/reminder.dart';
 import 'package:creativedata_app/Provider/eventProvider.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
 import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +32,8 @@ class BookAppointmentScreen extends StatefulWidget {
   final String doctorsName;
   final String hospital;
   final String type;
-  BookAppointmentScreen({Key key, this.time, this.doctorsName, this.hospital, this.type}) : super(key: key);
+  final List days;
+  const BookAppointmentScreen({Key key, this.time, this.doctorsName, this.hospital, this.type, this.days}) : super(key: key);
 
   @override
   _BookAppointmentScreenState createState() => _BookAppointmentScreenState();
@@ -41,8 +41,6 @@ class BookAppointmentScreen extends StatefulWidget {
 
 class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
-  DatabaseMethods databaseMethods = DatabaseMethods();
-  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   int selectedIndex = 0;
   DateTime startTime;
   int reminderHours;
@@ -125,7 +123,33 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       fontWeight: FontWeight.bold,
                       fontSize: 2.5 * SizeConfig.textMultiplier,
                     ),),
-                  Spacer(),
+                  SizedBox(width: 2 * SizeConfig.widthMultiplier,),
+                  Container(
+                    height: 4 * SizeConfig.heightMultiplier,
+                    width: (widget.days.length * 15) * SizeConfig.widthMultiplier,
+                    child: ListView.separated(
+                      separatorBuilder: (context, index) => Center(
+                        child: Text(", ", style: TextStyle(
+                          fontFamily: "Brand-Regular",
+                          fontSize: 1.8 * SizeConfig.textMultiplier,
+                        ),),
+                      ),
+                      shrinkWrap: true,
+                      scrollDirection: Axis.horizontal,
+                      physics: NeverScrollableScrollPhysics(),
+                      itemCount: widget.days.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          child: Center(
+                            child: Text(widget.days[index], style: TextStyle(
+                              fontFamily: "Brand-Regular",
+                              fontSize: 1.8 * SizeConfig.textMultiplier,
+                            ),),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -349,11 +373,15 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                 child: Padding(
                   padding: EdgeInsets.all(4),
                   child: RaisedButton(
-                    color: Colors.red[300],
+                    clipBehavior: Clip.hardEdge,
                     textColor: Colors.white,
+                    padding: EdgeInsets.zero,
                     child: Container(
                       width: 80 * SizeConfig.widthMultiplier,
                       height: 5 * SizeConfig.heightMultiplier,
+                      decoration: BoxDecoration(
+                        gradient: kPrimaryGradientColor,
+                      ),
                       child: Center(
                         child: Text("Book Appointment", style: TextStyle(
                             fontSize: 20.0,
@@ -403,6 +431,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     CustomNotification notification = CustomNotification.newAppointment(
       createdAt: FieldValue.serverTimestamp(),
       type: "appointment reminder",
+      counter: "1",
       appType: widget.type,
       docName: widget.doctorsName,
       name: Constants.myName,
@@ -430,7 +459,16 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       howLong: null,
     );
 
-    Map<String, dynamic> reminderMap = reminder.toAppointMap(reminder);
+    Activity activity = Activity.appReminderActivity(
+      appTime: Timestamp.fromDate(startTime),
+      createdAt: FieldValue.serverTimestamp(),
+      reminderType: "appointment",
+      type: "reminder",
+      user: widget.doctorsName,
+    );
+
+    var activityMap = activity.toAppReminderActivity(activity);
+    var reminderMap = reminder.toAppointMap(reminder);
 
     // Duration exDuration = DateTime.parse("20210917T171200").difference(DateTime.now());
     // scheduleAlarm(dateTimeNow: DateTime.parse("20210917T171200").subtract(Duration(minutes: 2)), dateTime: startTime, duration: "2 min",
@@ -488,9 +526,10 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
               Map<String, dynamic> eventMap = event.toMap(event);
               final provider = Provider.of<EventProvider>(context, listen: false);
               provider.addEvent(event);
-              databaseMethods.createUserReminder(reminderMap, firebaseAuth.currentUser.uid);
+              databaseMethods.createUserReminder(reminderMap, currentUser.uid);
               databaseMethods.createAppointment(chatRoomId, eventMap);
               databaseMethods.createNotification(notificationMap);
+              databaseMethods.createUserActivity(activityMap, currentUser.uid);
               Navigator.of(context).pop();
               displayToastMessage("Operation Successful! Created Appointment Reminder too", context);
             },
@@ -525,9 +564,9 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       ),
       child: Material(
         borderRadius: BorderRadius.circular(8),
-        color: selectedIndex == index ? Colors.red[300] : Colors.white,
+        color: selectedIndex == index ? Color(0xFFa81845) : Colors.white,
         child: InkWell(
-          splashColor: Colors.red[200],
+          splashColor: Color(0xFFa81845).withOpacity(0.6),
           highlightColor: Colors.grey.withOpacity(0.1),
           radius: 800,
           borderRadius: BorderRadius.circular(8),
@@ -562,7 +601,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   Widget buildDropdownFiled({@required String text, @required Function() onClicked}) {
     return ListTile(
       title: Text(text, style: TextStyle(fontFamily: "Brand-Regular"),),
-      trailing: Icon(Icons.arrow_drop_down, color: Colors.red[300],),
+      trailing: Icon(Icons.arrow_drop_down, color: Color(0xFFa81845),),
       onTap: onClicked,
     );
   }

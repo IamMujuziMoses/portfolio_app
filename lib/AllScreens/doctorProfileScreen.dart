@@ -1,12 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/Chat/cachedImage.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatScreen.dart';
 import 'package:creativedata_app/AllScreens/Chat/chatSearch.dart';
-import 'package:creativedata_app/AllScreens/Chat/conversationScreen.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
-import 'package:creativedata_app/AllScreens/loginScreen.dart';
 import 'package:creativedata_app/AllScreens/reviewsScreen.dart';
 import 'package:creativedata_app/Doctor/doctorAccount.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Utilities/permissions.dart';
 import 'package:creativedata_app/Widgets/photoViewPage.dart';
@@ -16,7 +16,6 @@ import 'package:creativedata_app/main.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../sizeConfig.dart';
 /*
@@ -42,7 +41,7 @@ class DoctorProfileScreen extends StatefulWidget {
   final List days;
   final Map fee;
 
-  DoctorProfileScreen({Key key,
+  const DoctorProfileScreen({Key key,
     this.imageUrl, this.doctorsName, this.speciality, this.hospital, this.reviews,
     this.uid, this.doctorsEmail, this.about, this.doctorsAge, this.hours,
     this.patients, this.experience, this.days, this.fee, this.phone,}) : super(key: key);
@@ -53,9 +52,9 @@ class DoctorProfileScreen extends StatefulWidget {
 
 class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
 
-  DatabaseMethods databaseMethods = DatabaseMethods();
   String myName;
   String myProfilePic;
+  QuerySnapshot snap;
 
   void getUserInfo() async {
     myName = await databaseMethods.getName();
@@ -102,7 +101,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
         child: Column(
           children: <Widget>[
             Container(
-              width: 95 * SizeConfig.widthMultiplier,
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -123,14 +122,14 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                       icon: FontAwesomeIcons.userMd,
                       title: widget.speciality,
                       width: 29 * SizeConfig.widthMultiplier,
-                      textWidth: 20 * SizeConfig.widthMultiplier,
+                      textWidth: 18 * SizeConfig.widthMultiplier,
                     ),
                     SizedBox(width: 1 * SizeConfig.widthMultiplier,),
                     specTile(
                       icon: FontAwesomeIcons.hospital,
                       title: widget.hospital,
                       width: 32 * SizeConfig.widthMultiplier,
-                      textWidth: 23 * SizeConfig.widthMultiplier,
+                      textWidth: 22 * SizeConfig.widthMultiplier,
                     ),
                     SizedBox(width: 2.5 * SizeConfig.widthMultiplier,),
                     Container(
@@ -140,7 +139,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           circleIconButton(
-                            color: Colors.red[300],
+                            color: Color(0xFFa81845),
                             iconColor: Colors.white,
                             icon: CupertinoIcons.video_camera,
                             onTap: () async {
@@ -148,26 +147,38 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                                 context: context,
                                 builder: (context) => ProgressDialog(message: "Please wait...",),
                               );
+                              Activity activity = Activity.callActivity(
+                                createdAt: FieldValue.serverTimestamp(),
+                                type: "call",
+                                callType: "video",
+                                receiver: widget.doctorsName,
+                              );
                               await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                              goToVideoChat(databaseMethods, widget.doctorsName, context, false) : {};
+                              goToVideoChat(databaseMethods, widget.doctorsName, context, false, activity) : {};
                             },
                           ),
                           circleIconButton(
                             color: Colors.white,
-                            iconColor: Colors.red[300],
+                            iconColor: Color(0xFFa81845),
                             icon: Icons.phone_outlined,
                             onTap: () async {
                               showDialog(
                                 context: context,
                                 builder: (context) => ProgressDialog(message: "Please wait...",),
                               );
+                              Activity activity = Activity.callActivity(
+                                createdAt: FieldValue.serverTimestamp(),
+                                type: "call",
+                                callType: "voice",
+                                receiver: widget.doctorsName,
+                              );
                               await Permissions.cameraAndMicrophonePermissionsGranted() ?
-                              goToVoiceCall(databaseMethods, widget.doctorsName, context, false) : {};
+                              goToVoiceCall(databaseMethods, widget.doctorsName, context, false, activity) : {};
                             },
                           ),
                           circleIconButton(
                             color: Colors.white,
-                            iconColor: Colors.red[300],
+                            iconColor: Color(0xFFa81845),
                             icon: CupertinoIcons.ellipses_bubble,
                             onTap: () => goToChat(widget.doctorsName, widget.imageUrl, false, widget.uid,
                                 myProfilePic, context,
@@ -194,9 +205,31 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                   _getDetails(widget.reviews, "Ratings"),
                   Spacer(),
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      showDialog(
+                        context: context,
+                        builder: (context) => ProgressDialog(message: "Please wait..."),
+                      );
+                      Stream reviewStream;
+                      await databaseMethods.getDoctorsReviews(widget.uid).then((val) {
+                        setState(() {
+                          reviewStream = val;
+                        });
+                      });
+                      snap = await reviewStream.first;
+                      int size = snap.size;
+                      Navigator.pop(context);
                       Navigator.push(
-                          context, MaterialPageRoute(builder: (context) => ReviewsScreen()));
+                          context, MaterialPageRoute(builder: (context) => ReviewsScreen(
+                        isDoctor: false,
+                        reviewStream: reviewStream,
+                        doctorsName: widget.doctorsName,
+                        doctorsUID: widget.uid,
+                        userPic: myProfilePic,
+                        doctorsRating: widget.reviews,
+                        size: size,
+                      ),
+                      ),);
                     },
                     child: getReviews(widget.reviews, "See All Reviews"),
                   ),
@@ -215,18 +248,13 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                       color: Colors.grey[700],
                       fontFamily: "Brand Bold",
                       fontWeight: FontWeight.bold,
-                      fontSize: 3 * SizeConfig.textMultiplier,
+                      fontSize: 2.8 * SizeConfig.textMultiplier,
                     ),),
                 ],
               ),
             ),
             SizedBox(height: 1 * SizeConfig.heightMultiplier,),
-            Padding(
-              padding: EdgeInsets.only(
-                left: 2 * SizeConfig.widthMultiplier,
-              ),
-              child: getAbout(widget.about),
-            ),
+            getAbout(widget.about),
             SizedBox(height: 3 * SizeConfig.heightMultiplier,),
             Padding(
               padding: EdgeInsets.only(
@@ -239,7 +267,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                       color: Colors.grey[700],
                       fontFamily: "Brand Bold",
                       fontWeight: FontWeight.bold,
-                      fontSize: 3 * SizeConfig.textMultiplier,
+                      fontSize: 2.8 * SizeConfig.textMultiplier,
                     ),),
                 ],
               ),
@@ -268,7 +296,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                     color: Colors.grey[700],
                     fontWeight: FontWeight.bold,
                     fontFamily: "Brand Bold",
-                    fontSize: 3 * SizeConfig.textMultiplier,
+                    fontSize: 2.8 * SizeConfig.textMultiplier,
                   ),
                   ),
                 ],
@@ -301,16 +329,20 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
             SizedBox(height: 6 * SizeConfig.heightMultiplier,),
             Padding(
               padding: EdgeInsets.only(
-                left: 4 * SizeConfig.widthMultiplier,
-                right: 4 * SizeConfig.widthMultiplier,
+                left: 10 * SizeConfig.widthMultiplier,
+                right: 10 * SizeConfig.widthMultiplier,
                 bottom: 2 * SizeConfig.heightMultiplier,
               ),
               child: RaisedButton(
-                color: Colors.red[300],
+                clipBehavior: Clip.hardEdge,
+                padding: EdgeInsets.zero,
                 textColor: Colors.white,
                 child: Container(
-                  height: 4 * SizeConfig.heightMultiplier,
-                  width: 60 * SizeConfig.widthMultiplier,
+                  height: 5 * SizeConfig.heightMultiplier,
+                  width: 70 * SizeConfig.widthMultiplier,
+                  decoration: BoxDecoration(
+                    gradient: kPrimaryGradientColor,
+                  ),
                   child: Center(
                     child: Text("Book an Appointment",
                       style: TextStyle(
@@ -326,6 +358,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                 onPressed: () => Navigator.push(
                     context, MaterialPageRoute(
                     builder: (context) => BookAppointmentScreen(
+                      days: widget.days,
                       time: time,
                       doctorsName: widget.doctorsName,
                       hospital: widget.hospital,
@@ -351,7 +384,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
         SizedBox(height: 1 * SizeConfig.heightMultiplier,),
         Container(
           height: 5 * SizeConfig.heightMultiplier,
-          width: 16 * SizeConfig.widthMultiplier,
+          width: 18 * SizeConfig.widthMultiplier,
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
@@ -370,7 +403,7 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
               child: Text(
                 amount,
                 style: TextStyle(
-                  color: Colors.red[300],
+                  color: Color(0xFFa81845),
                   fontFamily: "Brand Bold",
                   fontSize: 1.5 * SizeConfig.textMultiplier,
                   fontWeight: FontWeight.bold,
@@ -391,6 +424,7 @@ Widget circleIconButton({Function onTap, Color color, Color iconColor, IconData 
       height: 4 * SizeConfig.heightMultiplier,
       width: 8 * SizeConfig.widthMultiplier,
       decoration: BoxDecoration(
+        gradient: color == Color(0xFFa81845) ? kPrimaryGradientColor : null,
         color: color,
         borderRadius: BorderRadius.circular(50),
         boxShadow: [
@@ -468,7 +502,7 @@ Widget custom({@required Widget body, String doctorsName, imageUrl, BuildContext
             child: Padding(
               padding: EdgeInsets.all(8.0),
               child: Text(isDoctor == true ? "Dr. " + doctorsName : doctorsName, style: TextStyle(
-                color: Colors.red[300],
+                color: Color(0xFFa81845),
                 fontFamily: "Brand Bold",
                 fontSize: 2.5 * SizeConfig.textMultiplier,
               ),),

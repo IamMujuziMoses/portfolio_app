@@ -23,10 +23,10 @@ class VideoViewPage extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.grey[100],
         title: isSender
-            ? Text("You", style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]))
+            ? Text("You", style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)))
             : Text(chatRoomId != null
             ? sender
-            : "Dr. "  + sender, style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]),),
+            : "Dr. "  + sender, style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)),),
       ),
       body: Container(
         decoration: BoxDecoration(

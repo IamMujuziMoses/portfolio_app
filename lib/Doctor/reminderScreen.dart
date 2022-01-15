@@ -3,6 +3,7 @@ import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/addReminderScreen.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:creativedata_app/sizeConfig.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ReminderScreen extends StatelessWidget {
   final Stream reminderStream;
-  ReminderScreen({Key key, this.reminderStream}) : super(key: key);
+  const ReminderScreen({Key key, this.reminderStream}) : super(key: key);
 
   Widget reminderList() {
     return StreamBuilder(
@@ -86,7 +87,7 @@ class ReminderScreen extends StatelessWidget {
           titleSpacing: 0,
           elevation: 0,
           backgroundColor: Colors.grey[100],
-          title: Text("Reminders", style: TextStyle(fontFamily: "Brand Bold", color: Colors.red[300]),),
+          title: Text("Reminders", style: TextStyle(fontFamily: "Brand Bold", color: Color(0xFFa81845)),),
         ),
         body: Padding(
           padding: EdgeInsets.symmetric(horizontal: 15),
@@ -128,12 +129,13 @@ class ReminderScreen extends StatelessWidget {
                   height: 8 * SizeConfig.heightMultiplier,
                   width: 16 * SizeConfig.widthMultiplier,
                   decoration: BoxDecoration(
-                    color: status == "waiting" ? Colors.red[100] : Colors.grey[400],
+                    gradient: status == "waiting" ? kPrimaryGradientColor : null,
+                    color: status == "waiting" ? null : Colors.grey[400],
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Center(
                     child: Icon(CupertinoIcons.calendar_badge_plus,
-                      color: status == "waiting" ? Colors.red[300] : Colors.black,
+                      color: status == "waiting" ? Colors.white : Colors.black,
                     ),
                   ),
                 ),
@@ -209,7 +211,7 @@ class ReminderScreen extends StatelessWidget {
                     );
                   } : () => displaySnackBar(message: "Reminder already ended and cancelled", context: context, label: ""),
                   color: status == "waiting" ? Colors.white : Colors.grey[400],
-                  splashColor: Colors.red[300],
+                  splashColor: Color(0xFFa81845).withOpacity(0.6),
                   highlightColor: Colors.grey.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   child: Center(
@@ -251,7 +253,7 @@ class ReminderScreen extends StatelessWidget {
                     );
                   },
                   color: status == "waiting" ? Colors.white : Colors.grey[400],
-                  splashColor: Colors.red[300],
+                  splashColor: Color(0xFFa81845).withOpacity(0.6),
                   highlightColor: Colors.grey.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   child: Center(
@@ -302,12 +304,13 @@ class ReminderScreen extends StatelessWidget {
                   height: 8 * SizeConfig.heightMultiplier,
                   width: 16 * SizeConfig.widthMultiplier,
                   decoration: BoxDecoration(
-                    color: status == "waiting" ? Colors.red[100] : Colors.grey[400],
+                    gradient: status == "waiting" ? kPrimaryGradientColor : null,
+                    color: status == "waiting" ? null : Colors.grey[400],
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Center(
                     child: Icon(FontAwesomeIcons.calendarAlt,
-                      color: status == "waiting" ? Colors.red[300] : Colors.black,
+                      color: status == "waiting" ? Colors.white : Colors.black,
                     ),
                   ),
                 ),
@@ -382,7 +385,7 @@ class ReminderScreen extends StatelessWidget {
                     );
                   } : () => displaySnackBar(message: "Reminder already ended and cancelled", context: context, label: ""),
                   color: status == "waiting" ? Colors.white : Colors.grey[400],
-                  splashColor: Colors.red[300],
+                  splashColor: Color(0xFFa81845).withOpacity(0.6),
                   highlightColor: Colors.grey.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   child: Center(
@@ -424,7 +427,7 @@ class ReminderScreen extends StatelessWidget {
                     );
                   },
                   color: status == "waiting" ? Colors.white : Colors.grey[400],
-                  splashColor: Colors.red[300],
+                  splashColor: Color(0xFFa81845).withOpacity(0.6),
                   highlightColor: Colors.grey.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   child: Center(

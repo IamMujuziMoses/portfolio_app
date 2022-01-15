@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:provider/provider.dart';
 /*
 * Created by Mujuzi Moses
@@ -36,8 +37,10 @@ void main() async{
   await notificationsPlugin.initialize(initSettings,
     onSelectNotification: (payload) async {
     if (payload != null) {
-      debugPrint("notification payload $payload");
+      debugPrint("Notification Payload ::: $payload");
     }
+
+
     },
   );
   runApp(MyApp());
@@ -53,6 +56,7 @@ AssetsAudioPlayer assetsAudioPlayer = AssetsAudioPlayer();
 DatabaseMethods databaseMethods = DatabaseMethods();
 FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 User currentUser = firebaseAuth.currentUser;
+
 class _MyAppState extends State<MyApp> {
 
   bool userLoggedIn = false;
@@ -102,16 +106,20 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider<ImageUploadProvider>(create: (context) => ImageUploadProvider(),),
         ChangeNotifierProvider<EventProvider>(create: (context) => EventProvider(),),
       ],
-      child: new MaterialApp(
-        title: "Siro App",
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.grey,
-          primaryIconTheme: IconThemeData(color: Colors.red[300]),
-          visualDensity: VisualDensity.adaptivePlatformDensity,
+      child: OverlaySupport.global(
+        child: new MaterialApp(
+          title: "Siro App",
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+
+            canvasColor: Colors.grey[100],
+            primarySwatch: Colors.grey,
+            primaryIconTheme: IconThemeData(color: Color(0xFFa81845)),
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+          ),
+          home: firebaseAuth.currentUser  == null ? LoginScreen() : CustomBottomNavBar(isDoctor: isDoctor,),
+          routes: routes,
         ),
-        home: firebaseAuth.currentUser  == null ? LoginScreen() : CustomBottomNavBar(isDoctor: isDoctor,),
-        routes: routes,
       ),
     );
   }

@@ -1,13 +1,18 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/registerScreen.dart';
+import 'package:creativedata_app/Enum/userState.dart';
 import 'package:creativedata_app/Services/auth.dart';
-import 'package:creativedata_app/Services/database.dart';
 import 'package:creativedata_app/Services/helperFunctions.dart';
 import 'package:creativedata_app/Widgets/customBottomNavBar.dart';
+import 'package:creativedata_app/constants.dart';
+import 'package:creativedata_app/main.dart';
 import 'package:creativedata_app/sizeConfig.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:overlay_support/overlay_support.dart';
 /*
 * Created by Mujuzi Moses
 */
@@ -16,9 +21,9 @@ class LoginScreen extends StatelessWidget {
   static const String screenId = "loginScreen";
   
   AuthMethods authMethods = new AuthMethods();
-  DatabaseMethods databaseMethods = new DatabaseMethods();
   TextEditingController emailTEC = TextEditingController();
   TextEditingController passwordTEC = TextEditingController();
+  TextEditingController resetPasswordEmailTEC = TextEditingController();
   QuerySnapshot snapshot;
   String regId;
   String hospital;
@@ -90,25 +95,35 @@ class LoginScreen extends StatelessWidget {
                       ),
                       style: TextStyle(fontSize: 2 * SizeConfig.textMultiplier),
                     ),
-                    SizedBox(
-                      height: 10.0,
-                    ),
+                    SizedBox(height: 5 * SizeConfig.heightMultiplier,),
                     RaisedButton(
-                      color: Colors.red[300],
+                      clipBehavior: Clip.hardEdge,
+                      padding: EdgeInsets.zero,
                       textColor: Colors.white,
+                      elevation: 8,
                       child: Container(
                         height: 6.5 * SizeConfig.heightMultiplier,
+                        width: 100 * SizeConfig.widthMultiplier,
+                        decoration: BoxDecoration(
+                          gradient: kPrimaryGradientColor,
+                        ),
                         child: Center(
-                          child: Text(
-                            "Login",
-                            style: TextStyle(fontSize: 2.5 * SizeConfig.textMultiplier, fontFamily: "Brand Bold"),
-                          ),
+                          child: Text("Login", style: TextStyle(
+                            fontSize: 2.5 * SizeConfig.textMultiplier,
+                            fontFamily: "Brand Bold",
+                            color: Colors.white,
+                          ),),
                         ),
                       ),
                       shape: new RoundedRectangleBorder(
                         borderRadius: new BorderRadius.circular(24.0),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
+                        bool hasInternet = await InternetConnectionChecker().hasConnection;
+                        if (hasInternet == true) {} else {
+                          displayToastMessage("No internet Connection", context);
+                          return;
+                        }
                         if (!emailTEC.text.contains("@")) {
                           displayToastMessage("Email address is Void", context);
                         } else if (passwordTEC.text.isEmpty) {
@@ -125,6 +140,7 @@ class LoginScreen extends StatelessWidget {
                                 switch (regId) {
                                   case "Doctor":
                                     HelperFunctions.saveUserLoggedInSharedPref(true);
+                                    databaseMethods.setUserState(uid: snapshot.docs[0].get("uid"), userState: UserState.Online, isDoctor: true);
                                     Navigator.pushReplacement(context, MaterialPageRoute(
                                         builder: (context) => CustomBottomNavBar(isDoctor: true,)
                                     ));
@@ -132,6 +148,7 @@ class LoginScreen extends StatelessWidget {
                                     break;
                                   case "User":
                                     HelperFunctions.saveUserLoggedInSharedPref(true);
+                                    databaseMethods.setUserState(uid: snapshot.docs[0].get("uid"), userState: UserState.Online, isDoctor: false);
                                     Navigator.pushReplacement(context, MaterialPageRoute(
                                         builder: (context) => CustomBottomNavBar(isDoctor: false,)
                                     ));
@@ -141,6 +158,8 @@ class LoginScreen extends StatelessWidget {
                               } else {
                                 displayToastMessage("Login Failed", context);
                               }
+                            }).catchError((e) {
+                              displayToastMessage("Wrong email or password", context);
                             });
                           });
                         }
@@ -149,22 +168,81 @@ class LoginScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(height: 22 * SizeConfig.heightMultiplier,),
+              SizedBox(height: 20 * SizeConfig.heightMultiplier,),
               TextButton(
-                onPressed: () {
-                },
-                child: Text(
-                  "Forgot Password?!",
-
+                onPressed: () => showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => AlertDialog(
+                  title: Text("Reset Password", style: TextStyle(
+                    fontFamily: "Brand Bold",
+                    fontSize: 2.5 * SizeConfig.textMultiplier,
+                  ),),
+                  content: Container(
+                    height: 10 * SizeConfig.heightMultiplier,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        TextField(
+                          controller: resetPasswordEmailTEC,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: "Enter your email address...",
+                            labelStyle: TextStyle(
+                              fontSize: 2 * SizeConfig.textMultiplier,
+                            ),
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 1.5 * SizeConfig.textMultiplier,
+                            ),
+                          ),
+                          style: TextStyle(fontSize: 2 * SizeConfig.textMultiplier),
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: <Widget>[
+                    FlatButton(
+                      child: Text("Cancel"),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    FlatButton(
+                      child: Text("Reset"),
+                      onPressed: () async {
+                        if (resetPasswordEmailTEC.text.isEmpty) {
+                          displayToastMessage("Input Email", context);
+                        } else if (!resetPasswordEmailTEC.text.contains("@")){
+                          displayToastMessage("Invalid Email", context);
+                        } else {
+                          await FirebaseAuth.instance.sendPasswordResetEmail(email: resetPasswordEmailTEC.text.trim());
+                          Navigator.of(context).pop();
+                          showSimpleNotification(
+                            Text("A password reset link has been sent to ${resetPasswordEmailTEC.text.trim()}", style: TextStyle(
+                              fontFamily: "Brand Bold",
+                              color: Colors.grey[100],
+                            ),),
+                            background: Colors.black54,
+                            duration: Duration(seconds: 5),
+                            elevation: 0,
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 ),
+              ),
+                child: Text("Forgot Password?!", style: TextStyle(
+                  color: Color(0xFFa81845),
+                ),),
               ),
               TextButton(
                 onPressed: () {
                  Navigator.pushNamedAndRemoveUntil(context, RegisterScreen.screenId, (route) => false);
                 },
-                child: Text(
-                    "Don't have an Account? Register Here", style: TextStyle(decoration: TextDecoration.underline),
-                  ),
+                child: Text("Don't have an Account? Register Here", style: TextStyle(
+                  decoration: TextDecoration.underline,
+                  color: Color(0xFFa81845)
+                ),),
               ),
 
             ],

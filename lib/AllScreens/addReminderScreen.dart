@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:creativedata_app/AllScreens/VideoChat/pickUpLayout.dart';
 import 'package:creativedata_app/AllScreens/bookAppointmentScreen.dart';
+import 'package:creativedata_app/Models/activity.dart';
 import 'package:creativedata_app/Models/notification.dart';
 import 'package:creativedata_app/Models/reminder.dart';
 import 'package:creativedata_app/Utilities/utils.dart';
@@ -17,7 +18,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 */
 
 class AddReminderScreen extends StatefulWidget {
-  AddReminderScreen({Key key}) : super(key: key);
+  const AddReminderScreen({Key key}) : super(key: key);
 
   @override
   _AddReminderScreenState createState() => _AddReminderScreenState();
@@ -70,7 +71,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           backgroundColor: Colors.grey[100],
           title: Text("Add Reminder", style: TextStyle(
             fontFamily: "Brand Bold",
-            color: Colors.red[300],
+            color: Color(0xFFa81845),
           ),),
         ),
         body: Padding(
@@ -566,7 +567,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
                       child: RaisedButton(
                         onPressed: () => createReminder(),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        color: Colors.red[300],
+                        color: Color(0xFFa81845),
                         splashColor: Colors.white,
                         highlightColor: Colors.grey.withOpacity(0.1),
                         padding: EdgeInsets.all(0),
@@ -606,9 +607,9 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
       ),
       child: Material(
         borderRadius: BorderRadius.circular(8),
-        color: selectedIndex == index ? Colors.red[300] : Colors.white,
+        color: selectedIndex == index ? Color(0xFFa81845) : Colors.white,
         child: InkWell(
-          splashColor: Colors.red[200],
+          splashColor: Color(0xFFa81845).withOpacity(0.6),
           highlightColor: Colors.grey.withOpacity(0.1),
           radius: 800,
           borderRadius: BorderRadius.circular(8),
@@ -804,7 +805,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
               dropdownColor: Colors.white,
               icon: Icon(
                 Icons.keyboard_arrow_down_rounded,
-                color: Colors.red[300],
+                color: Color(0xFFa81845),
                 size: 5 * SizeConfig.imageSizeMultiplier,
               ),
               iconSize: 8 * SizeConfig.imageSizeMultiplier,
@@ -1058,6 +1059,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         CustomNotification notification = CustomNotification.newMedReminder(
           createdAt: FieldValue.serverTimestamp(),
           type: "medicine reminder",
+          counter: "1",
           cycle: timeSelectedValue,
           dosage: dosageTEC.text.trim(),
           drugName: titleTEC.text.trim(),
@@ -1085,6 +1087,16 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           createdAt: FieldValue.serverTimestamp(),
         );
 
+        Activity activity = Activity.medReminderActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "reminder",
+          reminderType: "medicine",
+          cycle: timeSelectedValue,
+          howLong: howLongSelectedValue,
+          drugName: titleTEC.text.trim(),
+
+        );
+        var activityMap = activity.toMedReminderActivity(activity);
         if (howLongSelectedValue == "1 day") {
           if (DateTime.now().isAfter(alarmDateTime)) {
             scheduleAlarm(dateTime: alarmDateTime.add(Duration(days: 1)), id: id, medName: titleTEC.text.trim());
@@ -1129,8 +1141,9 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         }
 
         Map<String, dynamic> reminderMap = reminder.toOnceMap(reminder);
-        await databaseMethods.createUserReminder(reminderMap, firebaseAuth.currentUser.uid);
+        await databaseMethods.createUserReminder(reminderMap, currentUser.uid);
         await databaseMethods.createNotification(notificationMap);
+        await databaseMethods.createUserActivity(activityMap, currentUser.uid);
 
         Navigator.pop(context);
         displaySnackBar(message: "Created Reminder", context: context, label: "OK");
@@ -1156,6 +1169,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         CustomNotification notification = CustomNotification.newMedReminder(
           createdAt: FieldValue.serverTimestamp(),
           type: "medicine reminder",
+          counter: "1",
           cycle: timeSelectedValue,
           dosage: dosageTEC.text.trim(),
           drugName: titleTEC.text.trim(),
@@ -1181,6 +1195,17 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
           time: timesToTake,
           createdAt: FieldValue.serverTimestamp(),
         );
+
+        Activity activity = Activity.medReminderActivity(
+          createdAt: FieldValue.serverTimestamp(),
+          type: "reminder",
+          reminderType: "medicine",
+          cycle: timeSelectedValue,
+          howLong: howLongSelectedValue,
+          drugName: titleTEC.text.trim(),
+
+        );
+        var activityMap = activity.toMedReminderActivity(activity);
         for (int i = 0; i < timesToTake.length; i++) {
           int idx = alarmTimesToTake[i].indexOf(",");
           int hour = int.parse(alarmTimesToTake[i].substring(0, idx));
@@ -1294,6 +1319,7 @@ class _AddReminderScreenState extends State<AddReminderScreen> {
         Map<String, dynamic> reminderMap = reminder.toMap(reminder);
         await databaseMethods.createUserReminder(reminderMap, firebaseAuth.currentUser.uid);
         await databaseMethods.createNotification(notificationMap);
+        await databaseMethods.createUserActivity(activityMap, currentUser.uid);
 
         Navigator.pop(context);
         displaySnackBar(message: "Created Reminder", context: context, label: "OK");

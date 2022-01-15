@@ -19,7 +19,7 @@ class SignsAndSymptoms extends StatelessWidget {
         backgroundColor: Colors.grey[100],
         title: Text("Signs & Symptoms", style: TextStyle(
         fontFamily: "Brand Bold",
-        color: Colors.red[300],),
+        color: Color(0xFFa81845),),
       ),),
       body: Container(
         color: Colors.grey[100],
@@ -95,7 +95,7 @@ class SignsAndSymptoms extends StatelessWidget {
                                 "health facility and seek medical care and attention immediately.",
                               textAlign: TextAlign.justify,
                               style: TextStyle(
-                                fontSize: 2.5 * SizeConfig.textMultiplier, fontFamily: "Brand-Regular",
+                                fontSize: 2.2 * SizeConfig.textMultiplier, fontFamily: "Brand-Regular",
                               ),),
                             SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                             Text("2. This is not an Exhaustive list. These are the most common symptoms of "
@@ -103,7 +103,7 @@ class SignsAndSymptoms extends StatelessWidget {
                                 "have any questions, call for help immediately.",
                               textAlign: TextAlign.justify,
                               style: TextStyle(
-                                fontSize: 2.5 * SizeConfig.textMultiplier, fontFamily: "Brand-Regular",
+                                fontSize: 2.2 * SizeConfig.textMultiplier, fontFamily: "Brand-Regular",
                               ),),
                             SizedBox(height: 2 * SizeConfig.heightMultiplier,),
                           ],
@@ -115,7 +115,7 @@ class SignsAndSymptoms extends StatelessWidget {
                 ),
                 Text("Most Common", style: TextStyle(
                   fontFamily: "Brand Bold",
-                  fontSize: 3 * SizeConfig.textMultiplier,
+                  fontSize: 2.5 * SizeConfig.textMultiplier,
                 ),),
                 SizedBox(height: 1 * SizeConfig.heightMultiplier,),
                 Padding(

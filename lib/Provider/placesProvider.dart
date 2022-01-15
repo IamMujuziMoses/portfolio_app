@@ -1,12 +1,11 @@
-/*
-* Created by Mujuzi Moses
-*/
-
-import 'package:creativedata_app/Constants/errorMessages.dart';
 import 'package:creativedata_app/CustomErrors/fault.dart';
 import 'package:creativedata_app/Models/venue.dart';
 import 'package:creativedata_app/Services/placesServices.dart';
+import 'package:creativedata_app/constants.dart';
 import 'package:flutter/cupertino.dart';
+/*
+* Created by Mujuzi Moses
+*/
 
 class PlacesNotifier extends ChangeNotifier {
   static String _clientId = "QOD2QBXLCI10PHPUYJ05XTG3FHSGUBEDPO31OUN5SG3C5XIJ";
